@@ -1,0 +1,291 @@
+**程式名稱:總庫存月報表
+set excl off
+close all
+clear 
+AREA1='B24TMP'
+FLG='0'
+FCH=''
+CHK=''
+IF !USED('A01')
+   SELE 0
+   USE A01 INDE A01
+ELSE
+   SELE A01
+ENDIF
+SET ORDER TO A01  
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK sys_oper+'B25'      
+IF !USED('A23')
+    SELE 0
+    USE A23
+ELSE 
+   SELE A23
+ENDIF
+SET ORDER TO 1 
+IF !USED ('B01')
+   SELE 0
+   USE B01 
+ELSE 
+   SELE B01
+ENDIF
+SET ORDER TO 1              
+B25='B25'+LEFT(DTOS(DATE()),6)   &&月報表檔
+IF !USED('&B25')
+   SELE 0
+   USE (B25) ALIA B25 INDE (B25)
+ELSE
+   SELE B25
+ENDIF
+SET ORDER TO 1                
+SELE B25.F02,SUM(B25.F03),SUM(B25.F04-B25.F05),SUM(B25.F06-B25.F07),SUM(B25.F10),SUM(B25.F11),;
+SUM(B25.F13),SUM(B25.F14+B25.F17),SUM(B25.F15),B01.F37;
+FROM B25,B01 GROUP BY B25.F02 ORDER BY B25.F02 INTO CURSOR B24TMP WHERE B01.F01=B25.F02 AND B25.F01 NOT IN(SELE F01 FROM A14 WHERE EMPTY(F13))
+B24form=createobject("tkB24")
+B24form.show  
+define class tkB24 as form
+  caption='B24.總庫存月報表'
+  controlbox=.F.
+  BORDERSTYLE=3  
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  controlcount=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  showtips=.t.
+  showwindow=1
+  WIDTH=INT_015*789
+  windowtype=1
+  ADD OBJECT LBL_REC AS LBL_REC WITH;
+      TOP=INT_015*5,;
+      LEFT=INT_015*630,;
+      WIDTH=INT_015*60.,;
+      CAPTION='總庫存金額'
+  ADD OBJECT REC_COUNT AS REC_COUNT  with;
+      caption=str(reccount()),;
+      TOP=INT_015*5
+  ADD OBJECT MTH_LIST AS MTH_LIST WITH;
+      autocenter=.t.      
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      columncount=11,;            
+      RECORDSOURCE='B24TMP',; 
+      HEIGHT=INT_015*500,;     
+      WIDTH=INT_015*780,;     
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',; 
+      COLUMN4.NAME='COLUMN4',; 
+      COLUMN5.NAME='COLUMN5',;             
+      COLUMN6.NAME='COLUMN6',;       
+      COLUMN7.NAME='COLUMN7',;       
+      COLUMN8.NAME='COLUMN8',;
+      COLUMN9.NAME='COLUMN9',;
+      COLUMN10.NAME='COLUMN10',;
+      COLUMN11.NAME='COLUMN11'
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;      
+      TOP=INT_015*0,;
+      LEFT=INT_015*350              
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      TOP=INT_015*0,;
+      LEFT=INT_015*250,;
+      ENABLED=.T.,;
+      VISIBLE=.T.                 
+  ADD OBJECT LOOK_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*5,;             
+      LEFT=INT_015*423,;
+      WIDTH=INT_015*40,;
+      HEIGHT=INT_015*25,;
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<F.搜尋'
+  PROCEDURE INIT
+       SELE B24TMP
+       CALC SUM(F37*SUM_F15) TO INV_CNT
+       go top
+       THISFORM.REC_COUNT.CAPTION=TRANSFORM(ROUND(INV_CNT,2),'@R 99999999999.99')
+       CHK_STR=IIF(SEEK(DTOS(CTOD((THISFORM.MTH_LIST.DISPLAYVALUE+'/01'))),'A23','A231'),LEFT(DTOC(A23.F01),5),'')
+       THISFORM.CMDGROUP.SEEK_BOTT.VISIBLE=.F.
+       THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.NEW_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.EDIT_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.DEL_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限     
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')   
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*149
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*85
+       THISFORM.GRID1.COLUMN3.WIDTH=INT_015*85
+       THISFORM.GRID1.COLUMN4.WIDTH=INT_015*85
+       THISFORM.GRID1.COLUMN5.WIDTH=INT_015*85
+       THISFORM.GRID1.COLUMN6.WIDTH=INT_015*85
+       THISFORM.GRID1.COLUMN7.WIDTH=INT_015*85
+       THISFORM.GRID1.COLUMN8.WIDTH=INT_015*85
+       THISFORM.GRID1.COLUMN9.WIDTH=INT_015*85
+       THISFORM.GRID1.COLUMN10.WIDTH=INT_015*85
+       THISFORM.GRID1.COLUMN11.WIDTH=INT_015*85       
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='料        號'	          
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='期初數量'	                 
+	   THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='淨進貨量'
+	   THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='淨出貨量'	   	   
+  	   THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='生產數量' 
+  	   THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='耗用數量'   	   
+  	   THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='盤差數量'   	     	   
+  	   THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='損耗數量'   	     	   
+  	   THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='期末數量'   	     	     	   
+  	   THISFORM.GRID1.COLUMN10.HEADER1.CAPTION='平均成本'   	     	     	   
+  	   THISFORM.GRID1.COLUMN11.HEADER1.CAPTION='庫存金額'   	     	     	   
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B24TMP.F02'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='B24TMP.SUM_F03'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE='B24TMP.SUM_EXP_3'
+       THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B24TMP.SUM_EXP_4'
+       THISFORM.GRID1.COLUMN5.CONTROLSOURCE='B24TMP.SUM_F10'
+       THISFORM.GRID1.COLUMN6.CONTROLSOURCE='B24TMP.SUM_F11'
+       THISFORM.GRID1.COLUMN7.CONTROLSOURCE='B24TMP.SUM_F13'
+       THISFORM.GRID1.COLUMN8.CONTROLSOURCE='B24TMP.SUM_EXP_8'
+       THISFORM.GRID1.COLUMN9.CONTROLSOURCE='B24TMP.SUM_F15'	   
+       THISFORM.GRID1.COLUMN10.CONTROLSOURCE='B24TMP.F37'	          
+       THISFORM.GRID1.COLUMN11.CONTROLSOURCE='ROUND(B24TMP.SUM_F15*B24TMP.F37,2)'	                        
+       THISFORM.GRID1.READONLY=.T.       
+       JK='料品編號'
+       THISFORM.GRID1.SETFOCUS
+  ENDPROC       
+  PROC MTH_LIST.INTERACTIVECHANGE
+       CHK_STR=IIF(SEEK(DTOS(CTOD((THIS.DISPLAYVALUE+'/01'))),'A23','A231'),LEFT(DTOC(A23.F01),5),'')
+       THISFORM.GRID1.RECORDSOURCE=''
+       SELE B25
+       USE
+       B25='B25'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&B25')
+          SELE 0
+          USE (B25) ALIA B25
+       ELSE
+          SELE B25
+       ENDIF
+       SET ORDER TO 1  
+       SELE B25.F02,SUM(B25.F03),SUM(B25.F04-B25.F05),SUM(B25.F06-B25.F07),SUM(B25.F10),SUM(B25.F11),;
+       SUM(B25.F13),SUM(B25.F14+B25.F17),SUM(B25.F15),B01.F37;
+       FROM B25,B01 GROUP BY B25.F02 ORDER BY B25.F02 INTO CURSOR B24TMP WHERE B01.F01=B25.F02  AND B25.F01 NOT IN(SELE F01 FROM A14 WHERE EMPTY(F13))       
+       SELE B24TMP
+       CALC SUM(F37*SUM_F15) TO INV_CNT
+       go top
+       THISFORM.REC_COUNT.CAPTION=TRANSFORM(ROUND(INV_CNT,2),'@R 99999999999.99')          
+       THISFORM.GRID1.RECORDSOURCE='B24TMP'            	   
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B24TMP.F02'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='B24TMP.SUM_F03'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE='B24TMP.SUM_EXP_3'
+       THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B24TMP.SUM_EXP_4'
+       THISFORM.GRID1.COLUMN5.CONTROLSOURCE='B24TMP.SUM_F10'
+       THISFORM.GRID1.COLUMN6.CONTROLSOURCE='B24TMP.SUM_F11'
+       THISFORM.GRID1.COLUMN7.CONTROLSOURCE='B24TMP.SUM_F13'
+       THISFORM.GRID1.COLUMN8.CONTROLSOURCE='B24TMP.SUM_EXP_8'
+       THISFORM.GRID1.COLUMN9.CONTROLSOURCE='B24TMP.SUM_F15'	   
+       THISFORM.GRID1.COLUMN10.CONTROLSOURCE='B24TMP.F37'	          
+       THISFORM.GRID1.COLUMN11.CONTROLSOURCE='ROUND(B24TMP.SUM_F15*B24TMP.F37,2)'
+	   thisform.grid1.setfocus        
+	   THISFORM.REFRESH
+       IF THISFORM.GRID1.ACTIVEROW=0
+          THISFORM.CMDGROUP.ENABLED=.F.
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.ENABLED=.T.      
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限    
+       ENDIF          
+  ENDPROC      
+  PROC GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex       
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       CHK=''
+       thisform.refresh
+  ENDPROC       
+  PROC LOOK_BOTT.CLICK
+       LOOK_SEEK=createobject("LOOK_SEEK")  
+       LOOK_SEEK.SHOW    
+       IF FLG='0'
+           =MESSAGEBOX('找不到您指定的鍵值',0+48,'警示')
+       ENDIF   
+       THISFORM.GRID1.SETFOCUS       
+       FLG='0'
+       CHK=''
+  ENDPROC
+enddefine        
+***********************************************列印程序
+PROCEDURE PNT_PRC     
+          
+              REPORT FORM ALLTRIM(INT_116)+'B24' PREVIEW
+*              report form B24 to print prompt        
+          
+ENDPROC
+
+****************************************搜尋畫面
+define class LOOK_SEEK as form
+  autocenter=.t.
+  caption='料號搜尋畫面'
+  fontsize=INT_015*9
+  HEIGHT=INT_015*190
+  WIDTH=INT_015*375
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  showwindow=1
+  windowtype=1
+  name='LOOK_SEEK'
+
+  add object label1 as label with;
+      autosize=.t.,;
+      HEIGHT=INT_015*25,;
+      left=INT_015*30,;
+      top=INT_015*75,;
+      FONTSIZE=INT_015*9,;
+      name='label1'
+      add object text1 as textbox with;
+          autosize=.t.,;
+          top=INT_015*70,;
+          WIDTH=INT_015*180,;
+          left=INT_015*120,;
+          HEIGHT=INT_015*25,; 
+          FONTSIZE=INT_015*9,;
+          MAXLENGTH=43,;
+          name='text1'
+      add object cmnd1 as commandbutton with;
+          autosize=.t.,;
+          left=INT_015*60,;    
+          HEIGHT=INT_015*25,;   
+          top=INT_015*144,;  
+          WIDTH=INT_015*80,;
+          FONTSIZE=INT_015*9,;          
+          caption='\<Y.執行',;
+          TOOLTIPTEXT='確認搜尋所輸入的鍵值!快速鍵->ALT+Y',;
+          name='cmnd1'
+      add object cmnd2 as commandbutton with;
+          autosize=.t.,;
+          left=INT_015*200,;
+          top=INT_015*144,;
+          HEIGHT=INT_015*25,;
+          WIDTH=INT_015*80,;
+          FONTSIZE=INT_015*9,;
+          caption='\<C.取消',;
+          TOOLTIPTEXT='取消搜尋作業!快速鍵->ALT+C',;
+          name='cmnd2'
+      procedure init 
+          THISFORM.label1.caption='料        號'
+          THISFORM.TEXT1.VALUE=''
+      ENDPROC    
+      procedure cmnd1.click 
+          LOCATE FOR LEFT(F02,LEN(ALLTRIM(THISFORM.TEXT1.VALUE)))=ALLTRIM(THISFORM.TEXT1.VALUE) 
+          IF FOUND() AND !EMPTY(THISFORM.TEXT1.VALUE)
+             FLG='1'
+          ENDIF 
+          THISFORM.RELEASE                
+      endproc
+      procedure cmnd2.click
+          FLG='1'   
+          thisform.release
+      endproc      
+enddefine            

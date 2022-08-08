@@ -1,0 +1,928 @@
+**程式名稱:S14A出缺勤明細查詢
+SET EXCL OFF
+CLOSE ALL
+CLEAR 
+AREA1='S14A_TEMP'
+FLG='0'
+FCH=''
+CHK=''
+STAR_DATE=''
+END_DATE=''
+IF !USED('A01')
+   SELE 0
+   USE A01
+ELSE 
+   SELE A01
+ENDIF
+SET ORDER TO A01      
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK SYS_OPER+'S14'    
+IF !USED('A23')		&&月份檔
+   SELE 0
+   USE A23 INDE A23
+ELSE
+   SELE A23
+ENDIF
+SELECT A23
+GO TOP
+FIRST_DATE=LEFT(DTOS(A23.F01),4)+'/'+SUBSTR(DTOS(A23.F01),5,2) &&系統月份檔第一筆開帳月份
+GO BOTTOM
+LAST_DATE=LEFT(DTOS(A23.F01),4)+'/'+SUBSTR(DTOS(A23.F01),5,2)  &&系統月份檔最後一筆開帳月份
+IF !USED('S14')
+   SELE 0
+   USE S14 
+ELSE
+   SELE S14
+ENDIF
+SET ORDER TO S141
+*********
+S14AFORM=CREATEOBJECT("TKS14A")
+S14AFORM.SHOW  
+DEFINE CLASS TKS14A AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='S14A.出勤明細查詢  (請輸入西元年月  例如:2005/08)'
+  TOP=INT_015*200
+  LEFT=INT_015*235  
+  HEIGHT=INT_015*100
+  WIDTH=INT_015*275
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.   
+  CONTROLBOX=.F.
+  BORDERSTYLE=1
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='TKS14A'
+  ADD OBJECT LBLF01 AS LABEL WITH;
+      LEFT=INT_015*45,;
+      TOP=INT_015*25,;
+      WIDTH=INT_015*50,;
+      CAPTION='起始日期'
+  ADD OBJECT TXTF01 AS TEXTBOX WITH;
+      LEFT=INT_015*100,;
+      TOP=INT_015*20,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*60,;
+      MAXLENGTH=7,;
+      INPUTMASK='9999/99',;   
+      NAME='TXTF01'      
+  ADD OBJECT LBLF02 AS LABEL WITH;
+      LEFT=INT_015*45,;
+      TOP=INT_015*60,;
+      WIDTH=INT_015*50,;
+      CAPTION='截止日期'            
+  ADD OBJECT TXTF02 AS TEXTBOX WITH;
+      LEFT=INT_015*100,;
+      TOP=INT_015*55,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*60,;
+      MAXLENGTH=7,;
+      INPUTMASK='9999/99',;   
+      NAME='TXTF02'            
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*190,;
+      TOP=INT_015*20,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*50,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<Y.確認',;
+      TOOLTIPTEXT='確認所輸入之內容->ALT+Y',;
+      NAME='CMND1'
+ ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*190,;
+      TOP=INT_015*55,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*50,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消此畫面!快速鍵->ALT+C'
+      NAME='CMND2'
+********************
+ PROCEDURE INIT 
+         THISFORM.SETALL('FONTSIZE',INT_015*10,'LABEL')
+         THISFORM.SETALL('FONTSIZE',INT_015*10,'TEXTBOX')
+         THISFORM.SETALL('FONTSIZE',INT_015*10,'COMMANDBUTTON')
+         THISFORM.TXTF01.VALUE = ALLTRIM(STR(YEAR(DATE()))) + '/' + PADL(ALLTRIM(STR(MONTH(DATE()))),2,'0')
+         THISFORM.TXTF02.VALUE = ALLTRIM(STR(YEAR(DATE()))) + '/' + PADL(ALLTRIM(STR(MONTH(DATE()))),2,'0')         
+         THISFORM.TXTF01.SETFOCUS
+ ENDPROC      
+********    
+ PROC CMND1.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND1.TOP=INT_015*21
+             THISFORM.CMND1.LEFT=INT_015*191
+  ENDPROC     
+  PROC CMND1.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND1.TOP=INT_015*20
+             THISFORM.CMND1.LEFT=INT_015*190                
+  ENDPROC 
+ PROC CMND2.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND2.TOP=INT_015*56
+             THISFORM.CMND2.LEFT=INT_015*191
+  ENDPROC     
+  PROC CMND2.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND2.TOP=INT_015*55
+             THISFORM.CMND2.LEFT=INT_015*190                
+  ENDPROC   
+********確認鍵******
+PROCEDURE CMND1.CLICK   
+      IF  LEN(ALLTRIM(THISFORM.TXTF01.VALUE))=1 
+	   =MESSAGEBOX('起始日期不得為空白,請重新輸入!',0+64,'提示視窗')
+	  THISFORM.TXTF01.SETFOCUS
+	  RETURN
+       ENDIF             
+       IF LEN(ALLTRIM((THISFORM.TXTF01.VALUE)))<>7 OR VAL(RIGHT(ALLTRIM(THISFORM.TXTF01.VALUE),2))<=0 OR VAL(RIGHT(ALLTRIM(THISFORM.TXTF01.VALUE),2))>=13
+             =MESSAGEBOX('起始日期不正確',0+64,'提示視窗')
+            THISFORM.TXTF01.SETFOCUS
+             RETURN
+       ENDIF
+      IF  LEN(ALLTRIM(THISFORM.TXTF02.VALUE))=1 
+	   =MESSAGEBOX('截止日期不得為空白,請重新輸入!',0+64,'提示視窗')
+	  THISFORM.TXTF02.SETFOCUS
+	  RETURN
+       ENDIF         
+       IF LEN(ALLTRIM((THISFORM.TXTF02.VALUE)))<>7 OR VAL(RIGHT(ALLTRIM(THISFORM.TXTF02.VALUE),2))<=0 OR VAL(RIGHT(ALLTRIM(THISFORM.TXTF02.VALUE),2))>=13
+           =MESSAGEBOX('截止日期不正確',0+64,'提示視窗')
+           THISFORM.TXTF02.SETFOCUS
+           RETURN
+       ENDIF 	 
+       IF CTOD(THISFORM.TXTF01.VALUE+'/01')>CTOD(THISFORM.TXTF02.VALUE+'/01')
+	    =MESSAGEBOX('起始日期不得大於截止日期,請重新輸入!',0+64,'薪資系統日期範圍：'+FIRST_DATE+' ～ '+LAST_DATE)
+	    THISFORM.TXTF01.SETFOCUS
+	    RETURN	  
+       ENDIF	
+       IF CTOD(THISFORM.TXTF02.VALUE+'/01')<CTOD(THISFORM.TXTF01.VALUE+'/01')
+	    =MESSAGEBOX('截止日期不得小於起始日期,請重新輸入!',0+64,'薪資系統日期範圍：'+FIRST_DATE+' ～ '+LAST_DATE)
+	    THISFORM.TXTF02.SETFOCUS
+	    RETURN	  
+       ENDIF		 
+*!*	       IF INDEXSEEK(DTOS(CTOD(THISFORM.TXTF01.VALUE+'/01')),.F.,'A23','A231')=.F.
+*!*		   =MESSAGEBOX('起始日期在薪資系統中並不存在,請重新輸入!',0+64,'薪資系統日期範圍：'+FIRST_DATE+' ～ '+LAST_DATE)
+*!*	           THISFORM.TXTF01.SETFOCUS
+*!*		   RETURN	  
+*!*	       ENDIF	  
+*!*	       IF INDEXSEEK(DTOS(CTOD(THISFORM.TXTF02.VALUE+'/01')),.F.,'A23','A231')=.F.
+*!*		   =MESSAGEBOX('截止日期在薪資系統中並不存在,請重新輸入!',0+64,'薪資系統日期範圍：'+FIRST_DATE+' ～ '+LAST_DATE)
+*!*		   THISFORM.TXTF02.SETFOCUS
+*!*		   RETURN	  
+*!*	       ENDIF	
+       STAR_DATE=THISFORM.TXTF01.VALUE
+       END_DATE=THISFORM.TXTF02.VALUE
+       SELECT * FROM S14 ORDER BY F01,F08 WHERE IIF(A02.F11<>'*',ALLTRIM(S14.F01)=IIF(SEEK(sys_oper,'A01'),ALLTRIM(A01.F12),''),.T.) AND ;
+                      LEFT(DTOS(F08),6)>=LEFT(DTOS(CTOD(ALLTRIM(THISFORM.TXTF01.VALUE)+'/01')),6) AND LEFT(DTOS(F08),6)<=LEFT(DTOS(CTOD(ALLTRIM(THISFORM.TXTF02.VALUE)+'/01')),6) INTO CURSOR S14_TEMP
+       SELECT   S14_TEMP             
+       IF  _TALLY>0
+            CREATE CURSOR S14A_TEMP;
+            (F01 C(4),F02 C(8),F03 C(4),F04 C(8),F05 N(4),F06 N(4),F07 N(5,1),F08 C(7),F09 N(5,1),F10 N(5,1),F12 N(3),F13 N(3),F99 C(17))
+             INDE ON F01+F08 TAG S14A_TEMP1
+             INDE ON F03+F08 TAG S14A_TEMP2   
+             SELECT S14_TEMP
+             GO TOP
+	     DO WHILE !EOF()
+	            SELECT S14A_TEMP
+	            APPEND BLANK 
+	            REPLACE S14A_TEMP.F01 WITH S14_TEMP.F01
+	            REPLACE S14A_TEMP.F02 WITH S14_TEMP.F02
+	            REPLACE S14A_TEMP.F03 WITH S14_TEMP.F03
+	            REPLACE S14A_TEMP.F04 WITH S14_TEMP.F04
+	            REPLACE S14A_TEMP.F05 WITH S14_TEMP.F05
+	            REPLACE S14A_TEMP.F06 WITH S14_TEMP.F06
+	            REPLACE S14A_TEMP.F07 WITH S14_TEMP.F07
+	            REPLACE S14A_TEMP.F08 WITH LEFT(DTOS(S14_TEMP.F08),4)+'/'+SUBSTR(DTOS(S14_TEMP.F08),5,2)
+	            REPLACE S14A_TEMP.F09 WITH S14_TEMP.F09
+	            REPLACE S14A_TEMP.F10 WITH S14_TEMP.F10
+	            REPLACE S14A_TEMP.F12 WITH S14_TEMP.F12
+	            REPLACE S14A_TEMP.F13 WITH S14_TEMP.F13
+	            REPLACE S14A_TEMP.F99 WITH S14_TEMP.F99
+	            SELECT S14_TEMP
+	            SKIP
+	     ENDDO
+	     SELECT S14_TEMP
+	     USE       
+	     SELECT S14A_TEMP
+	     SET ORDER TO  S14A_TEMP1
+	     GO TOP
+	     TKS14A_SEEK=CREATEOBJECT("TKS14A_SEEK")  
+	     TKS14A_SEEK.SHOW		 
+	     CLOSE TABLE ALL
+     	     THISFORM.RELEASE 	
+       ELSE
+	     =MESSAGEBOX('此日期範圍並無資料',0+64,'提示視窗')
+	     THISFORM.TXTF01.SETFOCUS
+       ENDIF    
+ENDPROC       
+********離開鍵***********
+ PROCEDURE CMND2.CLICK     
+     CLOSE TABLE ALL
+     THISFORM.RELEASE 
+*!*	     RETURN  
+      DO S14.PRG
+ ENDPROC      
+ENDDEFINE      
+************************
+DEFINE CLASS TKS14A_SEEK AS FORM      
+*!*	  AUTOCENTER=.T.  
+  CAPTION='S14A.出勤明細查詢'+SPACE(25)+'日期範圍：'+STAR_DATE+'～'+END_DATE
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  WIDTH=INT_015*791
+  CONTROLBOX=.F.
+  MAXBUTTON=.F.
+  MINBUTTON=.F.  
+  MOVABLE=.F.
+  CLOSABLE=.F.    
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='TKS14A_SEEK'         
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+     WIDTH=INT_015*180,;
+      AUTOCENTER=.T.
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      COLUMNCOUNT=13,;            
+      RECORDSOURCE='S14A_TEMP',; 
+      HEIGHT=INT_015*500,;     
+      WIDTH=INT_015*780,;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',; 
+      COLUMN4.NAME='COLUMN4',; 
+      COLUMN5.NAME='COLUMN5',;             
+      COLUMN6.NAME='COLUMN6',;       
+      COLUMN7.NAME='COLUMN7',;
+      COLUMN8.NAME='COLUMN8',;
+      COLUMN9.NAME='COLUMN9',;
+      COLUMN10.NAME='COLUMN10',;
+      COLUMN11.NAME='COLUMN11',;
+      COLUMN12.NAME='COLUMN12',;
+      COLUMN13.NAME='COLUMN13'      
+   ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      TOP=INT_015*0,;
+      LEFT=INT_015*205,;
+      ENABLED=.T.,;
+      VISIBLE=.T.            
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;      
+      TOP=INT_015*0,;
+      LEFT=INT_015*405         
+  ADD OBJECT TK_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*5,;
+      LEFT=INT_015*468,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*65,;      
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<T.出勤總表',;
+      NAME='TK_BOTT'                                                    
+  PROCEDURE INIT
+       THISFORM.ORPGROUP.NEW_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.EDIT_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.DEL_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限    
+       THISFORM.GRID1.LOCKCOLUMNS=2
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)   
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')   
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*60
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*60
+       THISFORM.GRID1.COLUMN3.WIDTH=INT_015*60
+       THISFORM.GRID1.COLUMN4.WIDTH=INT_015*60
+       THISFORM.GRID1.COLUMN5.WIDTH=INT_015*60
+       THISFORM.GRID1.COLUMN6.WIDTH=INT_015*70
+       THISFORM.GRID1.COLUMN7.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN8.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN9.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN10.WIDTH=INT_015*100
+       THISFORM.GRID1.COLUMN11.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN12.WIDTH=INT_015*100
+       THISFORM.GRID1.COLUMN13.WIDTH=INT_015*120
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='人員編號'
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='人員姓名'
+       THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='部門編號'	   
+       THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='部門名稱'	   
+       THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='出勤年月'	
+       THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='上班總天數'
+       THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='遲到總分鐘數'
+       THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='早退總分鐘數'    	   
+       THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='平日加班天數'
+       THISFORM.GRID1.COLUMN10.HEADER1.CAPTION='平日加班總小時數'
+       THISFORM.GRID1.COLUMN11.HEADER1.CAPTION='假日加班天數'
+       THISFORM.GRID1.COLUMN12.HEADER1.CAPTION='假日加班總小時數'
+       THISFORM.GRID1.COLUMN13.HEADER1.CAPTION='安全資料'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S14A_TEMP.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='S14A_TEMP.F02'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE='S14A_TEMP.F03'
+       THISFORM.GRID1.COLUMN4.CONTROLSOURCE='S14A_TEMP.F04'
+       THISFORM.GRID1.COLUMN5.CONTROLSOURCE='S14A_TEMP.F08'
+       THISFORM.GRID1.COLUMN6.CONTROLSOURCE='S14A_TEMP.F07'
+       THISFORM.GRID1.COLUMN7.CONTROLSOURCE='S14A_TEMP.F05'
+       THISFORM.GRID1.COLUMN8.CONTROLSOURCE='S14A_TEMP.F06'
+       THISFORM.GRID1.COLUMN9.CONTROLSOURCE='S14A_TEMP.F12'
+       THISFORM.GRID1.COLUMN10.CONTROLSOURCE='S14A_TEMP.F09'
+       THISFORM.GRID1.COLUMN11.CONTROLSOURCE='S14A_TEMP.F13'
+       THISFORM.GRID1.COLUMN12.CONTROLSOURCE='S14A_TEMP.F10'
+       THISFORM.GRID1.COLUMN13.CONTROLSOURCE='S14A_TEMP.F99'
+       THISFORM.GRID1.READONLY=.T.      
+       THISFORM.GRID1.ENABLED=.T.  
+       THISFORM.GRID1.SETFOCUS    
+        IF  THISFORM.GRID1.ACTIVEROW=0 
+              THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	      THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.    
+	      THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.	        
+	      THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.   
+	      THISFORM.TK_BOTT.ENABLED=.F.
+        ELSE
+              THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+	      THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+	      THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+	      THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.    
+	      THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.	        
+	      THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限       
+	      THISFORM.TK_BOTT.ENABLED=IIF(A02.F10='*',.T.,.F.)   			&&判斷有無列印薪資總表的權限 
+        ENDIF          
+       JK='人員編號'
+  ENDPROC    
+  PROC KEY_LIST.INIT 
+       WITH THIS 
+           .ADDITEM('依人員編號排列')
+           .ADDITEM('依部門編號排列')      
+       ENDWITH      
+  ENDPROC 
+  PROC KEY_LIST.INTERACTIVECHANGE                 
+       SELE S14A_TEMP
+       DO CASE
+          CASE THIS.DISPLAYVALUE='依人員編號排列'    
+                     THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='人員編號'
+		     THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='人員姓名'
+		     THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='部門編號'	   
+		     THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='部門名稱'	   	
+		     THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S14A_TEMP.F01'
+		     THISFORM.GRID1.COLUMN2.CONTROLSOURCE='S14A_TEMP.F02'
+		     THISFORM.GRID1.COLUMN3.CONTROLSOURCE='S14A_TEMP.F03'
+		     THISFORM.GRID1.COLUMN4.CONTROLSOURCE='S14A_TEMP.F04'		        
+                     SET ORDER TO S14A_TEMP1
+          CASE THIS.DISPLAYVALUE='依部門編號排列'         
+		     THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='部門編號'	   
+		     THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='部門名稱'	   	
+                     THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='人員編號'
+		     THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='人員姓名'		     
+		     THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S14A_TEMP.F03'
+		     THISFORM.GRID1.COLUMN2.CONTROLSOURCE='S14A_TEMP.F04'	
+		     THISFORM.GRID1.COLUMN3.CONTROLSOURCE='S14A_TEMP.F01'
+		     THISFORM.GRID1.COLUMN4.CONTROLSOURCE='S14A_TEMP.F02'		     	        
+                     SET ORDER TO S14A_TEMP2       
+       ENDCASE 
+       JK=THISFORM.GRID1.COLUMN1.HEADER1.CAPTION
+       THISFORM.GRID1.REFRESH
+       THISFORM.GRID1.SETFOCUS
+  ENDPROC             
+*******        
+  PROC GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       CHK=''
+       THISFORM.REFRESH
+  ENDPROC   
+**********列印出勤總表  
+ PROCEDURE  TK_BOTT.CLICK  
+    SELECT S14A_TEMP
+   TK_RANGE=CREATEOBJECT("TK_RANGE")  
+   TK_RANGE.SHOW  
+   THISFORM.GRID1.SETFOCUS  
+ ENDPROC       
+ENDDEFINE     
+***********************************************列印出勤總表 列印範圍選定
+DEFINE CLASS TK_RANGE AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='請輸入列印資料範圍'
+  TOP=INT_015*200
+  LEFT=INT_015*250 
+  HEIGHT=INT_015*120
+  WIDTH=INT_015*280
+  FONTSIZE=INT_015*9
+  MOVABLE=.F.
+  MAXBUTTON=.F.
+  MINBUTTON=.F.    
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='TK_RANGE'
+  ADD OBJECT LABEL1 AS LABEL WITH;
+      AUTOSIZE=.T.,;
+      HEIGHT=INT_015*25,;
+      LEFT=INT_015*30,;
+      TOP=INT_015*30,;
+      CAPTION='起始員工編號',;
+      NAME='LABEL1'
+  ADD OBJECT TEXT1 AS TEXTBOX WITH;
+      TOP=INT_015*24,;
+      LEFT=INT_015*110,;
+      HEIGHT=INT_015*25,; 
+      WIDTH=INT_015*60,; 
+      MAXLENGTH=4,;
+      NAME='TEXT1'      
+  ADD OBJECT LABEL2 AS LABEL WITH;
+      AUTOSIZE=.T.,;
+      HEIGHT=INT_015*25,;
+      LEFT=INT_015*30,;
+      TOP=INT_015*61,;
+      CAPTION='截止員工編號',;
+      NAME='LABEL2'
+  ADD OBJECT TEXT2 AS TEXTBOX WITH;
+      TOP=INT_015*55,;
+      LEFT=INT_015*110,;
+      HEIGHT=INT_015*25,;   
+      WIDTH=INT_015*60,;     
+      MAXLENGTH=4,;   
+      NAME='TEXT2'    
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*190,;    
+      HEIGHT=INT_015*25,; 
+      WIDTH=INT_015*70,;    
+      TOP=INT_015*14,;  
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<P.列         印',;
+      TOOLTIPTEXT='列印所輸入的範圍鍵值!快速鍵->ALT+Y',;
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*190,;    
+      HEIGHT=INT_015*25,; 
+      WIDTH=INT_015*70,;    
+      TOP=INT_015*45,;  
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<E.轉EXCEL',;
+      TOOLTIPTEXT='將資料轉至EXCEL格式!快速鍵->ALT+Y',;
+      NAME='CMND2'      
+  ADD OBJECT CMND3 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*190,;
+      TOP=INT_015*76,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*70,; 
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<C.取        消',;
+      TOOLTIPTEXT='取消作業!快速鍵->ALT+C',;
+      NAME='CMND3'
+  PROCEDURE INIT 
+      THISFORM.SETALL('FONTSIZE',INT_015*10,'TEXTBOX')
+      THISFORM.SETALL('FONTSIZE',INT_015*10,'LABEL')      
+      THISFORM.SETALL('FONTSIZE',INT_015*10,'COMMANDBUTTON')    
+      THISFORM.LABEL1.CAPTION='起始員工編號' 
+      THISFORM.LABEL2.CAPTION='截止員工編號' 
+      THISFORM.TEXT1.VALUE=S14A_TEMP.F01
+      THISFORM.TEXT2.VALUE=S14A_TEMP.F01    
+  ENDPROC    
+  PROCEDURE CMND1.CLICK 
+      IF  EMPTY(THISFORM.TEXT1.VALUE)
+           =MESSAGEBOX('起始編號不得為空白!',0+64,'提示訊息視窗')
+           THISFORM.TEXT1.SETFOCUS
+  	   RETURN 
+      ENDIF
+      IF  EMPTY(THISFORM.TEXT2.VALUE)
+           =MESSAGEBOX('截止編號不得為空白!',0+64,'提示訊息視窗')
+           THISFORM.TEXT2.SETFOCUS
+  	   RETURN 
+      ENDIF                     
+      SELECT * FROM S14A_TEMP WHERE F01>=THISFORM.TEXT1.VALUE AND F01<=THISFORM.TEXT2.VALUE  ORDER BY F01 INTO CURSOR S14A
+      IF  _TALLY >0
+          IF !USED('S0A')
+              SELE 0
+              USE S0A 
+          ELSE
+              SELE S0A
+          ENDIF
+          SET ORDER TO S0A1  
+          I=0
+          CREATE CURSOR S14AB (F01 C(60),F02 C(7),F03 C(150))
+          SELECT S14A
+          GO TOP
+          DO WHILE !EOF()
+                 SELECT S14AB
+                 APPEND BLANK
+                 REPLACE S14AB.F01 WITH ALLTRIM(S14A.F01+'  '+S14A.F02+'，'+S14A.F03+'  '+S14A.F04)
+                 REPLACE S14AB.F02 WITH S14A.F08
+                 REPLACE S14AB.F03 WITH ALLTRIM('上班天數：'+ALLTRIM(TRANSFORM(S14A.F07,'@R 99.9'))+'天，遲到分鐘：'+ALLTRIM(TRANSFORM(S14A.F05,'@R 9999'))+'分鐘，早退分鐘：'+ALLTRIM(TRANSFORM(S14A.F06,'@R 9999'))+'分鐘')			            
+                 SELECT S14AB
+                 APPEND BLANK
+                 REPLACE S14AB.F03 WITH ALLTRIM('平日加班天數：'+ALLTRIM(TRANSFORM(S14A.F12,'@R 999'))+'天，平日加班小時數：'+ALLTRIM(TRANSFORM(S14A.F09,'@R 999.9'))+'小時')
+                 SELECT S14AB
+                 APPEND BLANK
+                 REPLACE S14AB.F03 WITH ALLTRIM('假日加班天數：'+ALLTRIM(TRANSFORM(S14A.F13,'@R 999'))+'天，假日加班小時數：'+ALLTRIM(TRANSFORM(S14A.F10,'@R 999.9'))+'小時')			            
+                 SELECT S0A.*,SUM(S0A.F07) FROM S0A WHERE LEFT(DTOS(S0A.F08),6)>=LEFT(DTOS(CTOD(ALLTRIM(STAR_DATE)+'/01')),6) AND LEFT(DTOS(S0A.F08),6)<=LEFT(DTOS(CTOD(ALLTRIM(END_DATE)+'/01')),6) AND;
+                               ALLTRIM(S0A.F01)=ALLTRIM(S14A.F01) ORDER BY S0A.F01,S0A.F05,S0A.F09 GROUP BY S0A.F01,S0A.F05,S0A.F09 INTO CURSOR S0A_TEMP
+                 SELECT S0A_TEMP
+                 GO TOP 
+                 DO WHILE !EOF()
+                        SELECT S14AB
+                        APPEND BLANK 
+                        REPLACE S14AB.F03 WITH ALLTRIM(S0A_TEMP.F05+'  '+ALLTRIM(S0A_TEMP.F06)+'，缺勤數值：'+ALLTRIM(TRANSFORM(S0A_TEMP.SUM_F07,'@R 99.9'))+'  '+IIF(S0A_TEMP.F09='D','日',IIF(S0A_TEMP.F09='H','小時','次/月')))
+                        SELECT S0A_TEMP
+                        SKIP
+                 ENDDO
+                 SELECT S0A_TEMP
+                 USE 	            
+                 SELECT S14A
+                 SKIP
+          ENDDO
+          SELECT S0A
+          USE
+          SELECT S14A
+          USE
+          SELECT S14AB
+          GO TOP
+          REPORT FORM ALLTRIM(INT_116)+'S14A_3'  TO PRINTER PROMPT  PREVIEW  
+          SELECT S14AB
+          USE
+     ELSE
+          SELECT S14A
+          USE        
+          =MESSAGEBOX('查無此範圍資料',0+48,'警示')
+          THISFORM.TEXT1.SETFOCUS
+          RETURN     
+     ENDIF                          
+     THISFORM.CMND3.CLICK
+  ENDPROC    
+  ****
+  PROCEDURE CMND2.CLICK 
+      IF  EMPTY(THISFORM.TEXT1.VALUE)
+           =MESSAGEBOX('起始編號不得為空白!',0+64,'提示訊息視窗')
+           THISFORM.TEXT1.SETFOCUS
+  	   RETURN 
+      ENDIF
+      IF  EMPTY(THISFORM.TEXT2.VALUE)
+           =MESSAGEBOX('截止編號不得為空白!',0+64,'提示訊息視窗')
+           THISFORM.TEXT2.SETFOCUS
+  	   RETURN 
+      ENDIF      
+      FILENAME=LEFT(DTOS(CTOD(STAR_DATE+'/01')),6)+'~'+LEFT(DTOS(CTOD(END_DATE+'/01')),6)+'出勤總表'
+      SELECT * FROM S14A_TEMP WHERE F01>=THISFORM.TEXT1.VALUE AND F01<=THISFORM.TEXT2.VALUE  ORDER BY F01 INTO CURSOR S14A
+      IF  _TALLY >0
+          IF !USED('S0A')
+              SELE 0
+              USE S0A 
+          ELSE
+              SELE S0A
+          ENDIF
+          SET ORDER TO S0A1  
+          I=0
+          CREATE CURSOR S14AB (F01 C(60),F02 C(7),F03 C(150),F04 N(3))
+          INDE ON F04 TAG S14AB1
+          SELECT S14A
+          GO TOP
+          I=1
+          DO WHILE !EOF()
+                 SELECT S14AB
+                 APPEND BLANK
+                 REPLACE S14AB.F01 WITH ALLTRIM(S14A.F01+'  '+S14A.F02+'，'+S14A.F03+'  '+S14A.F04)
+                 REPLACE S14AB.F02 WITH S14A.F08
+                 REPLACE S14AB.F03 WITH ALLTRIM('上班天數：'+ALLTRIM(TRANSFORM(S14A.F07,'@R 99.9'))+'天，遲到分鐘：'+ALLTRIM(TRANSFORM(S14A.F05,'@R 9999'))+'分鐘，早退分鐘：'+ALLTRIM(TRANSFORM(S14A.F06,'@R 9999'))+'分鐘')			            
+                 REPLACE S14AB.F04 WITH I
+                 I=I+1
+                 SELECT S14AB
+                 APPEND BLANK
+                 REPLACE S14AB.F03 WITH ALLTRIM('平日加班天數：'+ALLTRIM(TRANSFORM(S14A.F12,'@R 999'))+'天，平日加班小時數：'+ALLTRIM(TRANSFORM(S14A.F09,'@R 999.9'))+'小時')
+                 REPLACE S14AB.F04 WITH I
+                 I=I+1                 
+                 SELECT S14AB
+                 APPEND BLANK
+                 REPLACE S14AB.F03 WITH ALLTRIM('假日加班天數：'+ALLTRIM(TRANSFORM(S14A.F13,'@R 999'))+'天，假日加班小時數：'+ALLTRIM(TRANSFORM(S14A.F10,'@R 999.9'))+'小時')			            
+                 REPLACE S14AB.F04 WITH I
+                 I=I+1                 
+                 SELECT S0A.*,SUM(S0A.F07) FROM S0A WHERE LEFT(DTOS(S0A.F08),6)>=LEFT(DTOS(CTOD(ALLTRIM(STAR_DATE)+'/01')),6) AND LEFT(DTOS(S0A.F08),6)<=LEFT(DTOS(CTOD(ALLTRIM(END_DATE)+'/01')),6) AND;
+                               ALLTRIM(S0A.F01)=ALLTRIM(S14A.F01) ORDER BY S0A.F01,S0A.F08,S0A.F05,S0A.F09 GROUP BY S0A.F01,S0A.F08,S0A.F05,S0A.F09 INTO CURSOR S0A_TEMP
+                 SELECT S0A_TEMP
+                 GO TOP 
+                 DO WHILE !EOF()
+                        SELECT S14AB
+                        APPEND BLANK 
+                        REPLACE S14AB.F03 WITH ALLTRIM(S0A_TEMP.F05+'  '+ALLTRIM(S0A_TEMP.F06)+'，缺勤數值：'+ALLTRIM(TRANSFORM(S0A_TEMP.SUM_F07,'@R 99.9'))+'  '+IIF(S0A_TEMP.F09='D','日',IIF(S0A_TEMP.F09='H','小時','次/月')))
+                        REPLACE S14AB.F04 WITH I
+                        I=I+1                        
+                        SELECT S0A_TEMP
+                        SKIP
+                 ENDDO
+                 SELECT S0A_TEMP
+                 USE 	            
+                 SELECT S14A
+                 SKIP
+          ENDDO
+          SELECT S0A
+          USE
+          SELECT S14A
+          USE
+          SELECT S14AB.F01 出勤項目,S14AB.F02 出勤日期,S14AB.F03 出勤內容 FROM S14AB ORDER BY S14AB.F04 NOWAIT   
+	  GCDELIMFILE=PUTFILE('儲存路徑',FILENAME,'XLS')
+	  IF !EMPTY(GCDELIMFILE) 
+	      ON ERROR DO FILE_IMPACT
+	      COPY TO (GCDELIMFILE) TYPE XL5     
+	      =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗') 
+	  ELSE
+	      THISFORM.TEXT1.SETFOCUS
+	      RETURN			    
+	  ENDIF  
+          SELECT S14AB
+          USE
+     ELSE
+          SELECT S14A
+          USE        
+          =MESSAGEBOX('查無此範圍資料',0+48,'警示')
+          THISFORM.TEXT1.SETFOCUS
+          RETURN     
+     ENDIF                          
+     THISFORM.CMND3.CLICK
+  ENDPROC           
+  ****         
+  PROCEDURE CMND3.CLICK
+      THISFORM.RELEASE
+  ENDPROC      
+  PROC CMND1.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND1.TOP=INT_015*15
+             THISFORM.CMND1.LEFT=INT_015*191
+  ENDPROC     
+  PROC CMND1.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND1.TOP=INT_015*14
+             THISFORM.CMND1.LEFT=INT_015*190                  
+  ENDPROC     
+  PROC CMND2.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND2.TOP=INT_015*46
+             THISFORM.CMND2.LEFT=INT_015*191
+  ENDPROC     
+  PROC CMND2.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND2.TOP=INT_015*45
+             THISFORM.CMND2.LEFT=INT_015*190                  
+  ENDPROC     
+  PROC CMND3.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND3.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND3.TOP=INT_015*77
+             THISFORM.CMND3.LEFT=INT_015*191
+  ENDPROC     
+  PROC CMND3.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND3.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND3.TOP=INT_015*76
+             THISFORM.CMND3.LEFT=INT_015*190                  
+  ENDPROC   
+ENDDEFINE         
+***********************************************列印程序
+PROCEDURE PNT_PRC  
+   SELE S14A_TEMP
+   ANS_RANGE=CREATEOBJECT("ANS_RANGE")  
+   ANS_RANGE.SHOW       
+ENDPROC 
+***********************************************列印範圍選定
+DEFINE CLASS ANS_RANGE AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='請輸入列印資料範圍'
+  TOP=INT_015*200
+  LEFT=INT_015*250    
+  HEIGHT=INT_015*120
+  WIDTH=INT_015*280
+  FONTSIZE=INT_015*9
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.    
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='ANS_RANGE'
+  ADD OBJECT LABEL1 AS LABEL WITH;
+      AUTOSIZE=.T.,;
+      HEIGHT=INT_015*25,;
+      LEFT=INT_015*30,;
+      TOP=INT_015*30,;
+      CAPTION='起始員工編號',;
+      NAME='LABEL1'
+  ADD OBJECT TEXT1 AS TEXTBOX WITH;
+      TOP=INT_015*24,;
+      LEFT=INT_015*110,;
+      HEIGHT=INT_015*25,; 
+      WIDTH=INT_015*60,; 
+      MAXLENGTH=4,;
+      NAME='TEXT1'      
+  ADD OBJECT LABEL2 AS LABEL WITH;
+      AUTOSIZE=.T.,;
+      HEIGHT=INT_015*25,;
+      LEFT=INT_015*30,;
+      TOP=INT_015*61,;
+      CAPTION='截止員工編號',;
+      NAME='LABEL2'
+  ADD OBJECT TEXT2 AS TEXTBOX WITH;
+      TOP=INT_015*55,;
+      LEFT=INT_015*110,;
+      HEIGHT=INT_015*25,;   
+      WIDTH=INT_015*60,;     
+      MAXLENGTH=4,;   
+      NAME='TEXT2'    
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*190,;    
+      HEIGHT=INT_015*25,; 
+      WIDTH=INT_015*70,;    
+      TOP=INT_015*14,;  
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<P.列         印',;
+      TOOLTIPTEXT='列印所輸入的範圍鍵值!快速鍵->ALT+Y',;
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*190,;    
+      HEIGHT=INT_015*25,; 
+      WIDTH=INT_015*70,;    
+      TOP=INT_015*45,;  
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<E.轉EXCEL',;
+      TOOLTIPTEXT='將資料轉至EXCEL格式!快速鍵->ALT+Y',;
+      NAME='CMND2'      
+  ADD OBJECT CMND3 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*190,;
+      TOP=INT_015*76,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*70,; 
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<C.取        消',;
+      TOOLTIPTEXT='取消作業!快速鍵->ALT+C',;
+      NAME='CMND3'
+  PROCEDURE INIT 
+      THISFORM.SETALL('FONTSIZE',INT_015*10,'TEXTBOX')
+      THISFORM.SETALL('FONTSIZE',INT_015*10,'LABEL')      
+      THISFORM.SETALL('FONTSIZE',INT_015*10,'COMMANDBUTTON')    
+      DO CASE  
+             CASE KEY()='F01+F08'     
+                        THISFORM.LABEL1.CAPTION='起始員工編號' 
+                        THISFORM.LABEL2.CAPTION='截止員工編號' 
+                        THISFORM.TEXT1.VALUE=S14A_TEMP.F01
+                        THISFORM.TEXT2.VALUE=S14A_TEMP.F01
+             CASE KEY()='F03+F08'    
+                        THISFORM.LABEL1.CAPTION='起始部門編號' 
+                        THISFORM.LABEL2.CAPTION='截止部門編號'        
+                        THISFORM.TEXT1.VALUE=S14A_TEMP.F03
+                        THISFORM.TEXT2.VALUE=S14A_TEMP.F03                              
+      ENDCASE     
+  ENDPROC    
+  **
+  PROCEDURE CMND1.CLICK 
+      IF  EMPTY(THISFORM.TEXT1.VALUE)
+           =MESSAGEBOX('起始編號不得為空白!',0+64,'提示訊息視窗')
+           THISFORM.TEXT1.SETFOCUS
+  	   RETURN 
+      ENDIF
+      IF  EMPTY(THISFORM.TEXT2.VALUE)
+           =MESSAGEBOX('截止編號不得為空白!',0+64,'提示訊息視窗')
+           THISFORM.TEXT2.SETFOCUS
+  	   RETURN 
+      ENDIF      
+      DO CASE  
+             CASE KEY()='F01+F08'     
+                        SELECT  * FROM S14A_TEMP WHERE F01>=THISFORM.TEXT1.VALUE AND F01<=THISFORM.TEXT2.VALUE  ORDER BY F01,F08,F06 NOWAIT
+		        IF  _TALLY >0
+		             REPORT FORM ALLTRIM(INT_116)+'S14A_1' TO PRINT PROMPT   PREVIEW
+		        ELSE
+		             =MESSAGEBOX('查無此範圍資料',0+48,'警示')
+		             THISFORM.TEXT1.SETFOCUS
+		             RETURN     
+		        ENDIF                          
+             CASE KEY()='F03+F08'    
+                        SELECT  * FROM S14A_TEMP WHERE F03>=THISFORM.TEXT1.VALUE AND F03<=THISFORM.TEXT2.VALUE  ORDER BY F03,F08,F06 NOWAIT               
+		        IF  _TALLY >0
+		             REPORT FORM ALLTRIM(INT_116)+'S14A_2' TO PRINT PROMPT   PREVIEW  
+		        ELSE
+		             =MESSAGEBOX('查無此範圍資料',0+48,'警示')
+		             THISFORM.TEXT1.SETFOCUS
+		             RETURN     
+		        ENDIF                               
+      ENDCASE         
+           THISFORM.CMND3.CLICK
+  ENDPROC     
+  *****
+  PROCEDURE CMND2.CLICK 
+      IF  EMPTY(THISFORM.TEXT1.VALUE)
+           =MESSAGEBOX('起始編號不得為空白!',0+64,'提示訊息視窗')
+           THISFORM.TEXT1.SETFOCUS
+  	   RETURN 
+      ENDIF
+      IF  EMPTY(THISFORM.TEXT2.VALUE)
+           =MESSAGEBOX('截止編號不得為空白!',0+64,'提示訊息視窗')
+           THISFORM.TEXT2.SETFOCUS
+  	   RETURN 
+      ENDIF     
+      FILENAME='S14A 出勤明細'+LEFT(STAR_DATE,4)+RIGHT(STAR_DATE,2)+'~'+LEFT(END_DATE,4)+RIGHT(END_DATE,2)       
+      DO CASE  
+             CASE KEY()='F01+F08'     
+                        SELECT F01 員工編號,F02 員工姓名,F03 部門編號,F04 部門名稱,F08 出勤年月,F07 上班總天數,F05 遲到總分鐘數,F06 早退總分鐘數,;
+                                       F12 平日加班天數,F09 平日加班總小時數,F13 假日加班天數,F10 假日加班總小時數,F09+F10 加班小計;
+                                       FROM S14A_TEMP WHERE F01>=THISFORM.TEXT1.VALUE AND F01<=THISFORM.TEXT2.VALUE  ORDER BY F01,F08 NOWAIT
+		        IF  _TALLY >0
+	                     GCDELIMFILE=PUTFILE('儲存路徑',FILENAME,'XLS')
+			     IF !EMPTY(GCDELIMFILE) 
+			          ON ERROR DO FILE_IMPACT
+			          COPY TO (GCDELIMFILE) TYPE XL5     
+			          =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗') 
+			     ELSE
+		                 THISFORM.TEXT1.SETFOCUS
+		                 RETURN			    
+			     ENDIF  
+		        ELSE
+		             =MESSAGEBOX('查無此範圍資料',0+48,'警示')
+		             THISFORM.TEXT1.SETFOCUS
+		             RETURN     
+		        ENDIF                          
+             CASE KEY()='F03+F08'    
+                        SELECT F03 部門編號,F04 部門名稱,F01 員工編號,F02 員工姓名,F08 出勤年月,F07 上班總天數,F05 遲到總分鐘數,F06 早退總分鐘數,;
+                                       F12 平日加班天數,F09 平日加班總小時數,F13 假日加班天數,F10 假日加班總小時數,F09+F10 加班小計;
+                                       FROM S14A_TEMP WHERE F03>=THISFORM.TEXT1.VALUE AND F03<=THISFORM.TEXT2.VALUE  ORDER BY F03,F08,F06 NOWAIT               
+		        IF  _TALLY >0
+	                     GCDELIMFILE=PUTFILE('儲存路徑',FILENAME,'XLS')
+			     IF !EMPTY(GCDELIMFILE) 
+			          ON ERROR DO FILE_IMPACT
+			          COPY TO (GCDELIMFILE) TYPE XL5     
+			          =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗') 
+			     ELSE
+		                 THISFORM.TEXT1.SETFOCUS
+		                 RETURN			    
+			     ENDIF  		        
+		        ELSE
+		             =MESSAGEBOX('查無此範圍資料',0+48,'警示')
+		             THISFORM.TEXT1.SETFOCUS
+		             RETURN     
+		        ENDIF                               
+      ENDCASE         
+           THISFORM.CMND3.CLICK
+  ENDPROC    
+  *****     
+  PROCEDURE CMND3.CLICK
+      THISFORM.RELEASE
+  ENDPROC      
+ PROC CMND1.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND1.TOP=INT_015*15
+             THISFORM.CMND1.LEFT=INT_015*191
+  ENDPROC     
+  PROC CMND1.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND1.TOP=INT_015*14
+             THISFORM.CMND1.LEFT=INT_015*190                  
+  ENDPROC     
+  PROC CMND2.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND2.TOP=INT_015*46
+             THISFORM.CMND2.LEFT=INT_015*191
+  ENDPROC     
+  PROC CMND2.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND2.TOP=INT_015*45
+             THISFORM.CMND2.LEFT=INT_015*190                  
+  ENDPROC     
+  PROC CMND3.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND3.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND3.TOP=INT_015*77
+             THISFORM.CMND3.LEFT=INT_015*191
+  ENDPROC     
+  PROC CMND3.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND3.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND3.TOP=INT_015*76
+             THISFORM.CMND3.LEFT=INT_015*190                  
+  ENDPROC   
+ENDDEFINE    

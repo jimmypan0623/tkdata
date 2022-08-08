@@ -1,0 +1,4883 @@
+***程式名稱:S50.公司員工基本資料
+CLOSE ALL
+CLEAR 
+PRG_NO='S50'
+FLG='0'
+FCH=''
+CHK=''
+R=0
+AREA1='S50'
+AREA2='S51_A'
+IF !USED('A01')
+   SELE 0
+   USE A01 INDE A01
+ELSE 
+   SELE A01
+ENDIF
+SET ORDER TO A01      
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK SYS_OPER+'S50'       
+IF !USED('A14')
+   SELE 0
+   USE A14
+ELSE 
+   SELE A14
+ENDIF
+SET ORDER TO A141 
+IF !USED('S05')
+     SELECT  0
+     USE S05
+ELSE 
+     SELECT  S05
+ENDIF
+SET ORDER TO S051    
+IF !USED('S51')
+   SELE 0
+   USE S51 INDE S51
+ELSE
+   SELE S51
+ENDIF
+SET ORDER TO S511 
+IF !USED('S52')
+   SELE 0
+   USE S52 INDE S52
+ELSE
+   SELE S52
+ENDIF
+SET ORDER TO S521 
+******A.學歷資料
+SELECT  F01,F02,F03,F04,F05,F06,F07,F99 FROM S51 WHERE F98='A' INTO CURSOR S51_A READWRITE
+INDE ON F01+F03 TAG S51_A1 
+SET ORDER TO S51_A1
+******B.專業技能
+SELECT  F01,F02,F08,F09,F10,F99 FROM S51 WHERE F98='B' INTO CURSOR S51_B READWRITE
+INDE ON F01+F08+F09 TAG S51_B1
+SET ORDER TO S51_B1
+*******C.工作經歷
+SELECT  F01,F02,F11,F12,F13,F14,F15,F99 FROM S51 WHERE F98='C' INTO CURSOR S51_C READWRITE
+INDE ON F01+F11 TAG S51_C1
+SET ORDER TO S51_C1
+******D.家庭狀況
+SELECT  F01,F02,F16,F17,F18,F19,F20,F99 FROM S51 WHERE F98='D' INTO CURSOR S51_D READWRITE
+INDE ON F01+F16+F17 TAG S51_D1
+SET ORDER TO S51_D1
+**********
+IF !USED('S50')
+   SELE 0
+   USE S50 INDE S50
+ELSE
+   SELE S50
+ENDIF
+****建立在職人員編號索引資料
+SELECT F01 FROM S50  WHERE F07='A' .OR. F07='B' .OR. F07='C' .OR. F07='2' .OR. F07='4'  .OR.  F07='5' .OR.  F07='6' .OR.  F07='9' INTO CURSOR S50A_SEEK READWRITE
+INDE ON F01 TAG S50A_SEEK1
+SET ORDER TO S50A_SEEK1
+****建立離職人員編號索引資料
+SELECT F01 FROM S50  WHERE F07='1'  .OR. F07='3'  .OR. F07='7' .OR. F07='8'  INTO CURSOR S50B_SEEK READWRITE
+INDE ON F01 TAG S50B_SEEK1
+SET ORDER TO S50B_SEEK1
+*****
+SELECT S50
+SET FILTER TO F07='A' .OR. F07='B' .OR. F07='C' .OR. F07='2' .OR. F07='4'  .OR.  F07='5' .OR.  F07='6' .OR.  F07='9'
+SET ORDER TO S501   && F01
+GO TOP
+********
+S50FORM=CREATEOBJECT("TKS50")
+S50FORM.SHOW  
+DEFINE CLASS TKS50 AS FORM
+  CAPTION='S50.公司員工基本資料'
+*!*	  AUTOCENTER=.T.
+  CONTROLBOX=.F.
+  BORDERSTYLE=3 
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  CONTROLCOUNT=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WIDTH=INT_015*789
+  WINDOWTYPE=1
+  NAME='TKS50'
+  ADD OBJECT SHAPE1 AS SHAPE1 WITH;
+      AUTOCENTER=.T.     
+  ADD OBJECT SHAPE2 AS SHAPE2 WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT SHAPE3 AS SHAPE3 WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT PAGEFRAME1 AS PAGEFRAME WITH;
+      LEFT=INT_015*236,;
+      WIDTH=INT_015*540,;
+      HEIGHT=INT_015*518,;
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;         
+      PAGECOUNT=6,;
+      TABSTRETCH=1,;
+      ACTIVEPAGE=1,;
+      VISIBLE=.T.,;
+      PAGE1.NAME='PAGE1',;
+      PAGE1.VISIBLE=.T.,;
+      PAGE1.CAPTION='員工基本資料設定',;      
+      PAGE2.NAME='PAGE2',;
+      PAGE2.VISIBLE=.T.,;
+      PAGE2.CAPTION='學歷資料',;   
+      PAGE3.NAME='PAGE3',;
+      PAGE3.VISIBLE=.T.,;
+      PAGE3.CAPTION='專業技能',;        
+      PAGE4.NAME='PAGE4',;
+      PAGE4.VISIBLE=.T.,;
+      PAGE4.CAPTION='工作經歷',;    
+      PAGE5.NAME='PAGE5',;
+      PAGE5.VISIBLE=.T.,;
+      PAGE5.CAPTION='家庭狀況',;      
+      PAGE6.NAME='PAGE6',;
+      PAGE6.VISIBLE=.T.,;
+      PAGE6.CAPTION='備註事項'               
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      AUTOCENTER=.T.,;
+      WIDTH=INT_015*215
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      TOP=INT_015*30,;
+      LEFT=INT_015*10,;
+      HEIGHT=INT_015*385,;
+      WIDTH=INT_015*214,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID1',;     
+      COLUMNCOUNT=3,;            
+      RECORDSOURCE='S50',;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3'
+  ADD OBJECT GRID2 AS GRID2 WITH;
+      TOP=INT_015*202,;
+      LEFT=INT_015*236,;
+      HEIGHT=INT_015*318,;
+      WIDTH=INT_015*540,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID2',;     
+      COLUMNCOUNT=6,;            
+      RECORDSOURCE='S51_A',; 
+      LINKMASTER='S50',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S51_A1',;  
+      VISIBLE=.F.,;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5',;
+      COLUMN6.NAME='COLUMN6'
+  ADD OBJECT GRID3 AS GRID2 WITH;
+      TOP=INT_015*202,;
+      LEFT=INT_015*236,;
+      HEIGHT=INT_015*318,;
+      WIDTH=INT_015*540,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID3',;     
+      COLUMNCOUNT=4,;            
+      RECORDSOURCE='S51_B',; 
+      LINKMASTER='S50',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S51_B1',;  
+      VISIBLE=.F.,;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4'  
+  ADD OBJECT GRID4 AS GRID2 WITH;
+      TOP=INT_015*202,;
+      LEFT=INT_015*236,;
+      HEIGHT=INT_015*318,;
+      WIDTH=INT_015*540,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID4',;     
+      COLUMNCOUNT=6,;            
+      RECORDSOURCE='S51_C',; 
+      LINKMASTER='S50',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S51_C1',;  
+      VISIBLE=.F.,;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5',;
+      COLUMN6.NAME='COLUMN6'      
+  ADD OBJECT GRID5 AS GRID2 WITH;
+      TOP=INT_015*202,;
+      LEFT=INT_015*236,;
+      HEIGHT=INT_015*318,;
+      WIDTH=INT_015*540,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID5',;     
+      COLUMNCOUNT=6,;            
+      RECORDSOURCE='S51_D',; 
+      LINKMASTER='S50',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S51_D1',;  
+      VISIBLE=.F.,;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5',;
+      COLUMN6.NAME='COLUMN6'      
+  ADD OBJECT CMDGROUP AS CMDGROUP1 WITH;
+	AUTOSIZE=.T. 
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+	AUTOSIZE=.T.             
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*481,;
+      LEFT=INT_015*560          
+  ADD OBJECT CHANG_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*12,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*66,;      
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='harrow.cur',;        
+      CAPTION='\<C.人員異動',;
+      NAME='CHANG_BOTT'      
+ ADD OBJECT PHOTO_BOTT AS COMMANDBUTTON WITH;
+     TOP=INT_015*490,;
+      LEFT=INT_015*80,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*61,;
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='harrow.cur',;        
+      CAPTION='\<I.修改照片',;
+      NAME='PHOTO_BOTT '       
+ADD OBJECT IMAGE1 AS IMAGE WITH;
+      LEFT=INT_015*660,;    
+      TOP=INT_015*40,;
+      HEIGHT=INT_015*130,;
+      WIDTH=INT_015*100,;     
+      STRETCH=1        
+ ADD OBJECT TRA_BOTT AS COMMANDBUTTON WITH;
+     TOP=INT_015*490,;
+      LEFT=INT_015*143,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*83,;
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='harrow.cur',;        
+      CAPTION='\<T.資料轉入S05',;
+      NAME='TRA_BOTT'           
+**************  A.員工基本資料設定    
+ PROCEDURE PAGEFRAME1.PAGE1.INIT    
+   THIS.ADDOBJECT('LBLF01','LABEL')
+     WITH THIS.LBLF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*21
+          .WIDTH=INT_015*50
+          .CAPTION='員工編號'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF01','TEXTBOX')          
+     WITH THIS.TXTF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*14
+          .WIDTH=INT_015*40
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=4
+     ENDWITH           
+   THIS.ADDOBJECT('LBLF02','LABEL')
+     WITH THIS.LBLF02
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*47
+          .WIDTH=INT_015*50
+          .CAPTION='中文姓名' 
+     ENDWITH
+  THIS.ADDOBJECT('TXTF02','TEXTBOX')          
+     WITH THIS.TXTF02
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*40
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=8
+     ENDWITH
+   THIS.ADDOBJECT('LBLF03','LABEL')
+     WITH THIS.LBLF03
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*73
+          .WIDTH=INT_015*50
+          .CAPTION='英文姓名' 
+     ENDWITH
+  THIS.ADDOBJECT('TXTF03','TEXTBOX')          
+     WITH THIS.TXTF03
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*66
+          .WIDTH=INT_015*110
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF04','LABEL')
+     WITH THIS.LBLF04
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*99
+          .WIDTH=INT_015*50
+          .CAPTION='到職日期' 
+     ENDWITH
+  THIS.ADDOBJECT('TXTF04','TEXTBOX')          
+     WITH THIS.TXTF04
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*92
+          .WIDTH=INT_015*65
+          .HEIGHT=INT_015*25
+     ENDWITH   
+   THIS.ADDOBJECT('LBLF05','LABEL')
+     WITH THIS.LBLF05
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*125
+          .WIDTH=INT_015*50
+          .CAPTION='所屬部門' 
+     ENDWITH
+   THIS.ADDOBJECT('LBLF051','LABEL')
+     WITH THIS.LBLF051
+          .VISIBLE=.T.
+          .LEFT=INT_015*125
+          .TOP=INT_015*125
+          .AUTOSIZE=.T.
+          .CAPTION='' 
+     ENDWITH     
+  THIS.ADDOBJECT('TXTF05','TEXTBOX')          
+     WITH THIS.TXTF05
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*118
+          .WIDTH=INT_015*55
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=4
+     ENDWITH          
+  THIS.ADDOBJECT('COMBOBOX05','COMBOBOX05') 
+     WITH THIS.COMBOBOX05 
+          .VISIBLE=.F.
+          .LEFT=INT_015*64
+          .TOP=INT_015*118
+     ENDWITH         
+   THIS.ADDOBJECT('LBLF06','LABEL')
+     WITH THIS.LBLF06
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*151
+          .WIDTH=INT_015*50
+          .CAPTION='職務名稱' 
+     ENDWITH  
+  THIS.ADDOBJECT('TXTF06','TEXTBOX')          
+     WITH THIS.TXTF06
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*144
+          .WIDTH=INT_015*110
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=30
+     ENDWITH     
+  THIS.ADDOBJECT('COMBOBOX06','COMBOBOX06') 
+     WITH THIS.COMBOBOX06 
+          .VISIBLE=.F.
+          .LEFT=INT_015*64
+          .TOP=INT_015*144
+     ENDWITH           
+   THIS.ADDOBJECT('LBLF07','LABEL')
+     WITH THIS.LBLF07
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*177
+          .WIDTH=INT_015*50
+          .CAPTION='任職狀況' 
+     ENDWITH  
+  THIS.ADDOBJECT('TXTF07','TEXTBOX')          
+     WITH THIS.TXTF07
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*170
+          .WIDTH=INT_015*110
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+     ENDWITH       
+  THIS.ADDOBJECT('COMBOBOX07','COMBOBOX07') 
+     WITH THIS.COMBOBOX07 
+          .VISIBLE=.F.
+          .LEFT=INT_015*64
+          .TOP=INT_015*170
+     ENDWITH      
+   THIS.ADDOBJECT('LBLF08','LABEL')
+     WITH THIS.LBLF08
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*204
+          .WIDTH=INT_015*50
+          .CAPTION='異動日期' 
+     ENDWITH  
+  THIS.ADDOBJECT('TXTF08','TEXTBOX')          
+     WITH THIS.TXTF08
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*197
+          .WIDTH=INT_015*65
+          .HEIGHT=INT_015*25
+     ENDWITH
+   THIS.ADDOBJECT('LBLF09','LABEL')
+     WITH THIS.LBLF09
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*230
+          .WIDTH=INT_015*50
+          .CAPTION='雇用性質' 
+     ENDWITH  
+  THIS.ADDOBJECT('TXTF09','TEXTBOX')          
+     WITH THIS.TXTF09
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*223
+          .WIDTH=INT_015*65
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF11','LABEL')
+     WITH THIS.LBLF11
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*256
+          .WIDTH=INT_015*50
+          .CAPTION='退伍日期' 
+     ENDWITH  
+  THIS.ADDOBJECT('TXTF11','TEXTBOX')          
+     WITH THIS.TXTF11
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*249
+          .WIDTH=INT_015*65
+          .HEIGHT=INT_015*25
+     ENDWITH                   
+**************
+   THIS.ADDOBJECT('LBLF13','LABEL')
+     WITH THIS.LBLF13
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*21
+          .WIDTH=INT_015*50
+          .CAPTION='身份字號'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF13','TEXTBOX')          
+     WITH THIS.TXTF13
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*14
+          .WIDTH=INT_015*120
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+     ENDWITH         
+   THIS.ADDOBJECT('LBLF14','LABEL')
+     WITH THIS.LBLF14
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*47
+          .WIDTH=INT_015*50
+          .CAPTION='出生日期' 
+     ENDWITH
+   THIS.ADDOBJECT('LBLF141','LABEL')
+     WITH THIS.LBLF141
+          .VISIBLE=.T.
+          .LEFT=INT_015*340
+          .TOP=INT_015*47
+          .AUTOSIZE=.T.
+          .CAPTION='' 
+     ENDWITH     
+  THIS.ADDOBJECT('TXTF14','TXTF14')          
+     WITH THIS.TXTF14
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*40
+     ENDWITH
+   THIS.ADDOBJECT('LBLF15','LABEL')
+     WITH THIS.LBLF15
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*73
+          .WIDTH=INT_015*50
+          .CAPTION='性        別' 
+     ENDWITH
+  THIS.ADDOBJECT('OPTIONGROUP15','OPTIONGROUP15')
+     WITH THIS.OPTIONGROUP15
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*66
+     ENDWITH         
+   THIS.ADDOBJECT('LBLF16','LABEL')
+     WITH THIS.LBLF16
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*99
+          .AUTOSIZE=.T.
+          .CAPTION='身        高                公分' 
+     ENDWITH
+  THIS.ADDOBJECT('TXTF16','TEXTBOX')          
+     WITH THIS.TXTF16
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*92
+          .WIDTH=INT_015*40
+          .HEIGHT=INT_015*25
+          .INPUTMASK='999.9'
+          .MAXLENGTH=5
+     ENDWITH   
+   THIS.ADDOBJECT('LBLF17','LABEL')
+     WITH THIS.LBLF17
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*125
+          .AUTOSIZE=.T.
+          .CAPTION='體        重                公斤' 
+     ENDWITH 
+  THIS.ADDOBJECT('TXTF17','TEXTBOX')          
+     WITH THIS.TXTF17
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*118
+          .WIDTH=INT_015*40
+          .HEIGHT=INT_015*25
+          .INPUTMASK='999.9'
+          .MAXLENGTH=5
+     ENDWITH          
+   THIS.ADDOBJECT('LBLF18','LABEL')
+     WITH THIS.LBLF18
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*151
+          .WIDTH=INT_015*50
+          .CAPTION='血        型' 
+     ENDWITH  
+  THIS.ADDOBJECT('OPTIONGROUP18','OPTIONGROUP')
+     WITH THIS.OPTIONGROUP18
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*144
+	  .HEIGHT=INT_015*25
+	  .WIDTH=INT_015*140
+	  .BUTTONCOUNT=4
+	  .VALUE=1
+	  .ENABLED=.F.
+	  .NAME='OPTIONGROUP18'
+	  .OPTION1.CAPTION='A'
+	  .OPTION1.TOP=INT_015*5
+	  .OPTION1.FONTSIZE=INT_015*9	  
+	  .OPTION1.AUTOSIZE=.T.
+	  .OPTION1.LEFT=INT_015*5
+	  .OPTION1.NAME='OPTION1'
+	  .OPTION2.CAPTION='B'
+	  .OPTION2.TOP=INT_015*5
+	  .OPTION2.FONTSIZE=INT_015*9	  
+	  .OPTION2.AUTOSIZE=.T.
+	  .OPTION2.LEFT=INT_015*35
+	  .OPTION2.NAME='OPTION2'         
+	  .OPTION3.CAPTION='O'
+	  .OPTION3.TOP=INT_015*5
+	  .OPTION3.FONTSIZE=INT_015*9	  
+	  .OPTION3.AUTOSIZE=.T.
+	  .OPTION3.LEFT=INT_015*65
+	  .OPTION3.NAME='OPTION3'  	  
+	  .OPTION4.CAPTION='AB'
+	  .OPTION4.TOP=INT_015*5
+	  .OPTION4.FONTSIZE=INT_015*9	  
+	  .OPTION4.AUTOSIZE=.T.
+	  .OPTION4.LEFT=INT_015*95
+	  .OPTION4.NAME='OPTION4'  	  
+     ENDWITH          
+   THIS.ADDOBJECT('LBLF19','LABEL')
+     WITH THIS.LBLF19
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*177
+          .WIDTH=INT_015*50
+          .CAPTION='婚姻狀況' 
+     ENDWITH  
+  THIS.ADDOBJECT('OPTIONGROUP19','OPTIONGROUP')
+     WITH THIS.OPTIONGROUP19
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*170
+	  .HEIGHT=INT_015*25
+	  .WIDTH=INT_015*190
+	  .BUTTONCOUNT=4
+	  .VALUE=1
+	  .ENABLED=.F.
+	  .NAME='OPTIONGROUP19'
+	  .OPTION1.CAPTION='已婚'
+	  .OPTION1.TOP=INT_015*5
+	  .OPTION1.FONTSIZE=INT_015*9	  
+	  .OPTION1.AUTOSIZE=.T.
+	  .OPTION1.LEFT=INT_015*5
+	  .OPTION1.NAME='OPTION1'
+	  .OPTION2.CAPTION='未婚'
+	  .OPTION2.TOP=INT_015*5
+	  .OPTION2.FONTSIZE=INT_015*9	  
+	  .OPTION2.AUTOSIZE=.T.
+	  .OPTION2.LEFT=INT_015*50
+	  .OPTION2.NAME='OPTION2'         
+	  .OPTION3.CAPTION='離婚'
+	  .OPTION3.TOP=INT_015*5
+	  .OPTION3.FONTSIZE=INT_015*9	  
+	  .OPTION3.AUTOSIZE=.T.
+	  .OPTION3.LEFT=INT_015*95
+	  .OPTION3.NAME='OPTION3'  	  
+	  .OPTION4.CAPTION='喪偶'
+	  .OPTION4.TOP=INT_015*5
+	  .OPTION4.FONTSIZE=INT_015*9	  
+	  .OPTION4.AUTOSIZE=.T.
+	  .OPTION4.LEFT=INT_015*140
+	  .OPTION4.NAME='OPTION4'  	  
+     ENDWITH         
+   THIS.ADDOBJECT('LBLF20','LABEL')
+     WITH THIS.LBLF20
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*204
+          .WIDTH=INT_015*50
+          .CAPTION='籍        貫' 
+     ENDWITH  
+  THIS.ADDOBJECT('TXTF20','TEXTBOX')          
+     WITH THIS.TXTF20
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*197
+          .WIDTH=INT_015*100
+          .HEIGHT=INT_015*25
+           .MAXLENGTH=20
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF10','LABEL')
+     WITH THIS.LBLF10
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*230
+          .WIDTH=INT_015*50
+          .CAPTION='兵役狀況' 
+     ENDWITH  
+  THIS.ADDOBJECT('OPTIONGROUP10','OPTIONGROUP')
+     WITH THIS.OPTIONGROUP10
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*223
+	  .HEIGHT=INT_015*25
+	  .WIDTH=INT_015*140
+	  .BUTTONCOUNT=3
+	  .VALUE=1
+	  .ENABLED=.F.
+	  .NAME='OPTIONGROUP10'
+	  .OPTION1.CAPTION='役畢'
+	  .OPTION1.TOP=INT_015*5
+	  .OPTION1.FONTSIZE=INT_015*9	  
+	  .OPTION1.AUTOSIZE=.T.
+	  .OPTION1.LEFT=INT_015*5
+	  .OPTION1.NAME='OPTION1'
+	  .OPTION2.CAPTION='未役'
+	  .OPTION2.TOP=INT_015*5
+	  .OPTION2.FONTSIZE=INT_015*9	  
+	  .OPTION2.AUTOSIZE=.T.
+	  .OPTION2.LEFT=INT_015*50
+	  .OPTION2.NAME='OPTION2'         
+	  .OPTION3.CAPTION='免役'
+	  .OPTION3.TOP=INT_015*5
+	  .OPTION3.FONTSIZE=INT_015*9	  
+	  .OPTION3.AUTOSIZE=.T.
+	  .OPTION3.LEFT=INT_015*95
+	  .OPTION3.NAME='OPTION3'  	  	  
+     ENDWITH         
+   THIS.ADDOBJECT('LBLF12','LABEL')
+     WITH THIS.LBLF12
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*256
+          .WIDTH=INT_015*50
+          .CAPTION='兵役種類' 
+     ENDWITH  
+  THIS.ADDOBJECT('TXTF12','TEXTBOX')          
+     WITH THIS.TXTF12
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*249
+          .WIDTH=INT_015*100
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+     ENDWITH        
+*********
+*********
+   THIS.ADDOBJECT('LBLF21','LABEL')
+     WITH THIS.LBLF21
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*282
+          .WIDTH=INT_015*50
+          .CAPTION='戶籍地址'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF21','TXTF21')          
+     WITH THIS.TXTF21
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*275
+     ENDWITH 
+   THIS.ADDOBJECT('LBLF22','LABEL')
+     WITH THIS.LBLF22
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*308
+          .WIDTH=INT_015*50
+          .CAPTION='戶籍電話'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF22','TXTF22')          
+     WITH THIS.TXTF22
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*301
+     ENDWITH
+   THIS.ADDOBJECT('LBLF23','LABEL')
+     WITH THIS.LBLF23
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*334
+          .WIDTH=INT_015*50
+          .CAPTION='通訊地址'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF23','TEXTBOX') 
+     WITH THIS.TXTF23
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*327
+          .WIDTH=INT_015*450
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=80
+     ENDWITH
+   THIS.ADDOBJECT('LBLF24','LABEL')
+     WITH THIS.LBLF24
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*361
+          .WIDTH=INT_015*50
+          .CAPTION='通訊電話'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF24','TEXTBOX')          
+     WITH THIS.TXTF24
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*354
+          .WIDTH=INT_015*120
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF25','LABEL')
+     WITH THIS.LBLF25
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*387
+          .WIDTH=INT_015*50
+          .CAPTION='行動電話'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF25','TEXTBOX')          
+     WITH THIS.TXTF25
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*380
+          .WIDTH=INT_015*100
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+     ENDWITH 
+   THIS.ADDOBJECT('LBLF26','LABEL')
+     WITH THIS.LBLF26
+          .VISIBLE=.T.
+          .LEFT=INT_015*220
+          .TOP=INT_015*387
+          .WIDTH=INT_015*50
+          .CAPTION='電子郵件'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF26','TEXTBOX')          
+     WITH THIS.TXTF26
+          .VISIBLE=.T.
+          .LEFT=INT_015*270
+          .TOP=INT_015*380
+          .WIDTH=INT_015*200
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=50
+     ENDWITH 
+   THIS.ADDOBJECT('LBLF27','LABEL')
+     WITH THIS.LBLF27
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*408
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+          .WORDWRAP=.T.
+          .CAPTION='緊        急連  絡  人'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF27','TEXTBOX')          
+     WITH THIS.TXTF27
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*406
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF28','LABEL')
+     WITH THIS.LBLF28
+          .VISIBLE=.T.
+          .LEFT=INT_015*150
+          .TOP=INT_015*413
+          .WIDTH=INT_015*50
+          .CAPTION='關        係'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF28','TEXTBOX')          
+     WITH THIS.TXTF28
+          .VISIBLE=.T.
+          .LEFT=INT_015*200
+          .TOP=INT_015*406
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+     ENDWITH         
+   THIS.ADDOBJECT('LBLF29','LABEL')
+     WITH THIS.LBLF29
+          .VISIBLE=.T.
+          .LEFT=INT_015*320
+          .TOP=INT_015*413
+          .WIDTH=INT_015*50
+          .CAPTION='聯絡電話'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF29','TEXTBOX')          
+     WITH THIS.TXTF29
+          .VISIBLE=.T.
+          .LEFT=INT_015*370
+          .TOP=INT_015*406
+          .WIDTH=INT_015*100
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+     ENDWITH         
+   THIS.ADDOBJECT('LBLF30','LABEL')
+     WITH THIS.LBLF30
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*439
+          .WIDTH=INT_015*50
+          .CAPTION='聯絡地址'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF30','TEXTBOX')          
+     WITH THIS.TXTF30
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*432
+          .WIDTH=INT_015*450
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=80
+     ENDWITH  
+   THIS.ADDOBJECT('LBLF99','LABEL')
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*465
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH
+   THIS.ADDOBJECT('LBLF991','LABEL')
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*465
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH                                                
+  ENDPROC  
+***********A.學歷資料
+ PROCEDURE PAGEFRAME1.PAGE2.INIT    
+   THIS.ADDOBJECT('LBLF03','LABEL')
+     WITH THIS.LBLF03
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*21
+          .WIDTH=INT_015*50
+          .CAPTION='學校名稱'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF03','TEXTBOX')          
+     WITH THIS.TXTF03
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*14
+          .WIDTH=INT_015*200
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=40
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF04','LABEL')
+     WITH THIS.LBLF04
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*47
+          .WIDTH=INT_015*50
+          .CAPTION='科系名稱'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF04','TEXTBOX')          
+     WITH THIS.TXTF04
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*40
+          .WIDTH=INT_015*100
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+     ENDWITH      
+   THIS.ADDOBJECT('LBLF05','LABEL')
+     WITH THIS.LBLF05
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*73
+          .WIDTH=INT_015*50
+          .CAPTION='入校日期'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF05','TEXTBOX')          
+     WITH THIS.TXTF05
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*66
+          .WIDTH=INT_015*65
+          .HEIGHT=INT_015*25
+     ENDWITH            
+   THIS.ADDOBJECT('LBLF06','LABEL')
+     WITH THIS.LBLF06
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*99
+          .WIDTH=INT_015*50
+          .CAPTION='離校日期'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF06','TEXTBOX')          
+     WITH THIS.TXTF06
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*92
+          .WIDTH=INT_015*65
+          .HEIGHT=INT_015*25
+     ENDWITH   
+   THIS.ADDOBJECT('LBLF07','LABEL')
+     WITH THIS.LBLF07
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*125
+          .WIDTH=INT_015*50
+          .CAPTION='畢業狀況'          
+     ENDWITH
+  THIS.ADDOBJECT('OPTIONGROUP07','OPTIONGROUP')
+     WITH THIS.OPTIONGROUP07
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*118
+	  .HEIGHT=INT_015*25
+	  .WIDTH=INT_015*125
+	  .BUTTONCOUNT=2
+	  .VALUE=1
+	  .ENABLED=.F.
+	  .NAME='OPTIONGROUP07'
+	  .OPTION1.CAPTION='畢業'
+	  .OPTION1.TOP=INT_015*5
+	  .OPTION1.FONTSIZE=INT_015*9	  
+	  .OPTION1.AUTOSIZE=.T.
+	  .OPTION1.LEFT=INT_015*5
+	  .OPTION1.NAME='OPTION1'
+	  .OPTION2.CAPTION='肄業'
+	  .OPTION2.TOP=INT_015*5
+	  .OPTION2.FONTSIZE=INT_015*9	  
+	  .OPTION2.AUTOSIZE=.T.
+	  .OPTION2.LEFT=INT_015*70
+	  .OPTION2.NAME='OPTION2'     	  	  
+     ENDWITH               
+   THIS.ADDOBJECT('LBLF99','LABEL')
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*151
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF991','LABEL')
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*151
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH          
+ENDPROC   
+*********** B.專業技能
+ PROCEDURE PAGEFRAME1.PAGE3.INIT    
+   THIS.ADDOBJECT('LBLF08','LABEL')
+     WITH THIS.LBLF08
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*21
+          .WIDTH=INT_015*50
+          .CAPTION='專業類別'          
+     ENDWITH
+  THIS.ADDOBJECT('OPTIONGROUP08','OPTIONGROUP08')
+     WITH THIS.OPTIONGROUP08
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*14	  
+     ENDWITH         
+   THIS.ADDOBJECT('LBLF09','LABEL')
+     WITH THIS.LBLF09
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*47
+          .WIDTH=INT_015*50
+          .CAPTION='專業項目'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF09','TEXTBOX')          
+     WITH THIS.TXTF09
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*40
+          .WIDTH=INT_015*160
+          .HEIGHT=INT_015*25
+           .MAXLENGTH=40
+     ENDWITH            
+   THIS.ADDOBJECT('LBLF10','LABEL')
+     WITH THIS.LBLF10
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*73
+          .WIDTH=INT_015*50
+          .CAPTION='程度內容'          
+     ENDWITH
+  THIS.ADDOBJECT('OPTIONGROUP10','OPTIONGROUP')
+     WITH THIS.OPTIONGROUP10
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*66
+	  .HEIGHT=INT_015*25
+	  .WIDTH=INT_015*160
+	  .BUTTONCOUNT=3
+	  .VALUE=1
+	  .ENABLED=.F.
+	  .NAME='OPTIONGROUP10'
+	  .OPTION1.CAPTION='精通'
+	  .OPTION1.TOP=INT_015*5
+	  .OPTION1.FONTSIZE=INT_015*9	  
+	  .OPTION1.AUTOSIZE=.T.
+	  .OPTION1.LEFT=INT_015*5
+	  .OPTION1.NAME='OPTION1'
+	  .OPTION2.CAPTION='通'
+	  .OPTION2.TOP=INT_015*5
+	  .OPTION2.FONTSIZE=INT_015*9	  
+	  .OPTION2.AUTOSIZE=.T.
+	  .OPTION2.LEFT=INT_015*55
+	  .OPTION2.NAME='OPTION2'     	  
+	  .OPTION3.CAPTION='略通'
+	  .OPTION3.TOP=INT_015*5
+	  .OPTION3.FONTSIZE=INT_015*9	  
+	  .OPTION3.AUTOSIZE=.T.
+	  .OPTION3.LEFT=INT_015*105
+	  .OPTION3.NAME='OPTION3' 	  	  	  
+     ENDWITH             
+   THIS.ADDOBJECT('LBLF99','LABEL')
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*151
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF991','LABEL')
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*151
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH                 
+ENDPROC
+***********C.工作經歷
+ PROCEDURE PAGEFRAME1.PAGE4.INIT    
+   THIS.ADDOBJECT('LBLF11','LABEL')
+     WITH THIS.LBLF11
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*21
+          .WIDTH=INT_015*50
+          .CAPTION='任職機關'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF11','TEXTBOX')          
+     WITH THIS.TXTF11
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*14
+          .WIDTH=INT_015*200
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=40
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF12','LABEL')
+     WITH THIS.LBLF12
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*47
+          .WIDTH=INT_015*50
+          .CAPTION='到職日期'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF12','TEXTBOX')          
+     WITH THIS.TXTF12
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*40
+          .WIDTH=INT_015*65
+          .HEIGHT=INT_015*25
+     ENDWITH            
+   THIS.ADDOBJECT('LBLF13','LABEL')
+     WITH THIS.LBLF13
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*73
+          .WIDTH=INT_015*50
+          .CAPTION='離職日期'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF13','TEXTBOX')          
+     WITH THIS.TXTF13
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*66
+          .WIDTH=INT_015*65
+          .HEIGHT=INT_015*25
+     ENDWITH   
+   THIS.ADDOBJECT('LBLF14','LABEL')
+     WITH THIS.LBLF14
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*99
+          .WIDTH=INT_015*50
+          .CAPTION='擔任職務'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF14','TEXTBOX')          
+     WITH THIS.TXTF14
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*92
+          .WIDTH=INT_015*160
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+     ENDWITH      
+   THIS.ADDOBJECT('LBLF15','LABEL')
+     WITH THIS.LBLF15
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*125
+          .WIDTH=INT_015*50
+          .CAPTION='離職原因'          
+     ENDWITH        
+  THIS.ADDOBJECT('TXTF15','TEXTBOX')          
+     WITH THIS.TXTF15
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*118
+          .WIDTH=INT_015*200
+          .HEIGHT=INT_015*25
+           .MAXLENGTH=50
+     ENDWITH      
+   THIS.ADDOBJECT('LBLF99','LABEL')
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*151
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF991','LABEL')
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*151
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH          
+ENDPROC   
+***********D.家庭狀況
+ PROCEDURE PAGEFRAME1.PAGE5.INIT    
+   THIS.ADDOBJECT('LBLF16','LABEL')
+     WITH THIS.LBLF16
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*21
+          .WIDTH=INT_015*50
+          .CAPTION='稱        謂'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF16','TEXTBOX')          
+     WITH THIS.TXTF16
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*14
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF17','LABEL')
+     WITH THIS.LBLF17
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*47
+          .WIDTH=INT_015*50
+          .CAPTION='姓        名'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF17','TEXTBOX')          
+     WITH THIS.TXTF17
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*40
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+     ENDWITH               
+   THIS.ADDOBJECT('LBLF18','LABEL')
+     WITH THIS.LBLF18
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*73
+          .WIDTH=INT_015*50
+          .CAPTION='年        齡'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF18','TEXTBOX')          
+     WITH THIS.TXTF18
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*66
+          .WIDTH=INT_015*40
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=3
+          .INPUTMASK='999'
+     ENDWITH      
+   THIS.ADDOBJECT('LBLF19','LABEL')
+     WITH THIS.LBLF19
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*99
+          .WIDTH=INT_015*50
+          .CAPTION='存  ／  歿'          
+     ENDWITH
+  THIS.ADDOBJECT('OPTIONGROUP19','OPTIONGROUP')
+     WITH THIS.OPTIONGROUP19
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*92
+	  .HEIGHT=INT_015*25
+	  .WIDTH=INT_015*120
+	  .BUTTONCOUNT=2
+	  .VALUE=1
+	  .ENABLED=.F.
+	  .NAME='OPTIONGROUP19'
+	  .OPTION1.CAPTION='存'
+	  .OPTION1.TOP=INT_015*5
+	  .OPTION1.FONTSIZE=INT_015*9	  
+	  .OPTION1.AUTOSIZE=.T.
+	  .OPTION1.LEFT=INT_015*5
+	  .OPTION1.NAME='OPTION1'
+	  .OPTION2.CAPTION='歿'
+	  .OPTION2.TOP=INT_015*5
+	  .OPTION2.FONTSIZE=INT_015*9	  
+	  .OPTION2.AUTOSIZE=.T.
+	  .OPTION2.LEFT=INT_015*70
+	  .OPTION2.NAME='OPTION2'     	  	  	  
+     ENDWITH          
+   THIS.ADDOBJECT('LBLF20','LABEL')
+     WITH THIS.LBLF20
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*125
+          .WIDTH=INT_015*50
+          .CAPTION='職        業'          
+     ENDWITH        
+  THIS.ADDOBJECT('TXTF20','TEXTBOX')          
+     WITH THIS.TXTF20
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*118
+          .WIDTH=INT_015*120
+          .HEIGHT=INT_015*25
+           .MAXLENGTH=20
+     ENDWITH      
+   THIS.ADDOBJECT('LBLF99','LABEL')
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*151
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH     
+   THIS.ADDOBJECT('LBLF991','LABEL')
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*151
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH          
+ENDPROC  
+***********備註事項
+ PROCEDURE PAGEFRAME1.PAGE6.INIT 
+   THIS.ADDOBJECT('LBLF31','LABEL')
+     WITH THIS.LBLF31
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*21
+          .WIDTH=INT_015*50
+          .CAPTION='備註事項'          
+     ENDWITH
+   THIS.ADDOBJECT('EDITBOX31','EDITBOX')
+     WITH THIS.EDITBOX31
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*40
+          .WIDTH=INT_015*300
+          .HEIGHT=INT_015*110
+          .READONLY=.T.
+          .NAME='EDITBOX31'       
+      ENDWITH            
+ ENDPROC 
+********  
+  PROC INIT      
+       THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.T.
+       THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,255)            
+       THISFORM.PAGEFRAME1.PAGE1.FONTSIZE=INT_015*10
+       THISFORM.PAGEFRAME1.PAGE2.FONTSIZE=INT_015*10   
+       THISFORM.PAGEFRAME1.PAGE3.FONTSIZE=INT_015*10      
+       THISFORM.PAGEFRAME1.PAGE4.FONTSIZE=INT_015*10  
+       THISFORM.PAGEFRAME1.PAGE5.FONTSIZE=INT_015*10  
+       THISFORM.PAGEFRAME1.PAGE6.FONTSIZE=INT_015*10   
+       THISFORM.SETALL('HEIGHT',INT_015*25,'TEXTBOX')
+       THISFORM.SETALL('HEIGHT',INT_015*17,'LABEL')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'TEXTBOX')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')           
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')  
+       THISFORM.SHRGROUP.VISIBLE=.F.
+       THISFORM.SHRGROUP.ENABLED=.F.
+       THISFORM.GRID1.VISIBLE=.T.
+       THISFORM.GRID2.VISIBLE=.F.
+       THISFORM.GRID3.VISIBLE=.F.
+       THISFORM.GRID4.VISIBLE=.F.
+       THISFORM.GRID5.VISIBLE=.F.       
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+       THISFORM.GRID2.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID2.SETALL('FONTSIZE',INT_015*9,'HEADER')          
+       THISFORM.GRID3.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID3.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+       THISFORM.GRID4.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID4.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+       THISFORM.GRID5.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID5.SETALL('FONTSIZE',INT_015*9,'HEADER')   
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)   
+       THISFORM.GRID2.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)   
+       THISFORM.GRID3.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)   
+       THISFORM.GRID4.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)   
+       THISFORM.GRID5.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)             
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='員工編號'
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='員工姓名'
+       THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='任職狀況'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S50.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='S50.F02'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE="BILL_MODE(S50.F07)"
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*50
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*55    
+       THISFORM.GRID1.COLUMN3.WIDTH=INT_015*55
+       THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='學校名稱'    
+       THISFORM.GRID2.COLUMN2.HEADER1.CAPTION='科系名稱'       
+       THISFORM.GRID2.COLUMN3.HEADER1.CAPTION='入學日期'
+       THISFORM.GRID2.COLUMN4.HEADER1.CAPTION='離校日期'
+       THISFORM.GRID2.COLUMN5.HEADER1.CAPTION='畢業狀況'
+       THISFORM.GRID2.COLUMN6.HEADER1.CAPTION='安全資料'
+       THISFORM.GRID2.LINKMASTER='S50'
+       THISFORM.GRID2.RELATIONALEXPR='F01'
+       THISFORM.GRID2.RECORDSOURCE='S51_A'
+       THISFORM.GRID2.CHILDORDER='S51_A1'
+       THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S51_A.F03'
+       THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S51_A.F04'       
+       THISFORM.GRID2.COLUMN3.CONTROLSOURCE='S51_A.F05'
+       THISFORM.GRID2.COLUMN4.CONTROLSOURCE='S51_A.F06'
+       THISFORM.GRID2.COLUMN5.CONTROLSOURCE="IIF(S51_A.F07='1','畢業','肄業')"
+       THISFORM.GRID2.COLUMN6.CONTROLSOURCE='S51_A.F99'
+       THISFORM.GRID2.COLUMN1.WIDTH=INT_015*150      
+       THISFORM.GRID2.COLUMN2.WIDTH=INT_015*100        
+       THISFORM.GRID2.COLUMN3.WIDTH=INT_015*90
+       THISFORM.GRID2.COLUMN4.WIDTH=INT_015*90
+       THISFORM.GRID2.COLUMN5.WIDTH=INT_015*50
+       THISFORM.GRID2.COLUMN6.WIDTH=INT_015*100
+       THISFORM.PHOTO_BOTT.VISIBLE=.T.
+       THISFORM.CHANG_BOTT.VISIBLE=.T.
+       THISFORM.GRID1.READONLY=.T.      
+       THISFORM.GRID2.READONLY=.T.  
+       THISFORM.GRID3.READONLY=.T. 
+       THISFORM.GRID4.READONLY=.T. 
+       THISFORM.GRID5.READONLY=.T.     
+       THISFORM.GRID1.ENABLED=.T.     
+       THISFORM.GRID1.SETFOCUS
+       IF THISFORM.GRID1.ACTIVEROW=0
+       	   THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+	   THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+	   THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+	   THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.
+	   THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.
+           THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+           THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+           THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+           THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+           THISFORM.CHANG_BOTT.ENABLED=.F.
+           THISFORM.PHOTO_BOTT.ENABLED=.F.    
+           THISFORM.TRA_BOTT.ENABLED=.F.      
+       ELSE
+       	   THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.
+	   THISFORM.PAGEFRAME1.PAGE3.ENABLED=.T.
+	   THISFORM.PAGEFRAME1.PAGE4.ENABLED=.T.
+	   THISFORM.PAGEFRAME1.PAGE5.ENABLED=.T.
+	   THISFORM.PAGEFRAME1.PAGE6.ENABLED=.T.
+           THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.    
+	   THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+           THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  &&判斷有無修改的權限
+           THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  &&判斷有無刪除的權限
+           THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限   
+           THISFORM.CHANG_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.) 
+           THISFORM.PHOTO_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  &&修改照片
+           THISFORM.TRA_BOTT.ENABLED=IIF(A02.F09='*',.T.,.F.) AND IIF(INDEXSEEK(S50.F01,.T.,'S05','S051'),.F.,.T.)
+       ENDIF          
+       THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)   &&判斷有無新增的權限
+       JK='員工編號'
+       SELECT  S50
+       GO TOP
+       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=S50.F01
+  ENDPROC           
+***********
+  PROCEDURE PAGEFRAME1.PAGE1.ACTIVATE
+        R=0
+	SELECT S50
+        DO CASE
+               CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工編號排列'
+                          SET ORDER TO S501
+               CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工姓名排列'
+              		  SET ORDER TO S502
+         ENDCASE      
+        THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.T.
+        THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,255)
+        THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+        THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+        THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+        THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+        THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)            
+        THISFORM.GRID2.VISIBLE=.F.
+        THISFORM.GRID3.VISIBLE=.F.
+        THISFORM.GRID4.VISIBLE=.F.
+        THISFORM.GRID5.VISIBLE=.F.         
+	THISFORM.SHRGROUP.TOP=INT_015*481
+	THISFORM.SHRGROUP.LEFT=INT_015*560	
+	THISFORM.PAGEFRAME1.PAGE1.TXTF14.READONLY=.T.
+	THISFORM.PAGEFRAME1.PAGE1.TXTF21.READONLY=.T.
+	THISFORM.PAGEFRAME1.PAGE1.TXTF22.READONLY=.T. 	
+	THISFORM.KEY_LIST.ENABLED=.T. 
+	THISFORM.PHOTO_BOTT.VISIBLE=.T.
+	THISFORM.CHANG_BOTT.VISIBLE=.T.
+	THISFORM.TRA_BOTT.VISIBLE=.T.
+        THISFORM.GRID1.ENABLED=.T.  
+        THISFORM.GRID1.SETFOCUS
+         IF  THISFORM.GRID1.ACTIVEROW=0 .AND. THISFORM.SHRGROUP.ENABLED=.F.	
+              THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	      THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.    
+	      THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.	              
+              THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.	
+              THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.         
+              THISFORM.KEY_LIST.ENABLED=.T.
+	      THISFORM.PHOTO_BOTT.ENABLED=.F.
+	      THISFORM.CHANG_BOTT.ENABLED=.F.
+	      THISFORM.TRA_BOTT.ENABLED=.F.
+         ELSE    
+              THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+	      THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+	      THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+	      THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.    
+	      THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.	          
+              THISFORM.CHANG_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.) 
+	      THISFORM.PHOTO_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)   &&修改照片
+	      THISFORM.TRA_BOTT.ENABLED=IIF(A02.F09='*',.T.,.F.)   .AND. IIF(INDEXSEEK(S50.F01,.T.,'S05','S051'),.F.,.T.)      	      	
+         ENDIF
+         THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)   &&判斷有無新增的權限 
+*!*	        THISFORM.REFRESH    
+  ENDPROC     
+***********
+  PROCEDURE PAGEFRAME1.PAGE2.ACTIVATE      
+        SELECT S51_A
+	SET ORDER TO S51_A1    
+	AREA2='S51_A' 
+        THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+        THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.T.
+        THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,255)  
+        THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+        THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+        THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+        THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)   	
+	THISFORM.KEY_LIST.ENABLED=.F. 
+	THISFORM.SHRGROUP.TOP=INT_015*165
+	THISFORM.SHRGROUP.LEFT=INT_015*560 
+	THISFORM.PHOTO_BOTT.VISIBLE=.F.
+	THISFORM.CHANG_BOTT.VISIBLE=.F.
+	THISFORM.TRA_BOTT.VISIBLE=.F.
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.   	  
+        THISFORM.GRID2.VISIBLE=.T.
+        THISFORM.GRID3.VISIBLE=.F.
+        THISFORM.GRID4.VISIBLE=.F.
+        THISFORM.GRID5.VISIBLE=.F.	
+	THISFORM.GRID2.ENABLED=.T.
+        THISFORM.GRID2.SETFOCUS       
+        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='學校名稱'    
+        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION='科系名稱'       
+        THISFORM.GRID2.COLUMN3.HEADER1.CAPTION='入學日期'
+        THISFORM.GRID2.COLUMN4.HEADER1.CAPTION='離校日期'
+        THISFORM.GRID2.COLUMN5.HEADER1.CAPTION='畢業狀況'
+        THISFORM.GRID2.COLUMN6.HEADER1.CAPTION='安全資料'
+        THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S51_A.F03'
+        THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S51_A.F04'       
+        THISFORM.GRID2.COLUMN3.CONTROLSOURCE='S51_A.F05'
+        THISFORM.GRID2.COLUMN4.CONTROLSOURCE='S51_A.F06'
+        THISFORM.GRID2.COLUMN5.CONTROLSOURCE="IIF(S51_A.F07='1','畢業','肄業')"
+        THISFORM.GRID2.COLUMN6.CONTROLSOURCE='S51_A.F99'
+        THISFORM.GRID2.COLUMN1.WIDTH=INT_015*150      
+        THISFORM.GRID2.COLUMN2.WIDTH=INT_015*100        
+        THISFORM.GRID2.COLUMN3.WIDTH=INT_015*90
+        THISFORM.GRID2.COLUMN4.WIDTH=INT_015*90
+        THISFORM.GRID2.COLUMN5.WIDTH=INT_015*50
+        THISFORM.GRID2.COLUMN6.WIDTH=INT_015*100               	 
+        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+	      THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	      THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+	      THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	 
+	      THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.      
+	      THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	      THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+	      THISFORM.PAGEFRAME1.PAGE2.SETALL('VALUE','','TEXTBOX')
+	      THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION=''
+	 ELSE
+	      IF THISFORM.GRID2.ACTIVEROW=0  .AND. THISFORM.SHRGROUP.ENABLED=.F.  
+		   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+		   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+		   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+		   THISFORM.CMDGROUP.END_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+	           THISFORM.PAGEFRAME1.PAGE2.SETALL('VALUE','','TEXTBOX')
+	           THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION=''	           		   
+	      ELSE
+		   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+		   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+		   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+		   THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+		   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  &&判斷有無修改的權限
+		   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   &&判斷有無刪除的權限
+		   THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限
+		   THISFORM.GRID2.AFTERROWCOLCHANGE  		      
+	      ENDIF 
+	      THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)      &&判斷有無新增的權限         
+	ENDIF            
+       R=RECNO('&AREA1') 
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+       THISFORM.GRID1.ENABLED=.F.  
+*!*	       THISFORM.REFRESH   	                    
+  ENDPROC     
+***********
+  PROCEDURE PAGEFRAME1.PAGE3.ACTIVATE 
+	SELECT S51_B
+	SET ORDER TO S51_B1
+	AREA2='S51_B' 
+        THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+        THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+        THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.T.
+        THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,255)      
+        THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+        THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+        THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)   	
+	THISFORM.KEY_LIST.ENABLED=.F.   
+	THISFORM.PHOTO_BOTT.VISIBLE=.F.
+	THISFORM.CHANG_BOTT.VISIBLE=.F.
+	THISFORM.TRA_BOTT.VISIBLE=.F.
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.          
+	THISFORM.SHRGROUP.TOP=INT_015*165
+	THISFORM.SHRGROUP.LEFT=INT_015*560			
+        THISFORM.GRID2.VISIBLE=.F.
+        THISFORM.GRID3.VISIBLE=.T.
+        THISFORM.GRID4.VISIBLE=.F.
+        THISFORM.GRID5.VISIBLE=.F.
+        THISFORM.GRID3.ENABLED=.T.  
+        THISFORM.GRID3.SETFOCUS    	        
+        THISFORM.GRID3.COLUMN1.HEADER1.CAPTION='專業類別'    
+        THISFORM.GRID3.COLUMN2.HEADER1.CAPTION='專業項目'              
+        THISFORM.GRID3.COLUMN3.HEADER1.CAPTION='程度內容'
+        THISFORM.GRID3.COLUMN4.HEADER1.CAPTION='安全資料'     
+        THISFORM.GRID3.COLUMN1.CONTROLSOURCE="IIF(S51_B.F08='1','語言',IIF(S51_B.F08='2','專長','證照'))"
+        THISFORM.GRID3.COLUMN2.CONTROLSOURCE='S51_B.F09'
+        THISFORM.GRID3.COLUMN3.CONTROLSOURCE="IIF(S51_B.F10='1','精通',IIF(S51_B.F10='2','通',IIF(S51_B.F10='3','略通','')))"
+        THISFORM.GRID3.COLUMN4.CONTROLSOURCE='S51_B.F99'
+        THISFORM.GRID3.COLUMN1.WIDTH=INT_015*55     
+        THISFORM.GRID3.COLUMN2.WIDTH=INT_015*150
+        THISFORM.GRID3.COLUMN3.WIDTH=INT_015*150
+        THISFORM.GRID3.COLUMN4.WIDTH=INT_015*100        
+        IF   EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+	      THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	      THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+	      THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	       
+	      THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+	      THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	      THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+	      THISFORM.PAGEFRAME1.PAGE3.SETALL('VALUE','','TEXTBOX')
+	      THISFORM.PAGEFRAME1.PAGE3.LBLF991.CAPTION=''
+	 ELSE
+	      IF  THISFORM.GRID3.ACTIVEROW=0 .AND. THISFORM.SHRGROUP.ENABLED=.F. 
+		   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+		   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+		   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+		   THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+		   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.  
+		   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+	           THISFORM.PAGEFRAME1.PAGE3.SETALL('VALUE','','TEXTBOX')
+	           THISFORM.PAGEFRAME1.PAGE3.LBLF991.CAPTION=''	           		   
+	      ELSE
+		   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+		   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+		   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+		   THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+		   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  &&判斷有無修改的權限
+		   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   &&判斷有無刪除的權限	   
+	           THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)    &&判斷有無列印的權限 
+	           THISFORM.GRID3.AFTERROWCOLCHANGE		      
+	      ENDIF 
+	      THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)	    &&判斷有無新增的權限         
+       ENDIF   
+       R=RECNO('&AREA1')
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+       THISFORM.GRID1.ENABLED=.F.        
+*!*	       THISFORM.REFRESH     
+  ENDPROC        
+***********
+  PROCEDURE PAGEFRAME1.PAGE4.ACTIVATE
+	SELECT S51_C
+	SET ORDER TO S51_C1
+	AREA2='S51_C' 	
+        THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+        THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+        THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+        THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.T.
+        THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,255)    
+        THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+        THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)   	
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.  
+	THISFORM.SHRGROUP.TOP=INT_015*165
+	THISFORM.SHRGROUP.LEFT=INT_015*560
+	THISFORM.KEY_LIST.ENABLED=.F.   
+	THISFORM.PHOTO_BOTT.VISIBLE=.F.	
+	THISFORM.CHANG_BOTT.VISIBLE=.F.
+	THISFORM.TRA_BOTT.VISIBLE=.F.	 	
+        THISFORM.GRID2.VISIBLE=.F.
+        THISFORM.GRID3.VISIBLE=.F.
+        THISFORM.GRID4.VISIBLE=.T.
+        THISFORM.GRID5.VISIBLE=.F.	        
+	THISFORM.GRID4.ENABLED=.T.    
+	THISFORM.GRID4.SETFOCUS 	
+        THISFORM.GRID4.COLUMN1.HEADER1.CAPTION='任職機關'    
+        THISFORM.GRID4.COLUMN2.HEADER1.CAPTION='到職日期'
+        THISFORM.GRID4.COLUMN3.HEADER1.CAPTION='離職日期'
+        THISFORM.GRID4.COLUMN4.HEADER1.CAPTION='擔任職務'
+        THISFORM.GRID4.COLUMN5.HEADER1.CAPTION='離職原因'
+        THISFORM.GRID4.COLUMN6.HEADER1.CAPTION='安全資料'
+        THISFORM.GRID4.COLUMN1.CONTROLSOURCE='S51_C.F11'
+        THISFORM.GRID4.COLUMN2.CONTROLSOURCE='S51_C.F12'
+        THISFORM.GRID4.COLUMN3.CONTROLSOURCE='S51_C.F13'
+        THISFORM.GRID4.COLUMN4.CONTROLSOURCE='S51_C.F14'
+        THISFORM.GRID4.COLUMN5.CONTROLSOURCE='S51_C.F15'
+        THISFORM.GRID4.COLUMN6.CONTROLSOURCE='S51_C.F99'
+        THISFORM.GRID4.COLUMN1.WIDTH=INT_015*100       
+        THISFORM.GRID4.COLUMN2.WIDTH=INT_015*60
+        THISFORM.GRID4.COLUMN3.WIDTH=INT_015*60
+        THISFORM.GRID4.COLUMN4.WIDTH=INT_015*50
+        THISFORM.GRID4.COLUMN5.WIDTH=INT_015*150
+        THISFORM.GRID4.COLUMN6.WIDTH=INT_015*100              	 
+        IF   EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+	      THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	      THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+	      THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	 
+	      THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.      
+	      THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	      THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+	      THISFORM.PAGEFRAME1.PAGE4.SETALL('VALUE','','TEXTBOX')
+	      THISFORM.PAGEFRAME1.PAGE4.LBLF991.CAPTION=''
+	 ELSE
+	      IF  THISFORM.GRID4.ACTIVEROW=0 .AND. THISFORM.SHRGROUP.ENABLED=.F.  
+		   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+		   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+		   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+		   THISFORM.CMDGROUP.END_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+	           THISFORM.PAGEFRAME1.PAGE4.SETALL('VALUE','','TEXTBOX')
+	           THISFORM.PAGEFRAME1.PAGE4.LBLF991.CAPTION=''	           		   
+	      ELSE
+		   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+		   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+		   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+		   THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+		   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  &&判斷有無修改的權限
+		   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   &&判斷有無刪除的權限
+		   THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限 		      
+		   THISFORM.GRID4.AFTERROWCOLCHANGE 
+	      ENDIF 
+	      THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)      &&判斷有無新增的權限         
+	ENDIF            
+       R=RECNO('&AREA1') 
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+       THISFORM.GRID1.ENABLED=.F.  
+*!*	       THISFORM.REFRESH   	                    
+  ENDPROC  
+***********
+  PROCEDURE PAGEFRAME1.PAGE5.ACTIVATE
+	SELECT S51_D
+	SET ORDER TO S51_D1
+	AREA2='S51_D'  
+        THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+        THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+        THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+        THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+        THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.T.
+        THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,255)    
+        THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)   	
+	THISFORM.SHRGROUP.TOP=INT_015*165
+	THISFORM.SHRGROUP.LEFT=INT_015*560 
+	THISFORM.PHOTO_BOTT.VISIBLE=.F.
+	THISFORM.CHANG_BOTT.VISIBLE=.F.
+	THISFORM.TRA_BOTT.VISIBLE=.F.
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.    	
+	THISFORM.KEY_LIST.ENABLED=.F.   	
+        THISFORM.GRID2.VISIBLE=.F.
+        THISFORM.GRID3.VISIBLE=.F.
+        THISFORM.GRID4.VISIBLE=.F.
+        THISFORM.GRID5.VISIBLE=.T.	
+	THISFORM.GRID5.ENABLED=.T.
+        THISFORM.GRID5.SETFOCUS       
+        THISFORM.GRID5.COLUMN1.HEADER1.CAPTION='稱        謂'    
+        THISFORM.GRID5.COLUMN2.HEADER1.CAPTION='姓        名'
+        THISFORM.GRID5.COLUMN3.HEADER1.CAPTION='年        齡'
+        THISFORM.GRID5.COLUMN4.HEADER1.CAPTION='存  ／  歿'
+        THISFORM.GRID5.COLUMN5.HEADER1.CAPTION='職        業'
+        THISFORM.GRID5.COLUMN6.HEADER1.CAPTION='安全資料'
+        THISFORM.GRID5.COLUMN1.CONTROLSOURCE='S51_D.F16'
+        THISFORM.GRID5.COLUMN2.CONTROLSOURCE='S51_D.F17'
+        THISFORM.GRID5.COLUMN3.CONTROLSOURCE='S51_D.F18'
+        THISFORM.GRID5.COLUMN4.CONTROLSOURCE="IIF(S51_D.F19='1','存','歿')"
+        THISFORM.GRID5.COLUMN5.CONTROLSOURCE='S51_D.F20'
+        THISFORM.GRID5.COLUMN6.CONTROLSOURCE='S51_D.F99'
+        THISFORM.GRID5.COLUMN1.WIDTH=INT_015*55    
+        THISFORM.GRID5.COLUMN2.WIDTH=INT_015*55
+        THISFORM.GRID5.COLUMN3.WIDTH=INT_015*55
+        THISFORM.GRID5.COLUMN4.WIDTH=INT_015*55
+        THISFORM.GRID5.COLUMN5.WIDTH=INT_015*150
+        THISFORM.GRID5.COLUMN6.WIDTH=INT_015*100            	 
+        IF   EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+	      THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	      THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+	      THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	 
+	      THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.      
+	      THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	      THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+	      THISFORM.PAGEFRAME1.PAGE5.SETALL('VALUE','','TEXTBOX')
+	      THISFORM.PAGEFRAME1.PAGE5.LBLF991.CAPTION=''
+	 ELSE
+	      IF  THISFORM.GRID5.ACTIVEROW=0 .AND. THISFORM.SHRGROUP.ENABLED=.F.  
+		   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+		   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+		   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+		   THISFORM.CMDGROUP.END_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+	           THISFORM.PAGEFRAME1.PAGE5.SETALL('VALUE','','TEXTBOX')
+	           THISFORM.PAGEFRAME1.PAGE5.LBLF991.CAPTION=''	           		   
+	      ELSE
+		   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+		   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+		   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+		   THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+		   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  &&判斷有無修改的權限
+		   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   &&判斷有無刪除的權限
+		   THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限 	
+		   THISFORM.GRID5.AFTERROWCOLCHANGE	      
+	      ENDIF 
+	      THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)      &&判斷有無新增的權限         
+	ENDIF            
+       R=RECNO('&AREA1') 
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+       THISFORM.GRID1.ENABLED=.F.  
+*!*	       THISFORM.REFRESH   	                    
+  ENDPROC        
+***********
+  PROCEDURE PAGEFRAME1.PAGE6.ACTIVATE
+        AREA2='S51'  
+        THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+        THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+        THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+        THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+        THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+        THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.T.
+        THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,255)           
+        THISFORM.GRID2.VISIBLE=.T.
+        THISFORM.GRID3.VISIBLE=.F.
+        THISFORM.GRID4.VISIBLE=.F.
+        THISFORM.GRID5.VISIBLE=.F.        
+        THISFORM.GRID2.RECORDSOURCE=''
+        THISFORM.GRID2.CHILDORDER=''
+        THISFORM.GRID2.RECORDSOURCE=''
+        THISFORM.GRID2.CHILDORDER=''
+	THISFORM.KEY_LIST.ENABLED=.F.   
+	THISFORM.GRID2.VISIBLE=.T. 	
+	THISFORM.GRID2.ENABLED=.F.   
+        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION=''    
+        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION=''
+        THISFORM.GRID2.COLUMN3.HEADER1.CAPTION=''
+        THISFORM.GRID2.COLUMN4.HEADER1.CAPTION=''
+        THISFORM.GRID2.COLUMN5.HEADER1.CAPTION=''
+        THISFORM.GRID2.COLUMN6.HEADER1.CAPTION=''   
+	THISFORM.SHRGROUP.TOP=INT_015*165
+	THISFORM.SHRGROUP.LEFT=INT_015*560 
+	THISFORM.PHOTO_BOTT.VISIBLE=.F.
+	THISFORM.CHANG_BOTT.VISIBLE=.F.
+	THISFORM.TRA_BOTT.VISIBLE=.F.
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.       	 
+	THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.	
+	THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.SETFOCUS 
+        IF   EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+	      THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	 
+	      THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.      
+	      THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	      THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+	 ELSE
+	      IF  EMPTY(THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.VALUE) .AND. THISFORM.SHRGROUP.ENABLED=.F.  
+		   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F. 
+		   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+		   THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.    
+		   THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)      &&判斷有無新增的權限           		   
+	      ELSE
+		   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  &&判斷有無修改的權限
+		   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   &&判斷有無刪除的權限
+		   THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限 
+		   THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	     
+	      ENDIF    
+	ENDIF            
+       R=RECNO('&AREA1') 
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+       THISFORM.GRID1.ENABLED=.F.  
+*!*	       THISFORM.REFRESH   	                    
+  ENDPROC              
+**********    
+  PROC KEY_LIST.INIT 
+       WITH THIS 
+           .ADDITEM('依員工編號排列')
+           .ADDITEM('依員工姓名排列')
+           .VALUE=1
+       ENDWITH             
+  ENDPROC
+********* 
+  PROC KEY_LIST.INTERACTIVECHANGE                 
+       SELE S50
+       DO CASE
+          CASE THIS.DISPLAYVALUE='依員工編號排列'
+               SET ORDER TO S501 
+	       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='員工編號'
+	       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='員工姓名'
+	       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S50.F01'
+	       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='S50.F02'
+	       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*50
+	       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*55 
+          CASE THIS.DISPLAYVALUE='依員工姓名排列'
+               SET ORDER TO S502
+	       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='員工姓名'
+	       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='員工編號'
+	       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S50.F02'
+	       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='S50.F01'
+	       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*55
+	       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*50                                                                
+       ENDCASE 
+        THISFORM.GRID1.SETFOCUS
+  ENDPROC      
+***********  
+  PROC GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=S50.F01
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE=S50.F02
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF03.VALUE=S50.F03
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE=S50.F04
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=S50.F05
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF06.VALUE=S50.F06
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=BILL_MODE(S50.F07)
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE=S50.F08
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=S50.F09
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF11.VALUE=S50.F11
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF12.VALUE=S50.F12
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF13.VALUE=S50.F13
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE=S50.F14
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF16.VALUE=S50.F16
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF17.VALUE=S50.F17
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE=S50.F20
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF21.VALUE=S50.F21
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF22.VALUE=S50.F22
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF23.VALUE=S50.F23
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF24.VALUE=S50.F24
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF25.VALUE=S50.F25
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF26.VALUE=S50.F26
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF27.VALUE=S50.F27
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE=S50.F28
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=S50.F29
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF30.VALUE=S50.F30
+       	THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP10.VALUE=VAL(S50.F10)
+       	THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP15.VALUE=VAL(S50.F15)
+       	THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP18.VALUE=VAL(S50.F18)
+       	THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP19.VALUE=VAL(S50.F19)
+       	THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION=IIF(SEEK(S50.F05,'A14'),A14.F02,'')
+       	THISFORM.PAGEFRAME1.PAGE1.LBLF141.CAPTION='現年'+ALLTRIM(STR(VAL(LEFT(DTOS(DATE()),4))-VAL(LEFT(DTOS(S50.F14),4))))+'歲'
+       	THISFORM.PAGEFRAME1.PAGE1.LBLF991.CAPTION=S50.F99        
+       	THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.VALUE=S50.F31  
+        IF EMPTY(S50.F98)<>.T. .AND. FILE(ALLTRIM(S50.F98))
+            THISFORM.IMAGE1.PICTURE=ALLTRIM(S50.F98)
+            THISFORM.PHOTO_BOTT.CAPTION='\<I.修改照片'
+        ELSE    
+       	    THISFORM.IMAGE1.PICTURE=''
+       	    THISFORM.PHOTO_BOTT.CAPTION='\<I.新增照片'             
+       ENDIF       	
+	THISFORM.PHOTO_BOTT.VISIBLE=.T.
+	THISFORM.CHANG_BOTT.VISIBLE=.T.
+	IF THISFORM.GRID1.ACTIVEROW=0 
+             THISFORM.PAGEFRAME1.PAGE1.SETALL('VALUE','','TEXTBOX') 
+             THISFORM.PAGEFRAME1.PAGE1.SETALL('VALUE',1,'OPTIONGROUP')   
+             THISFORM.PAGEFRAME1.PAGE1.SETALL('CAPTION','','LABEL')  	             
+	     THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	     THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	     THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	     THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+	     THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+	     THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+	     THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	     THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+	     THISFORM.CHANG_BOTT.ENABLED=.F.
+	     THISFORM.PHOTO_BOTT.ENABLED=.F.
+	     THISFORM.TRA_BOTT.ENABLED=.F.         
+ 	 ELSE
+	       THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+	       THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+	       THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+	       THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+	       THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T. 	 	        
+	       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)   &&判斷有無修改的權限
+	       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)    &&判斷有無刪除的權限
+	       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)    &&判斷有無列印的權限 	       
+	       THISFORM.PHOTO_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)   &&修改照片
+	       THISFORM.CHANG_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.)
+	       THISFORM.TRA_BOTT.ENABLED=IIF(A02.F09='*',.T.,.F.)  .AND. IIF(INDEXSEEK(S50.F01,.T.,'S05','S051'),.F.,.T.)
+         ENDIF	      
+         THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)	&&判斷有無新增的權限   
+         FCH='GRID1'
+         JK=THIS.COLUMN1.HEADER1.CAPTION  
+         IF THIS.ACTIVEROW=0
+             THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+         ELSE
+            THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+         ENDIF   
+         CHK=''     
+*!*	       THISFORM.REFRESH
+  ENDPROC     
+**********  
+  PROC GRID2.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+   	 THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=S51_A.F03
+   	 THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=S51_A.F04
+   	 THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE=S51_A.F05
+   	 THISFORM.PAGEFRAME1.PAGE2.TXTF06.VALUE=S51_A.F06
+   	 THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP07.VALUE=VAL(S51_A.F07)
+   	 THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION=S51_A.F99      			    			 
+         FCH='GRID2'
+         JK=THIS.COLUMN1.HEADER1.CAPTION
+         CHK=S51.F01
+*!*		THISFORM.REFRESH
+  ENDPROC 
+**********  
+  PROC GRID3.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX 
+         THISFORM.PAGEFRAME1.PAGE3.LBLF10.VISIBLE=IIF(S51_B.F08='3',.F.,.T.)
+         THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VISIBLE=IIF(S51_B.F08='3',.F.,.T.)
+       	 THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE=S51_B.F09
+       	 THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE=VAL(S51_B.F08)       			 
+       	 THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VALUE=VAL(S51_B.F10)
+       	 THISFORM.PAGEFRAME1.PAGE3.LBLF991.CAPTION=S51_B.F99
+         FCH='GRID3'
+         JK=THIS.COLUMN1.HEADER1.CAPTION
+         CHK=S51.F01
+*!*		THISFORM.REFRESH       	           
+  ENDPROC       
+**********  
+  PROC GRID4.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+       	 THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE=S51_C.F11
+       	 THISFORM.PAGEFRAME1.PAGE4.TXTF12.VALUE=S51_C.F12
+       	 THISFORM.PAGEFRAME1.PAGE4.TXTF13.VALUE=S51_C.F13
+       	 THISFORM.PAGEFRAME1.PAGE4.TXTF14.VALUE=S51_C.F14
+       	 THISFORM.PAGEFRAME1.PAGE4.TXTF15.VALUE=S51_C.F15
+       	 THISFORM.PAGEFRAME1.PAGE4.LBLF991.CAPTION=S51_C.F99  
+         FCH='GRID4'
+         JK=THIS.COLUMN1.HEADER1.CAPTION
+         CHK=S51.F01
+*!*		THISFORM.REFRESH       	            
+  ENDPROC     
+**********  
+  PROC GRID5.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX  
+       	 THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE=S51_D.F16
+       	 THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE=S51_D.F17
+       	 THISFORM.PAGEFRAME1.PAGE5.TXTF18.VALUE=S51_D.F18
+       	 THISFORM.PAGEFRAME1.PAGE5.TXTF20.VALUE=S51_D.F20
+       	 THISFORM.PAGEFRAME1.PAGE5.OPTIONGROUP19.VALUE=VAL(S51_D.F19)
+       	 THISFORM.PAGEFRAME1.PAGE5.LBLF991.CAPTION=S51_D.F99   
+         FCH='GRID5'
+         JK=THIS.COLUMN1.HEADER1.CAPTION
+         CHK=S51.F01
+*!*		THISFORM.REFRESH       	        
+  ENDPROC         
+***********
+PROCEDURE ORPGROUP.NEW_BOTT.CLICK    
+    THISFORM.KEY_LIST.ENABLED=.F. 
+    THISFORM.GRID1.ENABLED=.F.  
+    THISFORM.GRID2.ENABLED=.F.  
+    THISFORM.GRID3.ENABLED=.F.  
+    THISFORM.GRID4.ENABLED=.F.  
+    THISFORM.GRID5.ENABLED=.F.  
+    THISFORM.CHANG_BOTT.ENABLED=.F.
+    THISFORM.PHOTO_BOTT.ENABLED=.F.
+    THISFORM.TRA_BOTT.ENABLED=.F.
+    DO CASE
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=1             
+		     THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.	
+		     THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.	
+		     THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.	
+		     THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE1.SETALL('READONLY',.F.,'TEXTBOX')   
+      		     THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP10.ENABLED=.T.     		     
+		     THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP15.ENABLED=.T. 
+      		     THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP18.ENABLED=.T.   
+      		     THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP19.ENABLED=.T. 
+		     THISFORM.PAGEFRAME1.PAGE1.COMBOBOX05.VISIBLE=.T.	
+		     THISFORM.PAGEFRAME1.PAGE1.COMBOBOX06.VISIBLE=.T.	
+		     THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VISIBLE=.T.	    			     
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF05.VISIBLE=.F.
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF06.VISIBLE=.F.
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF07.VISIBLE=.F.
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF14.READONLY=.F.		     
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF21.READONLY=.F.
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF22.READONLY=.F. 		     
+      		     THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP10.VALUE=1	   
+      		     THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP15.VALUE=1	 
+      		     THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP18.VALUE=1	 
+      		     THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP19.VALUE=1	 
+      		     THISFORM.PAGEFRAME1.PAGE1.COMBOBOX05.VALUE=1 
+      		     THISFORM.PAGEFRAME1.PAGE1.COMBOBOX06.VALUE=1
+      		     THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=1 
+      		     THISFORM.IMAGE1.PICTURE=''		   		     	     	     		     
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE=''       
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF03.VALUE=''  
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE=CTOD('')
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=''  
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF06.VALUE=''  
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=''	     	     
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE=DATE()
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE='全職人員' 
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF11.VALUE=CTOD('')
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF12.VALUE=''
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF13.VALUE='' 
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE=CTOD('')
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF16.VALUE=0
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF17.VALUE=0
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE=''
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF21.VALUE=''
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF22.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF23.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF24.VALUE=''		
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF25.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF26.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF27.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF30.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION=''
+		     THISFORM.PAGEFRAME1.PAGE1.LBLF141.CAPTION=''
+		     THISFORM.PAGEFRAME1.PAGE1.LBLF991.CAPTION=''
+		     THISFORM.PAGEFRAME1.PAGE1.TXTF01.SETFOCUS
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2    
+		     THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.	   
+		     THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.       
+		     THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE2.SETALL('READONLY',.F.,'TEXTBOX')      
+		     THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP07.ENABLED=.T. 
+		     THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP07.VALUE=1
+		     THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE=CTOD('')	
+		     THISFORM.PAGEFRAME1.PAGE2.TXTF06.VALUE=CTOD('')     
+		     THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION=''    
+		     THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS	
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3    	
+		     THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.	   
+		     THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.       
+		     THISFORM.PAGEFRAME1.PAGE3.SETALL('READONLY',.F.,'TEXTBOX')      
+           	     THISFORM.PAGEFRAME1.PAGE3.LBLF10.VISIBLE=.T.
+           	     THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VISIBLE=.T.     		     
+		     THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.ENABLED=.T. 
+		     THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.ENABLED=.T. 
+		     THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE=1
+		     THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VALUE=1
+		     THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE=''	    
+		     THISFORM.PAGEFRAME1.PAGE3.LBLF991.CAPTION=''    
+		     THISFORM.PAGEFRAME1.PAGE3.TXTF09.SETFOCUS	
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4    
+		     THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.	   
+		     THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.     
+		     THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.  
+		     THISFORM.PAGEFRAME1.PAGE4.SETALL('READONLY',.F.,'TEXTBOX')      
+		     THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE4.TXTF12.VALUE=CTOD('')	
+		     THISFORM.PAGEFRAME1.PAGE4.TXTF13.VALUE=CTOD('')
+		     THISFORM.PAGEFRAME1.PAGE4.TXTF14.VALUE=''	  
+		     THISFORM.PAGEFRAME1.PAGE4.TXTF15.VALUE=''	   
+		     THISFORM.PAGEFRAME1.PAGE4.LBLF991.CAPTION=''    
+		     THISFORM.PAGEFRAME1.PAGE4.TXTF11.SETFOCUS	
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5   
+		     THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.	   
+		     THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.   
+		     THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.     
+		     THISFORM.PAGEFRAME1.PAGE5.SETALL('READONLY',.F.,'TEXTBOX')      
+		     THISFORM.PAGEFRAME1.PAGE5.OPTIONGROUP19.ENABLED=.T. 
+		     THISFORM.PAGEFRAME1.PAGE5.OPTIONGROUP19.VALUE=1
+		     THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE=''	
+		     THISFORM.PAGEFRAME1.PAGE5.TXTF18.VALUE=0
+		     THISFORM.PAGEFRAME1.PAGE5.TXTF20.VALUE=''	     
+		     THISFORM.PAGEFRAME1.PAGE5.LBLF991.CAPTION=''    
+		     THISFORM.PAGEFRAME1.PAGE5.TXTF16.SETFOCUS
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=6   
+		     THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.	   
+		     THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+		     THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.   
+		     THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.     
+		     THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.READONLY=.F.
+		     THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.VALUE=''  
+		     THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.SETFOCUS			     			     		     	           	     
+   ENDCASE
+  ENDPROC
+*************  
+PROCEDURE SHRGROUP.SHURE1_BOTT.CLICK               &&新增確認
+    DO CASE
+    	  CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=1  
+    	             SELECT  S50
+                     COD=SYS(21)
+                     SET ORDER TO S501 
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+          		  =MESSAGEBOX('員工編號不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF01.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF  	 
+		     IF  LEN(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE))<4
+          		  =MESSAGEBOX('員工編號不得少於四碼!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF01.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF      	 	     	     
+	             IF INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'1',.F.,'S50','S501')=.T.
+	           	  =MESSAGEBOX('此員工編號已存在,請查明後再輸入!',0+64,'提示訊息視窗')
+	          	  THISFORM.PAGEFRAME1.PAGE1.TXTF01.SETFOCUS
+	          	  SET ORDER TO &COD
+	          	  RETURN            
+	       	     ENDIF
+	             IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,'S50B_SEEK')=.T.
+	           	  =MESSAGEBOX('此員工編號已存在於離職員工編號中,請查明後再輸入!',0+64,'提示訊息視窗')
+	          	  THISFORM.PAGEFRAME1.PAGE1.TXTF01.SETFOCUS
+	          	  SET ORDER TO &COD
+	          	  RETURN            
+	       	     ENDIF	       	     
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+          		  =MESSAGEBOX('中文姓名不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF02.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+          		  =MESSAGEBOX('所屬部門不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF05.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF 
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF13.VALUE)
+          		  =MESSAGEBOX('身份證字號不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF13.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF   
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE)
+          		  =MESSAGEBOX('出生日期不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF14.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF     
+		     IF  DATE()-THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE<0
+          		  =MESSAGEBOX('此出生日期不正確,請重新輸入!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF14.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF   
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF23.VALUE)
+*!*	          		  =MESSAGEBOX('聯絡地址不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF23.SETFOCUS
+*!*	          		  SET ORDER TO &COD
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF  
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF24.VALUE)
+*!*	          		  =MESSAGEBOX('聯絡電話不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF23.SETFOCUS
+*!*	          		  SET ORDER TO &COD
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF     
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF27.VALUE)
+*!*	          		  =MESSAGEBOX('緊急連絡人不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF27.SETFOCUS
+*!*	          		  SET ORDER TO &COD
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF   
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE)
+*!*	          		  =MESSAGEBOX('關係不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF28.SETFOCUS
+*!*	          		  SET ORDER TO &COD
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF    	 	     
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE)
+*!*	          		  =MESSAGEBOX('緊急連絡電話不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF29.SETFOCUS
+*!*	          		  SET ORDER TO &COD
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF    	 	  
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF30.VALUE)
+*!*	          		  =MESSAGEBOX('緊急連絡地址不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF30.SETFOCUS
+*!*	          		  SET ORDER TO &COD
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF 
+			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF26.VALUE) <> .T. AND AT('@',THISFORM.PAGEFRAME1.PAGE1.TXTF26.VALUE) = 0
+	          		  =MESSAGEBOX('電子郵件格式不正確',0+64,'提示訊息視窗')
+	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF26.SETFOCUS
+	          		  SET ORDER TO &COD
+	          		  RETURN        	  
+	    	 	 ENDIF	   	 	          	 	     	 	       	 	       	 	      	 	        	 	     	       	     
+ 	             SELECT S50
+ 	             APPEND BLANK
+ 	             LOCK()
+ 	             IF RLOCK()
+ 	                 REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+ 	                 REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+ 	                 REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF03.VALUE
+ 	                 REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE
+ 	                 REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+ 	                 REPLACE F06 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF06.VALUE
+ 	                 DO CASE
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=1
+ 	                        	    REPLACE F07 WITH 'A'
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=2
+ 	                        	    REPLACE F07 WITH 'B'
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=3
+ 	                        	    REPLACE F07 WITH 'C' 	   
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=4
+ 	                        	    REPLACE F07 WITH '2'
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=5
+ 	                        	    REPLACE F07 WITH '4'
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=6
+ 	                        	    REPLACE F07 WITH '9'
+ 	                 ENDCASE
+ 	                 REPLACE F08 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE
+ 	                 REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE
+ 	                 REPLACE F10 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP10.VALUE)) 
+ 	                 REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF11.VALUE
+ 	                 REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF12.VALUE
+ 	                 REPLACE F13 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF13.VALUE
+ 	                 REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE
+ 	                 REPLACE F15 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP15.VALUE)) 
+ 	                 REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF16.VALUE
+ 	                 REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF17.VALUE
+ 	                 REPLACE F18 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP18.VALUE)) 
+ 	                 REPLACE F19 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP19.VALUE)) 
+ 	                 REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE
+ 	                 REPLACE F21 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF21.VALUE
+ 	                 REPLACE F22 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF22.VALUE
+ 	                 REPLACE F23 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF23.VALUE
+ 	                 REPLACE F24 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF24.VALUE
+ 	                 REPLACE F25 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF25.VALUE
+ 	                 REPLACE F26 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF26.VALUE
+ 	                 REPLACE F27 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF27.VALUE
+ 	                 REPLACE F28 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE
+ 	                 REPLACE F29 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE
+ 	                 REPLACE F30 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF30.VALUE
+ 	                 REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')	
+ 	              ENDIF   
+ 	               IF  MESSAGEBOX('是否要新增此人員之照片',4+32+256,'請確認')=6 
+			     IMAGE_DIR=GETPICT("","開啟來源檔案","開啟")
+			     IF EMPTY(IMAGE_DIR)<>.T.
+			      	   SELECT S50
+			       	   REPLACE  S50.F98 WITH  ALLTRIM(IMAGE_DIR)
+			      ENDIF   	                     
+ 	               ENDIF
+    	  CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2  
+    	             SELECT  S51_A
+                     COD=SYS(21)
+                     SET ORDER TO S51_A1     	  
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE)
+          		  =MESSAGEBOX('學校名稱不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF    	    
+		     IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'S51_A')=.T.
+          		  =MESSAGEBOX('此學校名稱已存在,請重新輸入!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF    	 
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE)
+*!*	          		  =MESSAGEBOX('科系名稱不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE2.TXTF04.SETFOCUS
+*!*	          		  SET ORDER TO &COD
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF    	 	     	          	        	 	      	  
+		     SELECT  S51        
+		     APPEND BLANK
+		     LOCK()
+		     IF RLOCK()
+		         REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE	
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE
+		         REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE
+		         REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE
+		         REPLACE F06 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF06.VALUE
+		         REPLACE F07 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP07.VALUE)) 
+		         REPLACE F98 WITH 'A'
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			    
+		     ENDIF
+		     SELECT  S51_A        
+		     APPEND BLANK
+		     LOCK()
+		     IF RLOCK()
+		         REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE	
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE
+		         REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE
+		         REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE
+		         REPLACE F06 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF06.VALUE
+		         REPLACE F07 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP07.VALUE)) 
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			    
+		     ENDIF		     	
+    	  CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3 
+    	             SELECT  S51_B
+                     COD=SYS(21)
+                     SET ORDER TO S51_B1     	    	   
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE)
+          		  =MESSAGEBOX('專業項目不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE3.TXTF09.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF     	
+		     IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE))+THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE,'S51_B')=.T.
+          		  =MESSAGEBOX('此專業類別及專業項目已存在,請重新輸入!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE3.TXTF09.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF      	 	      	            	        	 	      	  
+		     SELECT  S51        
+		     APPEND BLANK
+		     LOCK()
+		     IF RLOCK()
+		         REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE	
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F08 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE)) 
+		         REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE
+		         REPLACE F10 WITH IIF(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE=3,'',ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VALUE)))
+		         REPLACE F98 WITH 'B'
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			    
+		     ENDIF    
+		     SELECT  S51_B        
+		     APPEND BLANK
+		     LOCK()
+		     IF RLOCK()
+		         REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE	
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F08 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE)) 
+		         REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE
+		         REPLACE F10 WITH IIF(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE=3,'',ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VALUE)))
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			    
+		     ENDIF  		     	
+    	  CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4 
+    	             SELECT  S51_C
+                     COD=SYS(21)
+                     SET ORDER TO S51_C1     	  
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE)
+          		  =MESSAGEBOX('任職機關不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE4.TXTF11.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF  
+		     IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE,'S51_C')=.T.
+          		  =MESSAGEBOX('此任職機關已存在,請重新輸入!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE4.TXTF11.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN      	  
+    	 	     ENDIF     	 	       	          	        	 	      	  
+		     SELECT  S51        
+		     APPEND BLANK
+		     LOCK()
+		     IF RLOCK()
+		         REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE	
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE
+		         REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF12.VALUE
+		         REPLACE F13 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF13.VALUE
+		         REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF14.VALUE
+		         REPLACE F15 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF15.VALUE
+		         REPLACE F98 WITH 'C'
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')		    
+		     ENDIF	
+		     SELECT  S51_C        
+		     APPEND BLANK
+		     LOCK()
+		     IF RLOCK()
+		         REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE	
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE
+		         REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF12.VALUE
+		         REPLACE F13 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF13.VALUE
+		         REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF14.VALUE
+		         REPLACE F15 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF15.VALUE
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')		    
+		     ENDIF		     
+    	  CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5 
+    	             SELECT  S51_D
+                     COD=SYS(21)
+                     SET ORDER TO S51_D1     	  
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE)
+          		  =MESSAGEBOX('稱謂不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE5.TXTF16.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF 
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE)
+          		  =MESSAGEBOX('姓名不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE5.TXTF17.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF     	 	     
+		     IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE+THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE,'S51_D')=.T.
+          		  =MESSAGEBOX('此稱謂及姓名已存在,請重新輸入!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE5.TXTF16.SETFOCUS
+          		  SET ORDER TO &COD
+          		  RETURN        	  
+    	 	     ENDIF     	 	        	          	        	 	      	  
+		     SELECT  S51        
+		     APPEND BLANK
+		     LOCK()
+		     IF RLOCK()
+		         REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE	
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE
+		         REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE
+		         REPLACE F18 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF18.VALUE
+		         REPLACE F19 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE5.OPTIONGROUP19.VALUE))
+		         REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF20.VALUE
+		         REPLACE F98 WITH 'D'
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			    
+		     ENDIF	
+		     SELECT  S51_D        
+		     APPEND BLANK
+		     LOCK()
+		     IF RLOCK()
+		         REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE	
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE
+		         REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE
+		         REPLACE F18 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF18.VALUE
+		         REPLACE F19 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE5.OPTIONGROUP19.VALUE))
+		         REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF20.VALUE
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			    
+		     ENDIF	
+    	  CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=6
+		     SELECT  S50
+		     LOCK()
+		     IF RLOCK()
+		         REPLACE F31 WITH THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.VALUE	
+		     ENDIF    	  		     	     	     	     	    	    	 	         	 	     	            	         	         		         		         		         		         		         		         	         		         		            	 	     	      		      
+    ENDCASE 
+    UNLOCK ALL
+*!*	    SELECT S50
+*!*	    SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+    THISFORM.REFRESH
+    IF THISFORM.PAGEFRAME1.ACTIVEPAGE<>6
+        THISFORM.ORPGROUP.NEW_BOTT.CLICK
+    ELSE     
+        THISFORM.SHRGROUP.ABANDON_BOTT.CLICK   
+    ENDIF
+  ENDPROC  
+***********    
+  PROCEDURE ORPGROUP.EDIT_BOTT.CLICK 
+     THISFORM.KEY_LIST.ENABLED=.F. 
+     THISFORM.GRID1.ENABLED=.F.  
+     THISFORM.GRID2.ENABLED=.F.  
+     THISFORM.GRID3.ENABLED=.F.  
+     THISFORM.GRID4.ENABLED=.F.  
+     THISFORM.GRID5.ENABLED=.F.  
+     THISFORM.CHANG_BOTT.ENABLED=.F.
+     THISFORM.PHOTO_BOTT.ENABLED=.F.
+     THISFORM.TRA_BOTT.ENABLED=.F.
+     DO CASE
+           CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+         	      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+         	      THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+         	      THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+         	      THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.	
+         	      THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.  
+     		      THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP10.ENABLED=.T. 
+     		      THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP15.ENABLED=.T.    
+     		      THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP18.ENABLED=.T.   
+     		      THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP19.ENABLED=.T.   		      
+		      THISFORM.PAGEFRAME1.PAGE1.SETALL('READONLY',.F.,'TEXTBOX')    		      
+		      THISFORM.PAGEFRAME1.PAGE1.TXTF01.READONLY=.T.
+		      THISFORM.PAGEFRAME1.PAGE1.TXTF07.READONLY=IIF(S50.F07='A' .OR. S50.F07='B'  .OR. S50.F07='C' .OR.  S50.F07='2' .OR. S50.F07='4' .OR. S50.F07='9',.T.,.F.)	     		      
+		      THISFORM.PAGEFRAME1.PAGE1.TXTF08.READONLY=.T.	
+		      THISFORM.PAGEFRAME1.PAGE1.TXTF14.READONLY=.F.
+		      THISFORM.PAGEFRAME1.PAGE1.TXTF21.READONLY=.F.
+		      THISFORM.PAGEFRAME1.PAGE1.TXTF22.READONLY=.F.     
+		      THISFORM.PAGEFRAME1.PAGE1.TXTF05.VISIBLE=.F.	
+		      THISFORM.PAGEFRAME1.PAGE1.TXTF06.VISIBLE=.F.
+		      THISFORM.PAGEFRAME1.PAGE1.TXTF07.VISIBLE=IIF(S50.F07='A' .OR. S50.F07='B'  .OR. S50.F07='C' .OR.  S50.F07='2' .OR. S50.F07='4' .OR. S50.F07='9',.F.,.T.)		      	          		      
+		      THISFORM.PAGEFRAME1.PAGE1.COMBOBOX05.VISIBLE=.T.  
+		      THISFORM.PAGEFRAME1.PAGE1.COMBOBOX06.VISIBLE=.T.
+		      THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VISIBLE=IIF(S50.F07='A' .OR. S50.F07='B'  .OR. S50.F07='C' .OR.  S50.F07='2' .OR. S50.F07='4' .OR. S50.F07='9',.T.,.F.)			      	      
+		      THISFORM.PAGEFRAME1.PAGE1.COMBOBOX05.DISPLAYVALUE=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(5)+ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION)
+		      THISFORM.PAGEFRAME1.PAGE1.COMBOBOX06.DISPLAYVALUE=S50.F06
+		      THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=IIF(S50.F07='A',1,IIF(S50.F07='B',2,IIF(S50.F07='C',3,IIF(S50.F07='2',4,IIF(S50.F07='4',5,6)))))
+		      THISFORM.PAGEFRAME1.PAGE1.LBLF991.CAPTION=''	
+		      THISFORM.PAGEFRAME1.PAGE1.TXTF02.SETFOCUS
+           CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2       
+		      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		      THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.	
+		      THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+		      THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F. 
+		      THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.           
+		      THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP07.ENABLED=.T. 
+		      THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION=''	  
+		      THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS         
+           CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3   
+		      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.	
+		      THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+		      THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.  
+		      THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.          
+		      THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.ENABLED=.T.  
+		      THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.ENABLED=.T. 
+		      THISFORM.PAGEFRAME1.PAGE3.LBLF991.CAPTION=''	 
+		      THISFORM.PAGEFRAME1.PAGE3.TXTF09.SETFOCUS                
+           CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4   
+		      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.	
+		      THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+		      THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.     
+		      THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.       
+		      THISFORM.PAGEFRAME1.PAGE4.LBLF991.CAPTION=''	 
+		      THISFORM.PAGEFRAME1.PAGE4.TXTF11.SETFOCUS   
+           CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5  
+		      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.	
+		      THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+		      THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.      
+		      THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.       
+		      THISFORM.PAGEFRAME1.PAGE5.OPTIONGROUP19.ENABLED=.T.  
+		      THISFORM.PAGEFRAME1.PAGE5.LBLF991.CAPTION=''	 
+		      THISFORM.PAGEFRAME1.PAGE5.TXTF16.SETFOCUS   	
+           CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=6  
+		      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.	
+		      THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+		      THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.      
+		      THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.   
+		      THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.READONLY=.F.    
+		      THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.SETFOCUS  		      	      		       		      	      
+    ENDCASE		      
+    LOCK()
+    IF !RLOCK()
+         DO FILE_IMPACT
+         RETURN
+    ENDIF   
+  ENDPROC    
+**************
+PROCEDURE SHRGROUP.SHURE2_BOTT.CLICK   &&修改確認                 
+  DO CASE    
+         CASE  THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+          		  =MESSAGEBOX('中文姓名不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF02.SETFOCUS
+          		  RETURN        	  
+    	 	     ENDIF
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+          		  =MESSAGEBOX('所屬部門不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF05.SETFOCUS
+          		  RETURN        	  
+    	 	     ENDIF 
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF13.VALUE)
+          		  =MESSAGEBOX('身份證字號不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF13.SETFOCUS
+          		  RETURN        	  
+    	 	     ENDIF   
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE)
+          		  =MESSAGEBOX('出生日期不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF14.SETFOCUS
+          		  RETURN        	  
+    	 	     ENDIF     
+		     IF  DATE()-THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE<0
+          		  =MESSAGEBOX('此出生日期不正確,請重新輸入!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE1.TXTF14.SETFOCUS
+          		  RETURN        	  
+    	 	     ENDIF 
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF23.VALUE)
+*!*	          		  =MESSAGEBOX('聯絡地址不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF23.SETFOCUS
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF  
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF24.VALUE)
+*!*	          		  =MESSAGEBOX('聯絡電話不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF23.SETFOCUS
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF     
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF27.VALUE)
+*!*	          		  =MESSAGEBOX('緊急連絡人不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF27.SETFOCUS
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF   
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE)
+*!*	          		  =MESSAGEBOX('關係不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF28.SETFOCUS
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF    	 	     
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE)
+*!*	          		  =MESSAGEBOX('緊急連絡電話不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF29.SETFOCUS
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF    	 	  
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF30.VALUE)
+*!*	          		  =MESSAGEBOX('緊急連絡地址不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF30.SETFOCUS
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF 	
+*!*	    	 	     IF  S50.F02<>THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+*!*	    	 	     	  SELECT S51
+*!*			          REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE FOR ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) ALL
+*!*	    	 	     	  SELECT S52
+*!*			          REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE FOR ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) ALL		          
+*!*	     	     	     ENDIF
+			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF26.VALUE) <> .T. AND AT('@',THISFORM.PAGEFRAME1.PAGE1.TXTF26.VALUE) = 0
+	          		  =MESSAGEBOX('電子郵件格式不正確',0+64,'提示訊息視窗')
+	          		  THISFORM.PAGEFRAME1.PAGE1.TXTF26.SETFOCUS
+	          		  RETURN        	  
+	    	 	 ENDIF	
+	   SELECT  S50 
+	   IF RLOCK()
+		***中文姓名與部門有變動時
+               IF ALLTRIM(S50.F02)<>ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE) OR  ALLTRIM(S50.F05)<>ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                   SELECT  RECNO() FROM S51 WHERE ALLTRIM(S51.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S51.F01) INTO ARRAY BK1              
+                   JJ1=''               
+                   IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK1)
+                             JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+                      ENDFOR    
+                      KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')              
+                      RLOCK(KK1,'S51')
+                      LL1=RLOCK(KK1,'S51')
+                  ELSE
+                      LL1=.T.   
+                  ENDIF                   
+                  IF LL1=.T. .AND. LEN(ALLTRIM(JJ1))>0  	 	    
+                      SELECT S51
+                      FOR I= 1 TO ALEN(BK1)                      
+                             GO BK1(I) 
+                             REPLACE S51.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                      ENDFOR       
+                  ENDIF 
+                  ****
+                  SELECT  RECNO() FROM S52 WHERE ALLTRIM(S52.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S52.F01) INTO ARRAY BK2              
+                  JJ2=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK2)
+                              JJ2=JJ2+ALLTRIM(STR(BK2(I)))+','
+                      ENDFOR    
+                      KK2=STUFF(JJ2,RAT(',',JJ2,1),1,'')              
+                      RLOCK(KK2,'S52')
+                      LL2=RLOCK(KK2,'S52')
+                  ELSE
+                      LL2=.T.   
+                  ENDIF                   
+                  IF LL2=.T. .AND. LEN(ALLTRIM(JJ2))>0  	 	    
+                      SELECT S52
+                      FOR I= 1 TO ALEN(BK2)                      
+                             GO BK2(I) 
+                             REPLACE S52.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                      ENDFOR       
+                  ENDIF   
+                  ***
+		  IF !USED('S0A')	&&年度缺勤紀錄檔
+		        SELECT  0
+		        USE S0A
+		  ELSE 
+		        SELECT  S0A
+		  ENDIF
+		  SET ORDER TO S0A1 	
+                  SELECT  RECNO() FROM S0A WHERE ALLTRIM(S0A.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S0A.F01) INTO ARRAY BKA              
+                  JJA=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BKA)
+                              JJA=JJA+ALLTRIM(STR(BKA(I)))+','
+                      ENDFOR    
+                      KKA=STUFF(JJA,RAT(',',JJA,1),1,'')              
+                      RLOCK(KKA,'S0A')
+                      LLA=RLOCK(KKA,'S0A')
+                  ELSE
+                      LLA=.T.   
+                  ENDIF                   
+                  IF LLA=.T. .AND. LEN(ALLTRIM(JJA))>0  	 	    
+                      SELECT S0A
+                      FOR I= 1 TO ALEN(BKA)                      
+                             GO BKA(I) 
+                             REPLACE S0A.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S0A.F03 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S0A.F04 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S0A
+		  USE
+		  ****
+		  IF !USED('S0B')	&&年假記錄檔
+		        SELECT  0
+		        USE S0B
+		  ELSE 
+		        SELECT  S0B
+		  ENDIF
+		  SET ORDER TO S0B1 	
+                  SELECT  RECNO() FROM S0B WHERE ALLTRIM(S0B.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S0B.F01) INTO ARRAY BKB              
+                  JJB=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BKB)
+                              JJB=JJB+ALLTRIM(STR(BKB(I)))+','
+                      ENDFOR    
+                      KKB=STUFF(JJB,RAT(',',JJB,1),1,'')              
+                      RLOCK(KKB,'S0B')
+                      LLB=RLOCK(KKB,'S0B')
+                  ELSE
+                      LLB=.T.   
+                  ENDIF                   
+                  IF LLB=.T. .AND. LEN(ALLTRIM(JJB))>0  	 	    
+                      SELECT S0B
+                      FOR I= 1 TO ALEN(BKB)                      
+                             GO BKB(I) 
+                             REPLACE S0B.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S0B
+		  USE
+		  ****人事薪資基本檔	  	   	   
+                  SELECT  RECNO() FROM S05 WHERE ALLTRIM(S05.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S05.F01) INTO ARRAY BK5              
+                  JJ5=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK5)
+                              JJ5=JJ5+ALLTRIM(STR(BK5(I)))+','
+                      ENDFOR    
+                      KK5=STUFF(JJ5,RAT(',',JJ5,1),1,'')              
+                      RLOCK(KK5,'S05')
+                      LL5=RLOCK(KK5,'S05')
+                  ELSE
+                      LL5=.T.   
+                  ENDIF                   
+                  IF LL5=.T. .AND. LEN(ALLTRIM(JJ5))>0  	 	    
+                      SELECT S05
+                      FOR I= 1 TO ALEN(BK5)                      
+                             GO BK5(I) 
+                             REPLACE S05.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S05.F05 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S05.F06 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')                             
+                      ENDFOR       
+                  ENDIF   		  
+		  ****		  
+		  IF !USED('S06')	&&薪資項目及扣款項目
+		        SELECT  0
+		        USE S06
+		  ELSE 
+		        SELECT  S06
+		  ENDIF
+		  SET ORDER TO S061
+                  SELECT  RECNO() FROM S06 WHERE ALLTRIM(S06.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S06.F01) INTO ARRAY BK6              
+                  JJ6=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK6)
+                              JJ6=JJ6+ALLTRIM(STR(BK6(I)))+','
+                      ENDFOR    
+                      KK6=STUFF(JJ6,RAT(',',JJ6,1),1,'')              
+                      RLOCK(KK6,'S06')
+                      LL6=RLOCK(KK6,'S06')
+                  ELSE
+                      LL6=.T.   
+                  ENDIF                   
+                  IF LL6=.T. .AND. LEN(ALLTRIM(JJ6))>0  	 	    
+                      SELECT S06
+                      FOR I= 1 TO ALEN(BK6)                      
+                             GO BK6(I) 
+                             REPLACE S06.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S06.F03 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S06.F04 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')                             
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S06
+		  USE
+		  ****			                        
+		  IF !USED('S07')	&&調薪修改作業
+		        SELECT  0
+		        USE S07
+		  ELSE 
+		        SELECT  S07
+		  ENDIF
+		  SET ORDER TO S071  
+                  SELECT  RECNO() FROM S07 WHERE ALLTRIM(S07.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S07.F01) INTO ARRAY BK7              
+                  JJ7=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK7)
+                              JJ7=JJ7+ALLTRIM(STR(BK7(I)))+','
+                      ENDFOR    
+                      KK7=STUFF(JJ7,RAT(',',JJ7,1),1,'')              
+                      RLOCK(KK7,'S07')
+                      LL7=RLOCK(KK7,'S07')
+                  ELSE
+                      LL7=.T.   
+                  ENDIF                   
+                  IF LL7=.T. .AND. LEN(ALLTRIM(JJ7))>0  	 	    
+                      SELECT S07
+                      FOR I= 1 TO ALEN(BK7)                      
+                             GO BK7(I) 
+                             REPLACE S07.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S07.F03 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S07.F04 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S07
+		  USE
+		  ***		  
+		  IF !USED('S08')	&&懲處作業
+		        SELECT  0
+		        USE S08
+		  ELSE 
+		        SELECT  S08
+		  ENDIF
+		  SET ORDER TO S081  
+                  SELECT  RECNO() FROM S08 WHERE ALLTRIM(S08.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S08.F01) INTO ARRAY BK8              
+                  JJ8=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK8)
+                              JJ8=JJ8+ALLTRIM(STR(BK8(I)))+','
+                      ENDFOR    
+                      KK8=STUFF(JJ8,RAT(',',JJ8,1),1,'')              
+                      RLOCK(KK8,'S08')
+                      LL8=RLOCK(KK8,'S08')
+                  ELSE
+                      LL8=.T.   
+                  ENDIF                   
+                  IF LL8=.T. .AND. LEN(ALLTRIM(JJ8))>0  	 	    
+                      SELECT S08
+                      FOR I= 1 TO ALEN(BK8)                      
+                             GO BK8(I) 
+                             REPLACE S08.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S08.F03 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S08.F04 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S08
+		  USE
+		  ***			  
+		  IF !USED('S09')	&&其他所得發放作業
+		        SELECT  0
+		        USE S09
+		  ELSE 
+		        SELECT  S09
+		  ENDIF
+		  SET ORDER TO S091  	
+                  SELECT  RECNO() FROM S09 WHERE ALLTRIM(S09.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S09.F01) INTO ARRAY BK9              
+                  JJ9=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK9)
+                              JJ9=JJ9+ALLTRIM(STR(BK9(I)))+','
+                      ENDFOR    
+                      KK9=STUFF(JJ9,RAT(',',JJ9,1),1,'')              
+                      RLOCK(KK9,'S09')
+                      LL9=RLOCK(KK9,'S09')
+                  ELSE
+                      LL9=.T.   
+                  ENDIF                   
+                  IF LL9=.T. .AND. LEN(ALLTRIM(JJ9))>0  	 	    
+                      SELECT S09
+                      FOR I= 1 TO ALEN(BK9)                      
+                             GO BK9(I) 
+                             REPLACE S09.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S09.F03 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S09.F04 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S09
+		  USE
+		  ****		   		                   
+		  IF !USED('S11')	&&薪資月報表
+		        SELECT  0
+		        USE S11
+		  ELSE 
+		        SELECT  S11
+		  ENDIF
+		  SET ORDER TO S111                  
+                  SELECT  RECNO() FROM S11 WHERE ALLTRIM(S11.F02)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S11.F02) INTO ARRAY BK11              
+                  JJ11=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK11)
+                              JJ11=JJ11+ALLTRIM(STR(BK11(I)))+','
+                      ENDFOR    
+                      KK11=STUFF(JJ11,RAT(',',JJ11,1),1,'')              
+                      RLOCK(KK11,'S11')
+                      LL11=RLOCK(KK11,'S11')
+                  ELSE
+                      LL11=.T.   
+                  ENDIF                   
+                  IF LL11=.T. .AND. LEN(ALLTRIM(JJ11))>0  	 	    
+                      SELECT S11
+                      FOR I= 1 TO ALEN(BK11)                      
+                             GO BK11(I) 
+                             REPLACE S11.F03 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S11.F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S11.F05 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S11
+		  USE
+		  ***		     
+		  IF !USED('S12')	&&特殊其他所得發放作業 
+		        SELECT  0
+		        USE S12
+		  ELSE 
+		        SELECT  S12
+		  ENDIF
+		  SET ORDER TO S121 
+                  SELECT  RECNO() FROM S12 WHERE ALLTRIM(S12.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S12.F01) INTO ARRAY BK12              
+                  JJ12=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK12)
+                              JJ12=JJ12+ALLTRIM(STR(BK12(I)))+','
+                      ENDFOR    
+                      KK12=STUFF(JJ12,RAT(',',JJ12,1),1,'')              
+                      RLOCK(KK12,'S12')
+                      LL12=RLOCK(KK12,'S12')
+                  ELSE
+                      LL12=.T.   
+                  ENDIF                   
+                  IF LL12=.T. .AND. LEN(ALLTRIM(JJ12))>0  	 	    
+                      SELECT S12
+                      FOR I= 1 TO ALEN(BK12)                      
+                             GO BK12(I) 
+                             REPLACE S12.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S12.F03 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S12.F04 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S12
+		  USE
+		  ***			  
+		  IF !USED('S13')	&&各項部門作業人員記錄檔
+		        SELECT  0
+		        USE S13
+		  ELSE 
+		        SELECT  S13
+		  ENDIF
+		  SET ORDER TO S131 	
+                  SELECT  RECNO() FROM S13 WHERE ALLTRIM(S13.F04)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S13.F04) INTO ARRAY BK13
+                  JJ13=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK13)
+                              JJ13=JJ13+ALLTRIM(STR(BK13(I)))+','
+                      ENDFOR    
+                      KK13=STUFF(JJ13,RAT(',',JJ13,1),1,'')              
+                      RLOCK(KK13,'S13')
+                      LL13=RLOCK(KK13,'S13')
+                  ELSE
+                      LL13=.T.   
+                  ENDIF                   
+                  IF LL13=.T. .AND. LEN(ALLTRIM(JJ13))>0  	 	    
+                      SELECT S13
+                      FOR I= 1 TO ALEN(BK13)                      
+                             GO BK13(I) 
+                             REPLACE S13.F05 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S13
+		  USE
+		  ***			  	                      
+		  IF !USED('S14')	&&年度出勤紀錄檔
+		        SELECT  0
+		        USE S14
+		  ELSE 
+		        SELECT  S14
+		  ENDIF
+		  SET ORDER TO S141 	
+                  SELECT  RECNO() FROM S14 WHERE ALLTRIM(S14.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S14.F01)  INTO ARRAY BK14
+                  JJ14=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK14)
+                              JJ14=JJ14+ALLTRIM(STR(BK14(I)))+','
+                      ENDFOR    
+                      KK14=STUFF(JJ14,RAT(',',JJ14,1),1,'')              
+                      RLOCK(KK14,'S14')
+                      LL14=RLOCK(KK14,'S14')
+                  ELSE
+                      LL14=.T.   
+                  ENDIF                   
+                  IF LL14=.T. .AND. LEN(ALLTRIM(JJ14))>0  	 	    
+                      SELECT S14
+                      FOR I= 1 TO ALEN(BK14)                      
+                             GO BK14(I) 
+                             REPLACE S14.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S14.F03 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S14.F04 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S14
+		  USE
+		  ***		  
+		  IF !USED('S17')	&&上下班變更作業
+		        SELECT  0
+		        USE S17
+		  ELSE 
+		        SELECT  S17
+		  ENDIF
+		  SET ORDER TO S171 		
+                  SELECT  RECNO() FROM S17 WHERE ALLTRIM(S17.F03)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S17.F03)  INTO ARRAY BK17
+                  JJ17=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK17)
+                              JJ17=JJ17+ALLTRIM(STR(BK17(I)))+','
+                      ENDFOR    
+                      KK17=STUFF(JJ17,RAT(',',JJ17,1),1,'')              
+                      RLOCK(KK17,'S17')
+                      LL17=RLOCK(KK17,'S17')
+                  ELSE
+                      LL17=.T.   
+                  ENDIF                   
+                  IF LL17=.T. .AND. LEN(ALLTRIM(JJ17))>0  	 	    
+                      SELECT S17
+                      FOR I= 1 TO ALEN(BK17)                      
+                             GO BK17(I) 
+                             REPLACE S17.F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S17.F05 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S17.F06 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S17
+		  USE
+		  ***			  	   
+		  IF !USED('S18')	&&請假作業
+		        SELECT  0
+		        USE S18
+		  ELSE 
+		        SELECT  S18
+		  ENDIF
+		  SET ORDER TO S181 	
+                  SELECT  RECNO() FROM S18 WHERE ALLTRIM(S18.F03)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S18.F03)  INTO ARRAY BK18
+                  JJ18=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK18)
+                              JJ18=JJ18+ALLTRIM(STR(BK18(I)))+','
+                      ENDFOR    
+                      KK18=STUFF(JJ18,RAT(',',JJ18,1),1,'')              
+                      RLOCK(KK18,'S18')
+                      LL18=RLOCK(KK18,'S18')
+                  ELSE
+                      LL18=.T.   
+                  ENDIF                   
+                  IF LL18=.T. .AND. LEN(ALLTRIM(JJ18))>0  	 	    
+                      SELECT S18
+                      FOR I= 1 TO ALEN(BK18)                      
+                             GO BK18(I) 
+                             REPLACE S18.F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S18.F05 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S18.F06 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S18
+		  USE
+		  ***			  	   
+		  IF !USED('S19')	&&加班申請(修改)作業
+		        SELECT  0
+		        USE S19
+		  ELSE 
+		        SELECT  S19
+		  ENDIF
+		  SET ORDER TO S191 	                  
+                  SELECT  RECNO() FROM S19 WHERE ALLTRIM(S19.F03)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(S19.F03) INTO ARRAY BK19
+                  JJ19=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK19)
+                              JJ19=JJ19+ALLTRIM(STR(BK19(I)))+','
+                      ENDFOR    
+                      KK19=STUFF(JJ19,RAT(',',JJ19,1),1,'')              
+                      RLOCK(KK19,'S19')
+                      LL19=RLOCK(KK19,'S19')
+                  ELSE
+                      LL19=.T.   
+                  ENDIF                   
+                  IF LL19=.T. .AND. LEN(ALLTRIM(JJ19))>0  	 	    
+                      SELECT S19
+                      FOR I= 1 TO ALEN(BK19)                      
+                             GO BK19(I) 
+                             REPLACE S19.F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE)
+                             REPLACE S19.F05 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+                             REPLACE S19.F06 WITH IIF(SEEK(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)+SPACE(1),'A14'),A14.F02,'')
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S19
+		  USE
+		  RELEASE ALL LIKE BK* 
+		ENDIF  
+		  ***            	     	     
+*!*			     SELECT  S50 
+*!*			     IF RLOCK()
+			 SELECT S50
+ 	                 REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+ 	                 REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF03.VALUE
+ 	                 REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE
+ 	                 REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+ 	                 REPLACE F06 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF06.VALUE
+ 	                 DO CASE
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=1
+ 	                        	    REPLACE F07 WITH 'A'
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=2
+ 	                        	    REPLACE F07 WITH 'B'
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=3
+ 	                        	    REPLACE F07 WITH 'C' 	   
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=4
+ 	                        	    REPLACE F07 WITH '2'
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=5
+ 	                        	    REPLACE F07 WITH '4'
+ 	                        CASE  THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VALUE=6
+ 	                        	    REPLACE F07 WITH '9'
+ 	                 ENDCASE 	                 
+ 	                 REPLACE F08 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE
+ 	                 REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE
+ 	                 REPLACE F10 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP10.VALUE)) 
+ 	                 REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF11.VALUE
+ 	                 REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF12.VALUE
+ 	                 REPLACE F13 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF13.VALUE
+ 	                 REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE
+ 	                 REPLACE F15 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP15.VALUE)) 
+ 	                 REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF16.VALUE
+ 	                 REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF17.VALUE
+ 	                 REPLACE F18 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP18.VALUE)) 
+ 	                 REPLACE F19 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP19.VALUE)) 
+ 	                 REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE
+ 	                 REPLACE F21 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF21.VALUE
+ 	                 REPLACE F22 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF22.VALUE
+ 	                 REPLACE F23 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF23.VALUE
+ 	                 REPLACE F24 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF24.VALUE
+ 	                 REPLACE F25 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF25.VALUE
+ 	                 REPLACE F26 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF26.VALUE
+ 	                 REPLACE F27 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF27.VALUE
+ 	                 REPLACE F28 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE
+ 	                 REPLACE F29 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE
+ 	                 REPLACE F30 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF30.VALUE
+ 	                 REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')	
+		     ELSE
+		         DO FILE_IMPACT
+		         RETURN   
+		     ENDIF   
+		     THISFORM.GRID1.SETFOCUS 
+         CASE  THISFORM.PAGEFRAME1.ACTIVEPAGE=2   	  	
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE)
+          		  =MESSAGEBOX('學校名稱不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+          		  RETURN        	  
+    	 	     ENDIF    
+    	 	     IF  THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE<>S51_A.F03
+		           IF  INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'A'+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,.F.,'S51','S511')=.T.
+          		        =MESSAGEBOX('此學校名稱已存在,請重新輸入!',0+64,'提示訊息視窗')
+          		        THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+          		        RETURN  
+          		   ENDIF          	  
+    	 	     ENDIF   
+*!*			     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE)
+*!*	          		  =MESSAGEBOX('科系名稱不得空白!',0+64,'提示訊息視窗')
+*!*	          		  THISFORM.PAGEFRAME1.PAGE2.TXTF04.SETFOCUS
+*!*	          		  RETURN        	  
+*!*	    	 	     ENDIF    	 	       	 	     
+		     SELECT  S51    
+		     SET ORDER TO S511
+		     SEEK  S50.F01+'A'+S51_A.F03
+		     IF FOUND()
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE
+		         REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE
+		         REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE
+		         REPLACE F06 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF06.VALUE
+		         REPLACE F07 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP07.VALUE)) 
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			     
+		     ENDIF
+		     SELECT S51_A
+		     IF RLOCK()	    	
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE
+		         REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE
+		         REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE
+		         REPLACE F06 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF06.VALUE
+		         REPLACE F07 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP07.VALUE)) 
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			    
+		     ELSE
+		         DO FILE_IMPACT
+		         RETURN   
+		     ENDIF 
+		    THISFORM.GRID2.SETFOCUS 
+         CASE  THISFORM.PAGEFRAME1.ACTIVEPAGE=3     
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE)
+          		  =MESSAGEBOX('專業項目不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE3.TXTF09.SETFOCUS
+          		  RETURN        	  
+    	 	     ENDIF        
+    	 	     IF  ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE))<>S51_B.F08 .OR. THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE<>S51_B.F09
+		          IF  INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'B'+ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE))+THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE,.F.,'S51','S512')=.T.
+          		       =MESSAGEBOX('此專業類別及專業項目已存在,請重新輸入!',0+64,'提示訊息視窗')
+          		       THISFORM.PAGEFRAME1.PAGE3.TXTF09.SETFOCUS
+          		       RETURN
+          		  ENDIF             	  
+    	 	     ENDIF       	 	      	 	    
+		     SELECT  S51  
+		     SET ORDER TO S512
+		     SEEK S50.F01+'B'+S51_B.F08+S51_B.F09     
+		     IF FOUND()
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F08 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE)) 
+		         REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE
+		         REPLACE F10 WITH IIF(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE=3,'',ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VALUE)))
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			     
+		     ENDIF
+		     SELECT S51_B
+		     IF RLOCK()	    
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F08 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE)) 
+		         REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE
+		         REPLACE F10 WITH IIF(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE=3,'',ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VALUE)))
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			    
+		     ELSE
+		         DO FILE_IMPACT
+		         RETURN   
+		     ENDIF	   
+		    THISFORM.GRID2.SETFOCUS 	
+         CASE  THISFORM.PAGEFRAME1.ACTIVEPAGE=4    
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE)
+          		  =MESSAGEBOX('任職機關不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE4.TXTF11.SETFOCUS
+          		  RETURN        	  
+    	 	     ENDIF       
+    	 	     IF  ALLTRIM(THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE)<>ALLTRIM(S51_C.F11)
+		           IF  INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'C'+THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE,.F.,'S51','S513')=.T.
+          		       =MESSAGEBOX('此任職機關已存在,請重新輸入!',0+64,'提示訊息視窗')
+          		       THISFORM.PAGEFRAME1.PAGE4.TXTF11.SETFOCUS
+          		       RETURN 
+          		   ENDIF            	  
+    	 	     ENDIF      	 	   
+		     SELECT  S51   
+		     SET ORDER TO S513
+		     SEEK S50.F01+'C'+S51_C.F11
+		     IF FOUND()   
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE
+		         REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF12.VALUE
+		         REPLACE F13 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF13.VALUE
+		         REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF14.VALUE
+		         REPLACE F15 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF15.VALUE
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			      
+		     ENDIF    	 	           
+		     SELECT S51_C
+		     IF RLOCK()	    
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE
+		         REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF12.VALUE
+		         REPLACE F13 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF13.VALUE
+		         REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF14.VALUE
+		         REPLACE F15 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF15.VALUE
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			         		    
+		     ELSE
+		         DO FILE_IMPACT
+		         RETURN   
+		     ENDIF		        
+		    THISFORM.GRID2.SETFOCUS 	
+         CASE  THISFORM.PAGEFRAME1.ACTIVEPAGE=5     
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE)
+          		  =MESSAGEBOX('稱謂不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE5.TXTF16.SETFOCUS
+          		  RETURN        	  
+    	 	     ENDIF         
+		     IF  EMPTY(THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE)
+          		  =MESSAGEBOX('姓名不得空白!',0+64,'提示訊息視窗')
+          		  THISFORM.PAGEFRAME1.PAGE5.TXTF17.SETFOCUS
+          		  RETURN        	  
+    	 	     ENDIF     	 
+    	 	     IF  THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE	<>S51_D.F16 .OR.   THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE	<>S51_D.F17  
+		           IF  INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'D'+THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE+THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE,.F.,'S51','S514')=.T.
+          		        =MESSAGEBOX('此稱謂及姓名已存在,請重新輸入!',0+64,'提示訊息視窗')
+          		        THISFORM.PAGEFRAME1.PAGE5.TXTF16.SETFOCUS
+          		        RETURN 
+          		   ENDIF            	  
+    	 	     ENDIF         	 	     	 	    
+		     SELECT  S51   
+		     SET ORDER TO S514
+		     SEEK S50.F01+'D'+S51_D.F16+S51_D.F17
+		     IF FOUND()
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE
+		         REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE
+		         REPLACE F18 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF18.VALUE
+		         REPLACE F19 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE5.OPTIONGROUP19.VALUE))
+		         REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF20.VALUE
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			     
+		     ENDIF
+		     SELECT S51_D
+		     IF RLOCK()	    
+		         REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+		         REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE
+		         REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE
+		         REPLACE F18 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF18.VALUE
+		         REPLACE F19 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE5.OPTIONGROUP19.VALUE))
+		         REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF20.VALUE
+		         REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			    
+		     ELSE
+		         DO FILE_IMPACT
+		         RETURN   
+		     ENDIF	   
+		    THISFORM.GRID2.SETFOCUS 	
+    	  CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=6
+		     SELECT  S50
+		     LOCK()
+		     IF RLOCK()
+		         REPLACE F31 WITH THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.VALUE	
+		     ELSE
+		         DO FILE_IMPACT
+		         RETURN   
+		     ENDIF
+		     THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.SETFOCUS 		    		    		    	      		          	    
+   ENDCASE		              
+   THISFORM.SHRGROUP.ABANDON_BOTT.CLICK    
+ENDPROC   
+*************
+PROC ORPGROUP.DEL_BOTT.CLICK                    &&刪除資料程序
+ IF  MESSAGEBOX('是否確定要刪除此筆資料',4+32+256,'請確認')=6 
+      DO CASE 
+            CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+          	       DELETE FROM S51_A WHERE S51_A.F01=S50.F01  
+          	       DELETE FROM S51_B WHERE S51_B.F01=S50.F01 
+          	       DELETE FROM S51_C WHERE S51_C.F01=S50.F01 
+           	       DELETE FROM S51_D WHERE S51_D.F01=S50.F01   
+    	   	       DELETE FROM S51 WHERE S51.F01=S50.F01    
+    	   	       DELETE FROM S52 WHERE S52.F01=S50.F01   
+	               SELECT S50
+	               LOCK()
+	               IF RLOCK()
+	                   DELETE 
+	                   UNLOCK
+	                   SKIP -1
+	                   IF BOF()
+	                       GO TOP
+	                   ENDIF  
+		       ELSE
+		           DO FILE_IMPACT
+		       ENDIF
+		       THISFORM.GRID1.SETFOCUS   
+	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2      
+		        SELECT S51
+		        SET ORDER TO S511
+		        SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'A'+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE
+		        IF FOUND()
+		            DELETE 
+		        ENDIF
+		        SELECT S51_A
+		        LOCK()
+		        IF  RLOCK()
+			     DELETE 
+			     UNLOCK
+			     SKIP -1
+			     IF BOF()
+			         GO TOP
+			     ENDIF  
+			ELSE
+			     DO FILE_IMPACT
+			ENDIF  
+		       THISFORM.GRID2.SETFOCUS 
+	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3      
+		        SELECT S51
+		        SET ORDER TO S512
+		        SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'B'+ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.VALUE))+THISFORM.PAGEFRAME1.PAGE3.TXTF09.VALUE
+		        IF FOUND()
+		            DELETE 
+		        ENDIF
+		        SELECT S51_B
+		        LOCK()
+		        IF  RLOCK()
+			     DELETE 
+			     UNLOCK
+			     SKIP -1
+			     IF BOF()
+			         GO TOP
+			     ENDIF  
+			ELSE
+			     DO FILE_IMPACT
+			ENDIF  
+		       THISFORM.GRID2.SETFOCUS 	
+	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4     
+		        SELECT S51
+		        SET ORDER TO S513
+		        SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'C'+THISFORM.PAGEFRAME1.PAGE4.TXTF11.VALUE
+		        IF FOUND()
+		            DELETE 
+		        ENDIF
+		        SELECT S51_C
+		        LOCK()
+		        IF  RLOCK()
+			     DELETE 
+			     UNLOCK
+			     SKIP -1
+			     IF BOF()
+			         GO TOP
+			     ENDIF  
+			ELSE
+			     DO FILE_IMPACT
+			ENDIF  
+		       THISFORM.GRID2.SETFOCUS 	
+	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5      
+		        SELECT S51
+		        SET ORDER TO S514
+		        SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'D'+THISFORM.PAGEFRAME1.PAGE5.TXTF16.VALUE+THISFORM.PAGEFRAME1.PAGE5.TXTF17.VALUE
+		        IF FOUND()
+		            DELETE 
+		        ENDIF
+		        SELECT S51_D
+		        LOCK()
+		        IF  RLOCK()
+			     DELETE 
+			     UNLOCK
+			     SKIP -1
+			     IF BOF()
+			         GO TOP
+			     ENDIF  
+			ELSE
+			     DO FILE_IMPACT
+			ENDIF  
+		       THISFORM.GRID2.SETFOCUS 	
+	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=6
+	    	        SELECT S50
+	    	        SET ORDER TO S501	       
+	    	        SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE	
+	    	        IF FOUND()	       	       	       	
+	    	            REPLACE F31 WITH ' '
+	    	        ENDIF
+	    	        THISFORM.SHRGROUP.ABANDON_BOTT.CLICK  
+	    	        THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.SETFOCUS		       	       	       	       	
+       ENDCASE
+  ENDIF
+*!*	  THISFORM.REFRESH	       
+ENDPROC  
+****************
+  PROCEDURE SHRGROUP.ABANDON_BOTT.CLICK
+      THISFORM.SHRGROUP.ENABLED=.F.
+      THISFORM.SHRGROUP.VISIBLE=.F.      
+      THISFORM.ORPGROUP.ENABLED=.T.
+      THISFORM.ORPGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.CMDGROUP.ENABLED=.T.
+      THISFORM.CMDGROUP.SETALL('ENABLED',.T.,'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.SETALL('READONLY',.T.,'TEXTBOX')  
+      THISFORM.SETALL('VISIBLE',.T.,'TEXTBOX')       		          		                            
+      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.T.
+      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.
+      THISFORM.PAGEFRAME1.PAGE3.ENABLED=.T.    
+      THISFORM.PAGEFRAME1.PAGE4.ENABLED=.T.  
+      THISFORM.PAGEFRAME1.PAGE5.ENABLED=.T.    
+      THISFORM.PAGEFRAME1.PAGE6.ENABLED=.T. 
+      THISFORM.GRID2.ENABLED=.T.
+      THISFORM.GRID3.ENABLED=.T.
+      THISFORM.GRID4.ENABLED=.T.
+      THISFORM.GRID5.ENABLED=.T.   
+      THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.	
+      THISFORM.PHOTO_BOTT.VISIBLE=.T.
+      THISFORM.PHOTO_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)   &&修改照片
+      THISFORM.CHANG_BOTT.VISIBLE=.T.
+      THISFORM.CHANG_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.)
+      THISFORM.TRA_BOTT.VISIBLE=.F.
+      THISFORM.TRA_BOTT.ENABLED=IIF(A02.F09='*',.T.,.F.)  .AND. IIF(INDEXSEEK(S50.F01,.T.,'S05','S051'),.F.,.T.)
+       DO CASE 
+       	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=1  
+       	      		THISFORM.PAGEFRAME1.PAGE1.ACTIVATE  
+       	                THISFORM.GRID1.ENABLED=.T.
+			THISFORM.PAGEFRAME1.PAGE1.TXTF05.VISIBLE=.T.
+			THISFORM.PAGEFRAME1.PAGE1.TXTF06.VISIBLE=.T.
+			THISFORM.PAGEFRAME1.PAGE1.TXTF07.VISIBLE=.T.
+		        THISFORM.PAGEFRAME1.PAGE1.TXTF07.READONLY=.T.
+		        THISFORM.PAGEFRAME1.PAGE1.TXTF08.READONLY=.T.
+		        THISFORM.PAGEFRAME1.PAGE1.TXTF14.READONLY=.T.
+			THISFORM.PAGEFRAME1.PAGE1.TXTF21.READONLY=.T.
+			THISFORM.PAGEFRAME1.PAGE1.TXTF22.READONLY=.T. 		        
+		        THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP10.ENABLED=.F. 
+		        THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP15.ENABLED=.F.     
+		        THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP18.ENABLED=.F.
+		        THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP19.ENABLED=.F.
+		        THISFORM.PAGEFRAME1.PAGE1.COMBOBOX05.VISIBLE=.F.
+		        THISFORM.PAGEFRAME1.PAGE1.COMBOBOX06.VISIBLE=.F.
+		        THISFORM.PAGEFRAME1.PAGE1.COMBOBOX07.VISIBLE=.F.	        
+		        THISFORM.PAGEFRAME1.PAGE1.LBLF991.CAPTION=S50.F99
+		        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.	
+		        THISFORM.GRID1.SETFOCUS    
+      			THISFORM.KEY_LIST.ENABLED=.T.  	
+      			 IF THISFORM.GRID1.ACTIVEROW=0
+      			      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+	                      THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+	                      THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+	                      THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.
+	                ENDIF      	        
+       	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2
+       	                THISFORM.PAGEFRAME1.PAGE2.ACTIVATE  
+       	                THISFORM.GRID2.SETFOCUS 
+       	     	        THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP07.ENABLED=.F.	 
+		   	THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION=S51_A.F99 
+       	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3
+       	                THISFORM.PAGEFRAME1.PAGE3.ACTIVATE 
+       	                THISFORM.GRID3.SETFOCUS  
+       	                THISFORM.PAGEFRAME1.PAGE3.LBLF10.VISIBLE=IIF(S51_B.F08='3',.F.,.T.)
+           		THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VISIBLE=IIF(S51_B.F08='3',.F.,.T.)     
+       	     	        THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP08.ENABLED=.F.	
+       	     	        THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.ENABLED=.F. 
+		   	THISFORM.PAGEFRAME1.PAGE3.LBLF991.CAPTION=S51_B.F99 
+       	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4
+		   	THISFORM.PAGEFRAME1.PAGE4.ACTIVATE 
+		   	THISFORM.GRID4.SETFOCUS  
+		   	THISFORM.PAGEFRAME1.PAGE4.LBLF991.CAPTION=S51_C.F99 
+       	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5
+       	     	        THISFORM.PAGEFRAME1.PAGE5.ACTIVATE  
+       	     	        THISFORM.GRID5.SETFOCUS 
+       	     	        THISFORM.PAGEFRAME1.PAGE5.OPTIONGROUP19.ENABLED=.F.	 
+		   	THISFORM.PAGEFRAME1.PAGE5.LBLF991.CAPTION=S51_D.F99 	
+	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=6		   	
+	                THISFORM.PAGEFRAME1.PAGE6.ACTIVATE  
+		   	THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.READONLY=.T.	 
+		   	THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.VALUE=S50.F31 
+		   	THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.SETFOCUS   
+		   	THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	      		THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	                THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	                THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.		 
+                        THISFORM.CHANG_BOTT.VISIBLE=.F.
+                        THISFORM.PHOTO_BOTT.VISIBLE=.F.	                  	
+		   	IF  EMPTY(THISFORM.PAGEFRAME1.PAGE6.EDITBOX31.VALUE)
+		   	     THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)	
+		   	     THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.    
+		   	     THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+		   	ELSE
+		   	     THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.
+		   	     THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)   
+		   	     THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   &&判斷有無刪除的權限
+		   	ENDIF 	   						        
+      ENDCASE	    
+      IF  THISFORM.PAGEFRAME1.ACTIVEPAGE<>1  .AND. THISFORM.PAGEFRAME1.ACTIVEPAGE<>6
+            THISFORM.CHANG_BOTT.VISIBLE=.F.
+            THISFORM.PHOTO_BOTT.VISIBLE=.F.
+      ENDIF
+*!*	      THISFORM.REFRESH   
+      UNLOCK ALL          
+  ENDPROC  
+**********  
+  PROCEDURE SHRGROUP.FINISH_BOTT.CLICK
+    SELECT S50
+        DO CASE 
+            CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工編號排列'
+                 SET ORDER TO S501
+            CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工姓名排列'
+                 SET ORDER TO S502
+         ENDCASE   
+       THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+  ENDPROC
+   ************************照片新增或修改**********  
+  PROC PHOTO_BOTT.CLICK  
+       THISFORM.IMAGE1.PICTURE=''
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+       THISFORM.GRID1.ENABLED=.F.
+       THISFORM.KEY_LIST.ENABLED=.F.          
+       THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.
+       THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+       THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+       THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+       THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+       THISFORM.CHANG_BOTT.ENABLED=.F.
+       THISFORM.PHOTO_BOTT.ENABLED=.F.
+*!*	       IF FILE('CONFIG.FPW')= .T.
+            IMAGE_DIR=GETPICT("","開啟來源檔案","開啟")
+*!*	            CREATE CURSOR IMAGE_TEMP (F01 C(50))
+*!*	            APPEND FROM  CONFIG.FPW TYPE DELIMITED
+*!*	            GO 2
+*!*	            IMAGE_HOME1 = RIGHT(ALLTRIM(IMAGE_TEMP.F01),LEN(ALLTRIM(IMAGE_TEMP.F01))-AT('=',ALLTRIM(IMAGE_TEMP.F01)))
+*!*	            IMAGE_HOME2 = IIF(RIGHT(ALLTRIM(IMAGE_HOME1),1)='\',ALLTRIM(IMAGE_HOME1),ALLTRIM(IMAGE_HOME1)+'\')
+*!*	            IMAGE_HOME = ALLTRIM(IMAGE_HOME2) + 'PHOTO\' +RIGHT(ALLTRIM(IMAGE_DIR),LEN(ALLTRIM(IMAGE_DIR))-RAT('\',ALLTRIM(IMAGE_DIR),1))
+            IF EMPTY(IMAGE_DIR)<>.T.
+       	        SELECT S50
+       	        REPLACE  S50.F98 WITH  ALLTRIM(IMAGE_DIR)
+*!*	       	        IF DIRECTORY(ALLTRIM(IMAGE_HOME2) + 'PHOTO') = .F.
+*!*	                    MKDIR ALLTRIM(IMAGE_HOME2) + 'PHOTO'
+*!*	                ENDIF
+*!*	                COPY FILE ALLTRIM(IMAGE_DIR) TO ALLTRIM(IMAGE_HOME2) + 'PHOTO'
+       	        =MESSAGEBOX('照片修新增 / 修改 成功!',0+64,'提示訊息視窗')
+           ENDIF    
+*!*	        ELSE
+*!*	            =MESSAGEBOX('系統檔案CONFIG.FPW遺失,請洽系統管理人員!',0+16,'提示訊息視窗')
+*!*	        ENDIF   
+       THISFORM.SHRGROUP.ABANDON_BOTT.CLICK  
+    ENDPROC
+************     人員異動
+  PROC CHANG_BOTT.CLICK     
+      	SELECT  S50
+      	LOCK()
+      	PO=S50.F01
+   	CHANG_CHK=CREATEOBJECT("CHANG_CHK")  
+   	CHANG_CHK.SHOW
+   	THISFORM.GRID1.SETFOCUS 
+  ENDPROC    
+  ****** 資料轉入S05
+  PROC TRA_BOTT.CLICK   
+     IF  MESSAGEBOX('是否確定要將此人員資料轉入S05.人事薪資基本檔中',4+32+256,'請確認')=6 
+          SELECT S50
+          LOCK()
+          IF RLOCK()
+	      SELECT S05
+	      SET ORDER TO S051
+	      SEEK S50.F01
+	      IF FOUND()   
+	          =MESSAGEBOX('此人員已存在S05.人事薪資基本檔中,請查明!',0+64,'提示訊息視窗')
+	          RETURN
+	      ELSE
+	    	  SELECT A01
+	    	  LOCATE FOR ALLTRIM(A01.F03)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE) 
+	    	  IF FOUND()
+	    	      REPLACE A01.F12 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+	    	  ENDIF	      
+		  IF !USED('S00')	&&薪資參數設定
+		      SELE 0
+		      USE S00 
+		  ELSE
+		      SELE S00
+		  ENDIF
+		 SET ORDER TO S005	      
+	          SELECT S05
+	          APPEND BLANK 
+	          REPLACE S05.F01 WITH S50.F01
+	          REPLACE S05.F02 WITH S50.F02
+	          REPLACE S05.F03 WITH IIF(S50.F15='1','M','F')
+	          REPLACE S05.F04 WITH S50.F13
+	          REPLACE S05.F05 WITH S50.F05
+	          REPLACE S05.F06 WITH IIF(SEEK(S50.F05,'A14'),A14.F02,'')
+	          REPLACE S05.F07 WITH S50.F06
+	          REPLACE S05.F09 WITH S50.F04
+	          REPLACE S05.F13 WITH S50.F24
+	          REPLACE S05.F14 WITH S50.F23
+	          REPLACE S05.F15 WITH 'M'
+	          REPLACE S05.F20 WITH S50.F04
+	          REPLACE S05.F27 WITH .T.
+	          REPLACE S05.F28 WITH S50.F07
+	          REPLACE S05.F29 WITH IIF(INDEXSEEK('I',.T.,'S00','S005'),S00.F48,'')
+	          REPLACE S05.F30 WITH '1'
+	          REPLACE S05.F33 WITH S05.F26
+	          REPLACE S05.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')	
+	          SELECT S00
+	          USE
+	      ENDIF   
+	      =MESSAGEBOX('此人員已成功轉入S05.人事薪資基本檔中!,請至該作業中執行年假重算',0+64,'提示訊息視窗')
+	  ENDIF
+     ENDIF
+     UNLOCK ALL	
+     SELECT S50
+
+     THISFORM.GRID1.SETFOCUS 
+  ENDPROC       
+ENDDEFINE
+********************************************************
+DEFINE CLASS CHANG_CHK AS FORM
+  AUTOCENTER=.T.
+  CAPTION='請輸入異動內容   員工姓名 '+S50.F02
+  HEIGHT=INT_015*135
+  WIDTH=INT_015*230
+  MOVABLE=.F.
+  MAXBUTTON=.F.
+  MINBUTTON=.F.   
+  FONTSIZE=INT_015*9
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='CHANG_CHK'
+  ADD OBJECT LABELA AS LABEL WITH;
+      VISIBLE=.T.,;
+      LEFT=INT_015*20,;
+      TOP=INT_015*10,;
+      AUTOSIZE=.T.,;
+      BACKCOLOR=RGB(255,255,0),;
+      CAPTION='異動之人員可以更改新的員工編號'      
+  ADD OBJECT LABEL1 AS LABEL WITH;
+      VISIBLE=.T.,;
+      LEFT=INT_015*14,;
+      TOP=INT_015*41,;
+      WIDTH=INT_015*50,;
+      CAPTION='員工編號'          
+  ADD OBJECT TXTF1 AS TEXTBOX WITH;           
+       VISIBLE=.T.,;
+       LEFT=INT_015*64,;
+       TOP=INT_015*34,;
+       WIDTH=INT_015*75,;
+       HEIGHT=INT_015*25,;
+       MAXLENGTH=4
+  ADD OBJECT LABEL8 AS LABEL WITH;
+      VISIBLE=.T.,;
+      LEFT=INT_015*14,;
+      TOP=INT_015*70,;
+      WIDTH=INT_015*50,;
+      CAPTION='異動日期'          
+  ADD OBJECT TXTF8 AS TEXTBOX WITH;           
+       VISIBLE=.T.,;
+       LEFT=INT_015*64,;
+       TOP=INT_015*64,;
+       WIDTH=INT_015*75,;
+       HEIGHT=INT_015*25          
+  ADD OBJECT LABEL7 AS LABEL WITH;
+      VISIBLE=.T.,;
+      LEFT=INT_015*14,;
+      TOP=INT_015*99,;
+      WIDTH=INT_015*50,;
+      CAPTION='異動項目'                
+  ADD OBJECT COMBOBOX7 AS COMBOBOX WITH;
+       VISIBLE=.T.,;
+       LEFT=INT_015*64,;
+       TOP=INT_015*93,;       
+       HEIGHT=INT_015*25,;
+       WIDTH=INT_015*75,;
+       FONTSIZE=INT_015*9,;   
+       BOUNDCOLUMN=1,;
+       ROWSOURCETYPE=1,;
+       STYLE=2,;    
+       VALUE=1,;
+       ROWSOURCE='離        職,留職停薪,職務調整,升        遷,退        休,資        遣',;
+       NAME='COMBOBOX7'
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*165,;     
+      TOP=INT_015*50,;  
+      HEIGHT=INT_015*25,;    
+      WIDTH=INT_015*50,;
+      CAPTION='\<Y.確定',;
+      TOOLTIPTEXT='確認所選擇的鍵值!快速鍵->ALT+Y',;
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*165,;
+      TOP=INT_015*96,;
+      HEIGHT=INT_015*25,;    
+      WIDTH=INT_015*50,;
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消作業!快速鍵->ALT+C',;
+      NAME='CMND2'     
+  *****    
+ PROC INIT   
+       THISFORM.SETALL('HEIGHT',INT_015*25,'TEXTBOX')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'TEXTBOX')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')     
+       THISFORM.TXTF1.VALUE=PO
+       THISFORM.TXTF8.VALUE=DATE()
+       THISFORM.COMBOBOX7.VALUE=1
+       THISFORM.TXTF8.SETFOCUS 
+ ENDPROC
+ *******   
+ PROCEDURE CMND1.CLICK   
+     IF  MESSAGEBOX('是否確定要異動此人員資料',4+32+256,'請確認')=6 
+ 	  IF  EMPTY(THISFORM.TXTF1.VALUE)
+  		=MESSAGEBOX('員工編號不得空白!',0+64,'提示訊息視窗')
+  		THISFORM.TXTF1.SETFOCUS   
+  		RETURN	  
+    	  ENDIF    
+ 	  IF  LEN(ALLTRIM(THISFORM.TXTF1.VALUE))<4
+  		=MESSAGEBOX('員工編號不得少於四碼!',0+64,'提示訊息視窗')
+  		THISFORM.TXTF1.SETFOCUS   
+  		RETURN	  
+    	  ENDIF       
+    	  IF THISFORM.COMBOBOX7.VALUE <>  3 AND THISFORM.COMBOBOX7.VALUE <> 4  
+    	       IF ALLTRIM(PO)=ALLTRIM(THISFORM.TXTF1.VALUE) 
+  		   =MESSAGEBOX('員工編號不得與原先編號相同!',0+64,'提示訊息視窗')
+  		   THISFORM.TXTF1.SETFOCUS   
+  		   RETURN	
+  	       ENDIF         	      
+    	  ENDIF
+    	  IF ALLTRIM(PO)<>ALLTRIM(THISFORM.TXTF1.VALUE)
+	      IF IIF(INDEXSEEK(THISFORM.TXTF1.VALUE,.F.,'S50B_SEEK','S50B_SEEK1'),.T.,.F.) OR  IIF(INDEXSEEK(THISFORM.TXTF1.VALUE,.F.,'S50','S501'),.T.,.F.)
+	  	  =MESSAGEBOX('此員工編號已存在,請重新輸入!',0+64,'提示訊息視窗')
+	  	  THISFORM.TXTF1.SETFOCUS   
+	  	  RETURN	    	   
+	      ENDIF   	      
+  	  ENDIF  
+ 	  IF EMPTY(THISFORM.TXTF8.VALUE)
+  		 =MESSAGEBOX('異動日期不得空白!',0+64,'提示訊息視窗')
+  		 THISFORM.TXTF8.SETFOCUS   
+  		 RETURN	 
+  	  ELSE
+  	  	 S16='S16'+LEFT(DTOS(THISFORM.TXTF8.VALUE),6)
+		 S161='S161'+LEFT(DTOS(THISFORM.TXTF8.VALUE),6)
+		 IF !USED('&S16')	&&上下班紀錄檔
+		   SELE 0
+		   USE (S16) ALIA S16
+		ELSE
+		   SELE S16
+		ENDIF
+		SET ORDER TO S161 
+		SEEK PO
+		IF FOUND() 
+		    =MESSAGEBOX(LEFT(DTOC(THISFORM.TXTF8.VALUE),5)+'之S16.上下班紀錄作業已存在該員工資料,不得異動!',0+64,'提示訊息視窗')
+		    SELECT S16
+		    USE
+  		    THISFORM.TXTF8.SETFOCUS   
+  		    RETURN	 
+		ENDIF
+*		USE S16
+      ENDIF    
+           	  
+          SELECT S50
+          IF RLOCK()      
+               S50_F07 = S50.F07
+               REPLACE F01 WITH  THISFORM.TXTF1.VALUE
+               REPLACE F08 WITH  THISFORM.TXTF8.VALUE
+               REPLACE F99 WITH  DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')	
+               DO CASE
+                     CASE THISFORM.COMBOBOX7.VALUE=1
+                                REPLACE F07 WITH '1'                          
+                     CASE THISFORM.COMBOBOX7.VALUE=2
+                                REPLACE F07 WITH '3'
+                     CASE THISFORM.COMBOBOX7.VALUE=3
+                                REPLACE F07 WITH '5'                 
+                     CASE THISFORM.COMBOBOX7.VALUE=4
+                                REPLACE F07 WITH '6'      
+                     CASE THISFORM.COMBOBOX7.VALUE=5
+                                REPLACE F07 WITH '7'   
+                     CASE THISFORM.COMBOBOX7.VALUE=6
+                                REPLACE F07 WITH '8'  
+               ENDCASE  
+               IF THISFORM.COMBOBOX7.VALUE <>  3 AND THISFORM.COMBOBOX7.VALUE <> 4  
+                    SELECT S50B_SEEK
+                    APPEND BLANK 
+                    REPLACE S50B_SEEK.F01 WITH  ALLTRIM(THISFORM.TXTF1.VALUE)
+                    SELECT S50A_SEEK
+                    SEEK PO
+                    IF FOUND()
+                         DELETE 
+                    ENDIF              
+               ENDIF     
+               ****員工編號有變更與任職狀況有變更時
+               IF ALLTRIM(PO)<>ALLTRIM(THISFORM.TXTF1.VALUE)  OR  S50_F07 <> S50.F07        
+		  ****人事薪資基本檔	  	   	   
+                  SELECT  RECNO() FROM S05 WHERE ALLTRIM(S05.F01)=ALLTRIM(PO) AND !EMPTY(S05.F01) INTO ARRAY BK5              
+                  JJ5=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK5)
+                              JJ5=JJ5+ALLTRIM(STR(BK5(I)))+','
+                      ENDFOR    
+                      KK5=STUFF(JJ5,RAT(',',JJ5,1),1,'')              
+                      RLOCK(KK5,'S05')
+                      LL5=RLOCK(KK5,'S05')
+                  ELSE
+                      LL5=.T.   
+                  ENDIF                   
+                  IF LL5=.T. .AND. LEN(ALLTRIM(JJ5))>0  	 	    
+                      SELECT S05
+                      FOR I= 1 TO ALEN(BK5)                      
+                             GO BK5(I) 
+                             REPLACE S05.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                             REPLACE S05.F10 WITH S50.F08
+                             REPLACE S05.F28 WITH S50.F07
+                      ENDFOR       
+                  ENDIF   
+               ENDIF  
+               ****                
+               ****員工編號有變更時
+               IF ALLTRIM(PO)<>ALLTRIM(THISFORM.TXTF1.VALUE)
+                   SELECT  RECNO() FROM S51 WHERE ALLTRIM(S51.F01)=ALLTRIM(PO) AND !EMPTY(S51.F01) INTO ARRAY BK1              
+                   JJ1=''               
+                   IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK1)
+                             JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+                      ENDFOR    
+                      KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')              
+                      RLOCK(KK1,'S51')
+                      LL1=RLOCK(KK1,'S51')
+                  ELSE
+                      LL1=.T.   
+                  ENDIF                   
+                  IF LL1=.T. .AND. LEN(ALLTRIM(JJ1))>0  	 	    
+                      SELECT S51
+                      FOR I= 1 TO ALEN(BK1)                      
+                             GO BK1(I) 
+                             REPLACE S51.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF 
+                  ****
+                  SELECT  RECNO() FROM S52 WHERE ALLTRIM(S52.F01)=ALLTRIM(PO) AND !EMPTY(S52.F01) INTO ARRAY BK2              
+                  JJ2=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK2)
+                              JJ2=JJ2+ALLTRIM(STR(BK2(I)))+','
+                      ENDFOR    
+                      KK2=STUFF(JJ2,RAT(',',JJ2,1),1,'')              
+                      RLOCK(KK2,'S52')
+                      LL2=RLOCK(KK2,'S52')
+                  ELSE
+                      LL2=.T.   
+                  ENDIF                   
+                  IF LL2=.T. .AND. LEN(ALLTRIM(JJ2))>0  	 	    
+                      SELECT S52
+                      FOR I= 1 TO ALEN(BK2)                      
+                             GO BK2(I) 
+                             REPLACE S52.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   
+                  ***
+		  IF !USED('S0A')	&&年度缺勤紀錄檔
+		        SELECT  0
+		        USE S0A
+		  ELSE 
+		        SELECT  S0A
+		  ENDIF
+		  SET ORDER TO S0A1 	
+                  SELECT  RECNO() FROM S0A WHERE ALLTRIM(S0A.F01)=ALLTRIM(PO) AND !EMPTY(S0A.F01) INTO ARRAY BKA              
+                  JJA=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BKA)
+                              JJA=JJA+ALLTRIM(STR(BKA(I)))+','
+                      ENDFOR    
+                      KKA=STUFF(JJA,RAT(',',JJA,1),1,'')              
+                      RLOCK(KKA,'S0A')
+                      LLA=RLOCK(KKA,'S0A')
+                  ELSE
+                      LLA=.T.   
+                  ENDIF                   
+                  IF LLA=.T. .AND. LEN(ALLTRIM(JJA))>0  	 	    
+                      SELECT S0A
+                      FOR I= 1 TO ALEN(BKA)                      
+                             GO BKA(I) 
+                             REPLACE S0A.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S0A
+		  USE
+		  ****
+		  IF !USED('S0B')	&&年假記錄檔
+		        SELECT  0
+		        USE S0B
+		  ELSE 
+		        SELECT  S0B
+		  ENDIF
+		  SET ORDER TO S0B1 	
+                  SELECT  RECNO() FROM S0B WHERE ALLTRIM(S0B.F01)=ALLTRIM(PO) AND !EMPTY(S0B.F01) INTO ARRAY BKB              
+                  JJB=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BKB)
+                              JJB=JJB+ALLTRIM(STR(BKB(I)))+','
+                      ENDFOR    
+                      KKB=STUFF(JJB,RAT(',',JJB,1),1,'')              
+                      RLOCK(KKB,'S0B')
+                      LLB=RLOCK(KKB,'S0B')
+                  ELSE
+                      LLB=.T.   
+                  ENDIF                   
+                  IF LLB=.T. .AND. LEN(ALLTRIM(JJB))>0  	 	    
+                      SELECT S0B
+                      FOR I= 1 TO ALEN(BKB)                      
+                             GO BKB(I) 
+                             REPLACE S0B.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S0B
+		  USE		  
+		  ****		  
+		  IF !USED('S06')	&&薪資項目及扣款項目
+		        SELECT  0
+		        USE S06
+		  ELSE 
+		        SELECT  S06
+		  ENDIF
+		  SET ORDER TO S061
+                  SELECT  RECNO() FROM S06 WHERE ALLTRIM(S06.F01)=ALLTRIM(PO) AND !EMPTY(S06.F01) INTO ARRAY BK6              
+                  JJ6=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK6)
+                              JJ6=JJ6+ALLTRIM(STR(BK6(I)))+','
+                      ENDFOR    
+                      KK6=STUFF(JJ6,RAT(',',JJ6,1),1,'')              
+                      RLOCK(KK6,'S06')
+                      LL6=RLOCK(KK6,'S06')
+                  ELSE
+                      LL6=.T.   
+                  ENDIF                   
+                  IF LL6=.T. .AND. LEN(ALLTRIM(JJ6))>0  	 	    
+                      SELECT S06
+                      FOR I= 1 TO ALEN(BK6)                      
+                             GO BK6(I) 
+                             REPLACE S06.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S06
+		  USE
+		  ****			                        
+		  IF !USED('S07')	&&調薪修改作業
+		        SELECT  0
+		        USE S07
+		  ELSE 
+		        SELECT  S07
+		  ENDIF
+		  SET ORDER TO S071  
+                  SELECT  RECNO() FROM S07 WHERE ALLTRIM(S07.F01)=ALLTRIM(PO) AND !EMPTY(S07.F01) INTO ARRAY BK7              
+                  JJ7=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK7)
+                              JJ7=JJ7+ALLTRIM(STR(BK7(I)))+','
+                      ENDFOR    
+                      KK7=STUFF(JJ7,RAT(',',JJ7,1),1,'')              
+                      RLOCK(KK7,'S07')
+                      LL7=RLOCK(KK7,'S07')
+                  ELSE
+                      LL7=.T.   
+                  ENDIF                   
+                  IF LL7=.T. .AND. LEN(ALLTRIM(JJ7))>0  	 	    
+                      SELECT S07
+                      FOR I= 1 TO ALEN(BK7)                      
+                             GO BK7(I) 
+                             REPLACE S07.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S07
+		  USE
+		  ***		  
+		  IF !USED('S08')	&&懲處作業
+		        SELECT  0
+		        USE S08
+		  ELSE 
+		        SELECT  S08
+		  ENDIF
+		  SET ORDER TO S081  
+                  SELECT  RECNO() FROM S08 WHERE ALLTRIM(S08.F01)=ALLTRIM(PO) AND !EMPTY(S08.F01) INTO ARRAY BK8              
+                  JJ8=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK8)
+                              JJ8=JJ8+ALLTRIM(STR(BK8(I)))+','
+                      ENDFOR    
+                      KK8=STUFF(JJ8,RAT(',',JJ8,1),1,'')              
+                      RLOCK(KK8,'S08')
+                      LL8=RLOCK(KK8,'S08')
+                  ELSE
+                      LL8=.T.   
+                  ENDIF                   
+                  IF LL8=.T. .AND. LEN(ALLTRIM(JJ8))>0  	 	    
+                      SELECT S08
+                      FOR I= 1 TO ALEN(BK8)                      
+                             GO BK8(I) 
+                             REPLACE S08.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S08
+		  USE
+		  ***			  
+		  IF !USED('S09')	&&其他所得發放作業
+		        SELECT  0
+		        USE S09
+		  ELSE 
+		        SELECT  S09
+		  ENDIF
+		  SET ORDER TO S091  	
+                  SELECT  RECNO() FROM S09 WHERE ALLTRIM(S09.F01)=ALLTRIM(PO) AND !EMPTY(S09.F01) INTO ARRAY BK9              
+                  JJ9=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK9)
+                              JJ9=JJ9+ALLTRIM(STR(BK9(I)))+','
+                      ENDFOR    
+                      KK9=STUFF(JJ9,RAT(',',JJ9,1),1,'')              
+                      RLOCK(KK9,'S09')
+                      LL9=RLOCK(KK9,'S09')
+                  ELSE
+                      LL9=.T.   
+                  ENDIF                   
+                  IF LL9=.T. .AND. LEN(ALLTRIM(JJ9))>0  	 	    
+                      SELECT S09
+                      FOR I= 1 TO ALEN(BK9)                      
+                             GO BK9(I) 
+                             REPLACE S09.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S09
+		  USE
+		  ****		   		                   
+		  IF !USED('S11')	&&薪資月報表
+		        SELECT  0
+		        USE S11
+		  ELSE 
+		        SELECT  S11
+		  ENDIF
+		  SET ORDER TO S111                  
+                  SELECT  RECNO() FROM S11 WHERE ALLTRIM(S11.F02)=ALLTRIM(PO) AND !EMPTY(S11.F02) INTO ARRAY BK11              
+                  JJ11=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK11)
+                              JJ11=JJ11+ALLTRIM(STR(BK11(I)))+','
+                      ENDFOR    
+                      KK11=STUFF(JJ11,RAT(',',JJ11,1),1,'')              
+                      RLOCK(KK11,'S11')
+                      LL11=RLOCK(KK11,'S11')
+                  ELSE
+                      LL11=.T.   
+                  ENDIF                   
+                  IF LL11=.T. .AND. LEN(ALLTRIM(JJ11))>0  	 	    
+                      SELECT S11
+                      FOR I= 1 TO ALEN(BK11)                      
+                             GO BK11(I) 
+                             REPLACE S11.F02 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S11
+		  USE
+		  ***		     
+		  IF !USED('S12')	&&特殊其他所得發放作業 
+		        SELECT  0
+		        USE S12
+		  ELSE 
+		        SELECT  S12
+		  ENDIF
+		  SET ORDER TO S121 
+                  SELECT  RECNO() FROM S12 WHERE ALLTRIM(S12.F01)=ALLTRIM(PO) AND !EMPTY(S12.F01) INTO ARRAY BK12              
+                  JJ12=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK12)
+                              JJ12=JJ12+ALLTRIM(STR(BK12(I)))+','
+                      ENDFOR    
+                      KK12=STUFF(JJ12,RAT(',',JJ12,1),1,'')              
+                      RLOCK(KK12,'S12')
+                      LL12=RLOCK(KK12,'S12')
+                  ELSE
+                      LL12=.T.   
+                  ENDIF                   
+                  IF LL12=.T. .AND. LEN(ALLTRIM(JJ12))>0  	 	    
+                      SELECT S12
+                      FOR I= 1 TO ALEN(BK12)                      
+                             GO BK12(I) 
+                             REPLACE S12.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S12
+		  USE
+		  ***			  
+		  IF !USED('S13')	&&各項部門作業人員記錄檔
+		        SELECT  0
+		        USE S13
+		  ELSE 
+		        SELECT  S13
+		  ENDIF
+		  SET ORDER TO S131 	
+                  SELECT  RECNO() FROM S13 WHERE ALLTRIM(S13.F04)=ALLTRIM(PO) AND !EMPTY(S13.F04) INTO ARRAY BK13
+                  JJ13=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK13)
+                              JJ13=JJ13+ALLTRIM(STR(BK13(I)))+','
+                      ENDFOR    
+                      KK13=STUFF(JJ13,RAT(',',JJ13,1),1,'')              
+                      RLOCK(KK13,'S13')
+                      LL13=RLOCK(KK13,'S13')
+                  ELSE
+                      LL13=.T.   
+                  ENDIF                   
+                  IF LL13=.T. .AND. LEN(ALLTRIM(JJ13))>0  	 	    
+                      SELECT S13
+                      FOR I= 1 TO ALEN(BK13)                      
+                             GO BK13(I) 
+                             REPLACE S13.F04 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S13
+		  USE
+		  ***			  	                      
+		  IF !USED('S14')	&&年度出勤紀錄檔
+		        SELECT  0
+		        USE S14
+		  ELSE 
+		        SELECT  S14
+		  ENDIF
+		  SET ORDER TO S141 	
+                  SELECT  RECNO() FROM S14 WHERE ALLTRIM(S14.F01)=ALLTRIM(PO) AND !EMPTY(S14.F01)  INTO ARRAY BK14
+                  JJ14=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK14)
+                              JJ14=JJ14+ALLTRIM(STR(BK14(I)))+','
+                      ENDFOR    
+                      KK14=STUFF(JJ14,RAT(',',JJ14,1),1,'')              
+                      RLOCK(KK14,'S14')
+                      LL14=RLOCK(KK14,'S14')
+                  ELSE
+                      LL14=.T.   
+                  ENDIF                   
+                  IF LL14=.T. .AND. LEN(ALLTRIM(JJ14))>0  	 	    
+                      SELECT S14
+                      FOR I= 1 TO ALEN(BK14)                      
+                             GO BK14(I) 
+                             REPLACE S14.F01 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S14
+		  USE
+		  ***		  
+		  IF !USED('S17')	&&上下班變更作業
+		        SELECT  0
+		        USE S17
+		  ELSE 
+		        SELECT  S17
+		  ENDIF
+		  SET ORDER TO S171 		
+                  SELECT  RECNO() FROM S17 WHERE ALLTRIM(S17.F03)=ALLTRIM(PO) AND !EMPTY(S17.F03)  INTO ARRAY BK17
+                  JJ17=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK17)
+                              JJ17=JJ17+ALLTRIM(STR(BK17(I)))+','
+                      ENDFOR    
+                      KK17=STUFF(JJ17,RAT(',',JJ17,1),1,'')              
+                      RLOCK(KK17,'S17')
+                      LL17=RLOCK(KK17,'S17')
+                  ELSE
+                      LL17=.T.   
+                  ENDIF                   
+                  IF LL17=.T. .AND. LEN(ALLTRIM(JJ17))>0  	 	    
+                      SELECT S17
+                      FOR I= 1 TO ALEN(BK17)                      
+                             GO BK17(I) 
+                             REPLACE S17.F03 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S17
+		  USE
+		  ***			  	   
+		  IF !USED('S18')	&&請假作業
+		        SELECT  0
+		        USE S18
+		  ELSE 
+		        SELECT  S18
+		  ENDIF
+		  SET ORDER TO S181 	
+                  SELECT  RECNO() FROM S18 WHERE ALLTRIM(S18.F03)=ALLTRIM(PO) AND !EMPTY(S18.F03)  INTO ARRAY BK18
+                  JJ18=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK18)
+                              JJ18=JJ18+ALLTRIM(STR(BK18(I)))+','
+                      ENDFOR    
+                      KK18=STUFF(JJ18,RAT(',',JJ18,1),1,'')              
+                      RLOCK(KK18,'S18')
+                      LL18=RLOCK(KK18,'S18')
+                  ELSE
+                      LL18=.T.   
+                  ENDIF                   
+                  IF LL18=.T. .AND. LEN(ALLTRIM(JJ18))>0  	 	    
+                      SELECT S18
+                      FOR I= 1 TO ALEN(BK18)                      
+                             GO BK18(I) 
+                             REPLACE S18.F03 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S18
+		  USE
+		  ***			  	   
+		  IF !USED('S19')	&&加班申請(修改)作業
+		        SELECT  0
+		        USE S19
+		  ELSE 
+		        SELECT  S19
+		  ENDIF
+		  SET ORDER TO S191 	                  
+                  SELECT  RECNO() FROM S19 WHERE ALLTRIM(S19.F03)=ALLTRIM(PO) AND !EMPTY(S19.F03) INTO ARRAY BK19
+                  JJ19=''               
+                  IF _TALLY>0   
+                      FOR I= 1 TO ALEN(BK19)
+                              JJ19=JJ19+ALLTRIM(STR(BK19(I)))+','
+                      ENDFOR    
+                      KK19=STUFF(JJ19,RAT(',',JJ19,1),1,'')              
+                      RLOCK(KK19,'S19')
+                      LL19=RLOCK(KK19,'S19')
+                  ELSE
+                      LL19=.T.   
+                  ENDIF                   
+                  IF LL19=.T. .AND. LEN(ALLTRIM(JJ19))>0  	 	    
+                      SELECT S19
+                      FOR I= 1 TO ALEN(BK19)                      
+                             GO BK19(I) 
+                             REPLACE S19.F03 WITH ALLTRIM(THISFORM.TXTF1.VALUE)
+                      ENDFOR       
+                  ENDIF   		  
+		  SELECT S19
+		  USE
+		  ***                  
+                   SELECT A01
+                   LOCATE FOR A01.F12 = PO
+                   IF FOUND()
+                       REPLACE A01.F12 WITH THISFORM.TXTF1.VALUE
+                   ENDIF
+	          RELEASE ALL LIKE BK*              
+               ENDIF
+               ****
+          ENDIF
+          ** 
+      ENDIF    
+      THISFORM.CMND2.CLICK 
+  ENDPROC
+ ***** 
+  PROCEDURE CMND2.CLICK
+       SELECT S50
+       UNLOCK ALL 
+      THISFORM.RELEASE
+  ENDPROC      
+ENDDEFINE        
+***********************************************列印程序
+PROCEDURE PNT_PRC  
+  LK=S50.F01
+  DP=S50.F05 
+  IF  MESSAGEBOX('是否只要列印員工基本資料空白表格',4+32+256,'請確認')=6 
+        REPORT FORM ALLTRIM(INT_116)+'S50B'   TO PRINT PROMPT   PREVIEW    
+        CLEAR
+  ELSE     
+      CREATE CURSOR S51_TEMP;
+         (F98 C(3),F03 C(40),F04 C(20),F05 D(8),F06 D(8),F07 C(4),F08 C(4),F09 C(30),F10 C(10),F11 C(50),;
+          F12 D(8),F13 D(8),F14 C(20),F15 C(50),F16 C(10),F17 C(10),F18 N(3),F19 C(2),F20 C(20))
+          INDE ON F98 TAG S51_TEMP1   
+      SELECT * FROM S51 WHERE F01=LK  .AND. F98='A'  INTO CURSOR S51A
+      SELECT S51A
+      GO TOP
+      DO WHILE !EOF()
+      	     SELECT S51_TEMP
+      	     APPEND BLANK
+      	     REPLACE S51_TEMP.F98 WITH ALLTRIM(IIF(RECNO('S51A')>9,'A'+ALLTRIM(STR((RECNO('S51A')))),'A0'+ALLTRIM(STR((RECNO('S51A'))))))
+      	     REPLACE S51_TEMP.F03 WITH S51A.F03
+      	     REPLACE S51_TEMP.F04 WITH S51A.F04
+      	     REPLACE S51_TEMP.F05 WITH S51A.F05
+      	     REPLACE S51_TEMP.F06 WITH S51A.F06
+      	     REPLACE S51_TEMP.F07 WITH IIF(S51A.F07='1','畢業','肄業')
+	     SELECT S51A
+	     SKIP
+      ENDDO	      
+      SELECT S51A
+      USE 
+      *****
+      SELECT * FROM S51 WHERE F01=LK  .AND. F98='B'  INTO CURSOR S51B
+      SELECT S51B
+      GO TOP
+      DO WHILE !EOF()
+      	     SELECT S51_TEMP
+      	     APPEND BLANK
+      	     REPLACE S51_TEMP.F98 WITH ALLTRIM(IIF(RECNO('S51B')>9,'B'+ALLTRIM(STR((RECNO('S51B')))),'B0'+ALLTRIM(STR((RECNO('S51B'))))))
+      	     REPLACE S51_TEMP.F08 WITH IIF(S51B.F08='1','語言',IIF(S51B.F08='2','專長','證照'))
+      	     REPLACE S51_TEMP.F09 WITH S51B.F09
+      	     REPLACE S51_TEMP.F10 WITH IIF(S51B.F10='1','精通',IIF(S51B.F10='2','通',IIF(S51B.F10='3','略通','')))
+	     SELECT S51B
+	     SKIP
+      ENDDO      
+      SELECT S51B
+      USE 
+      ****
+      SELECT * FROM S51 WHERE F01=LK  .AND. F98='C'  INTO CURSOR S51C
+      SELECT S51C
+      GO TOP
+      DO WHILE !EOF()
+      	     SELECT S51_TEMP
+      	     APPEND BLANK
+      	     REPLACE S51_TEMP.F98 WITH ALLTRIM(IIF(RECNO('S51C')>9,'C'+ALLTRIM(STR((RECNO('S51C')))),'C0'+ALLTRIM(STR((RECNO('S51C'))))))
+      	     REPLACE S51_TEMP.F11 WITH S51C.F11
+      	     REPLACE S51_TEMP.F12 WITH S51C.F12
+      	     REPLACE S51_TEMP.F13 WITH S51C.F13
+      	     REPLACE S51_TEMP.F14 WITH S51C.F14
+      	     REPLACE S51_TEMP.F15 WITH S51C.F15
+	     SELECT S51C
+	     SKIP
+      ENDDO
+      SELECT S51C
+      USE 
+      ***
+      SELECT * FROM S51 WHERE F01=LK  .AND. F98='D'  INTO CURSOR S51D
+      SELECT S51D
+      GO TOP
+      DO WHILE !EOF()
+      	     SELECT S51_TEMP
+      	     APPEND BLANK
+      	     REPLACE S51_TEMP.F98 WITH ALLTRIM(IIF(RECNO('S51D')>9,'D'+ALLTRIM(STR((RECNO('S51D')))),'D0'+ALLTRIM(STR((RECNO('S51D'))))))
+      	     REPLACE S51_TEMP.F16 WITH S51D.F16
+      	     REPLACE S51_TEMP.F17 WITH S51D.F17
+      	     REPLACE S51_TEMP.F18 WITH S51D.F18
+      	     REPLACE S51_TEMP.F19 WITH IIF(S51D.F19='1','存','歿')
+      	     REPLACE S51_TEMP.F20 WITH S51D.F20
+	     SELECT S51D
+	     SKIP
+      ENDDO
+      SELECT S51D
+      USE             
+      SELECT S51_TEMP
+      SET ORDER TO S51_TEMP1
+      GO TOP
+      SELECT S50
+*!*	      IF  _TALLY> 0
+           REPORT FORM ALLTRIM(INT_116)+'S50A' TO PRINT PROMPT   PREVIEW
+           SELECT S51_TEMP
+           USE
+*!*	      ELSE
+*!*	             =MESSAGEBOX('查無此員工之相關資料,請查明後在列印',0+48,'警示')
+*!*	             RETURN     
+*!*	      ENDIF     
+     CLEAR
+   ENDIF
+   SELECT S50
+   SEEK LK   
+ENDPROC
+***************************************************部門
+DEFINE CLASS COMBOBOX05 AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*55
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=2    
+       VALUE=1
+       NAME='COMBOBOX05'
+ PROCEDURE INIT    
+       SELECT F01,F02 FROM A14 WHERE  LEN(ALLTRIM(F01))=4  ORDER BY F01 INTO CURSOR A14_TEMP
+       SELECT A14_TEMP
+       GO TOP
+       THIS.ADDITEM(' ')       
+       DO WHILE  !EOF()
+              THIS.ADDITEM(ALLTRIM(A14_TEMP.F01)+SPACE(5)+ALLTRIM(A14_TEMP.F02))
+      	      SELECT  A14_TEMP
+      	      SKIP
+       ENDDO
+       SELECT A14_TEMP
+       USE   
+  ENDPROC  
+   PROCEDURE INTERACTIVECHANGE
+       THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=LEFT(THIS.DISPLAYVALUE,5)
+       THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION=RIGHT(ALLTRIM(THIS.DISPLAYVALUE),LEN(ALLTRIM(THIS.DISPLAYVALUE))-9)
+       THISFORM.PAGEFRAME1.PAGE1.TXTF05.REFRESH  
+  ENDPROC       
+ENDDEFINE
+**************************************************職務項目名稱
+DEFINE CLASS COMBOBOX06 AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*110
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=0    
+       VALUE=1
+       NAME='COMBOBOX06'
+ PROCEDURE INIT    
+       IF !USED('S01')  &&薪資資料設定
+	   SELE 0
+	   USE S01 
+       ELSE
+	   SELE S01
+       ENDIF
+       SET ORDER TO S011
+       SELECT F07 FROM S01 WHERE F01='D' ORDER BY F07 INTO CURSOR S01_TEMP
+       SELECT S01_TEMP
+       GO TOP
+       THIS.ADDITEM('')       
+       DO WHILE  !EOF() 
+              THIS.ADDITEM(ALLTRIM(S01_TEMP.F07))
+      	      SELECT  S01_TEMP
+      	      SKIP
+       ENDDO
+       SELECT S01_TEMP
+       USE   
+       SELECT S01
+       USE
+  ENDPROC  
+   PROCEDURE INTERACTIVECHANGE
+       THISFORM.PAGEFRAME1.PAGE1.TXTF06.VALUE=ALLTRIM(THIS.DISPLAYVALUE)
+       THISFORM.PAGEFRAME1.PAGE1.TXTF06.REFRESH  
+  ENDPROC       
+ENDDEFINE
+***************************************************任職狀況
+DEFINE CLASS COMBOBOX07 AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*110
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=2    
+       VALUE=1
+       NAME='COMBOBOX07'
+ PROCEDURE INIT    
+       THIS.ADDITEM('新進人員') 
+       THIS.ADDITEM('資料補登') 
+       THIS.ADDITEM('在        職')  
+       THIS.ADDITEM('離職復職') 
+       THIS.ADDITEM('留職復職')     
+       THIS.ADDITEM('外包人員')              
+  ENDPROC  
+   PROCEDURE INTERACTIVECHANGE
+       THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=THIS.DISPLAYVALUE
+       THISFORM.PAGEFRAME1.PAGE1.TXTF07.REFRESH  
+  ENDPROC       
+ENDDEFINE
+***************************************************出生日期
+DEFINE CLASS TXTF14 AS TEXTBOX
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*65
+       FONTSIZE=INT_015*9   
+       NAME='TXTF14 '
+   PROCEDURE INTERACTIVECHANGE
+       THISFORM.PAGEFRAME1.PAGE1.LBLF141.CAPTION='現年'+ALLTRIM(STR(VAL(LEFT(DTOS(DATE()),4))-VAL(LEFT(DTOS(THIS.VALUE),4))))+'歲'
+       THISFORM.PAGEFRAME1.PAGE1.TXTF14.REFRESH 
+  ENDPROC       
+ENDDEFINE
+******************************************性別
+DEFINE CLASS OPTIONGROUP15 AS OPTIONGROUP
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*105
+       FONTSIZE=INT_015*9   
+       BUTTONCOUNT=2
+       VALUE=1
+       ENABLED=.F.       
+       NAME='OPTIONGROUP15'
+       OPTION1.CAPTION='男'
+       OPTION1.TOP=INT_015*5
+       OPTION1.FONTSIZE=INT_015*9	  
+       OPTION1.AUTOSIZE=.T.
+       OPTION1.LEFT=INT_015*5
+       OPTION1.NAME='OPTION1'
+       OPTION2.CAPTION='女'
+       OPTION2.TOP=INT_015*5
+       OPTION2.FONTSIZE=INT_015*9	  
+       OPTION2.AUTOSIZE=.T.
+       OPTION2.LEFT=INT_015*60
+       OPTION2.NAME='OPTION2'            
+   PROCEDURE INTERACTIVECHANGE
+       IF THIS.VALUE=1
+            THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP10.VALUE=1
+       ELSE
+            THISFORM.PAGEFRAME1.PAGE1.OPTIONGROUP10.VALUE=3 
+       ENDIF
+  ENDPROC       
+ENDDEFINE
+***************************************************戶籍地址
+DEFINE CLASS TXTF21 AS TEXTBOX
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*450
+       MAXLENGTH=80
+       FONTSIZE=INT_015*9   
+       NAME='TXTF21 '
+   PROCEDURE INTERACTIVECHANGE
+       THISFORM.PAGEFRAME1.PAGE1.TXTF23.VALUE=THIS.VALUE
+       THISFORM.PAGEFRAME1.PAGE1.TXTF21.REFRESH 
+       THISFORM.PAGEFRAME1.PAGE1.TXTF23.REFRESH 
+  ENDPROC       
+ENDDEFINE
+***************************************************戶籍電話
+DEFINE CLASS TXTF22 AS TEXTBOX
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*120
+       MAXLENGTH=20
+       FONTSIZE=INT_015*9   
+       NAME='TXTF21 '
+   PROCEDURE INTERACTIVECHANGE
+       THISFORM.PAGEFRAME1.PAGE1.TXTF24.VALUE=THIS.VALUE
+       THISFORM.PAGEFRAME1.PAGE1.TXTF22.REFRESH 
+       THISFORM.PAGEFRAME1.PAGE1.TXTF24.REFRESH 
+  ENDPROC       
+ENDDEFINE
+***************************************************專業類別
+DEFINE CLASS OPTIONGROUP08 AS OPTIONGROUP
+      VISIBLE=.T.
+      HEIGHT=INT_015*25
+      WIDTH=INT_015*160
+      BUTTONCOUNT=3
+      VALUE=1
+      ENABLED=.F.
+      NAME='OPTIONGROUP08'
+      OPTION1.CAPTION='語言'
+      OPTION1.TOP=INT_015*5
+      OPTION1.FONTSIZE=INT_015*9	  
+      OPTION1.AUTOSIZE=.T.
+      OPTION1.LEFT=INT_015*5
+      OPTION1.NAME='OPTION1'
+      OPTION2.CAPTION='專長'
+      OPTION2.TOP=INT_015*5
+      OPTION2.FONTSIZE=INT_015*9	  
+      OPTION2.AUTOSIZE=.T.
+      OPTION2.LEFT=INT_015*55
+      OPTION2.NAME='OPTION2'     	  
+      OPTION3.CAPTION='證照'
+      OPTION3.TOP=INT_015*5
+      OPTION3.FONTSIZE=INT_015*9	  
+      OPTION3.AUTOSIZE=.T.
+      OPTION3.LEFT=INT_015*105
+      OPTION3.NAME='OPTION3'  	  
+   PROCEDURE INTERACTIVECHANGE
+       IF THIS.VALUE=3
+           THISFORM.PAGEFRAME1.PAGE3.LBLF10.VISIBLE=.F. 
+           THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VISIBLE=.F. 
+       ELSE
+           THISFORM.PAGEFRAME1.PAGE3.LBLF10.VISIBLE=.T. 
+           THISFORM.PAGEFRAME1.PAGE3.OPTIONGROUP10.VISIBLE=.T.    
+       ENDIF
+  ENDPROC       
+ENDDEFINE
+*****
+*******************      
+DEFINE CLASS CMDGROUP1 AS COMMANDGROUP
+  AUTOSIZE=.F.
+  BUTTONCOUNT=5  
+  BACKSTYLE=0
+  BORDERSTYLE=0
+  VALUE=1       
+  LEFT=10
+  TOP=INT_015*415
+  LEFT=INT_015*10
+  WIDTH=INT_015*218
+  HEIGHT=INT_015*30 
+  NAME='CMDGROUP1'  
+  COMMAND1.AUTOSIZE=.F.
+  COMMAND1.TOP=INT_015*5
+  COMMAND1.LEFT=INT_015*5    
+  COMMAND1.HEIGHT=INT_015*25
+  COMMAND1.WIDTH=INT_015*40
+  COMMAND1.FONTSIZE=INT_015*9
+  COMMAND1.CAPTION='第一筆'
+  COMMAND1.TOOLTIPTEXT='移至第一筆記錄'
+  COMMAND1.NAME='TOP_BOTT' 
+  COMMAND2.AUTOSIZE=.F.
+  COMMAND2.TOP=INT_015*5
+  COMMAND2.LEFT=INT_015*47
+  COMMAND2.HEIGHT=INT_015*25
+  COMMAND2.WIDTH=INT_015*40
+  COMMAND2.FONTSIZE=INT_015*9  
+  COMMAND2.CAPTION='上一筆'
+  COMMAND2.TOOLTIPTEXT='移至上一筆記錄'
+  COMMAND2.NAME='UP_BOTT'
+  COMMAND3.AUTOSIZE=.F.
+  COMMAND3.TOP=INT_015*5
+  COMMAND3.LEFT=INT_015*89
+  COMMAND3.HEIGHT=INT_015*25
+  COMMAND3.WIDTH=INT_015*40
+  COMMAND3.FONTSIZE=INT_015*9  
+  COMMAND3.CAPTION='下一筆'
+  COMMAND3.TOOLTIPTEXT='移至下一筆記錄'
+  COMMAND3.NAME='NEXT_BOTT'
+  COMMAND4.AUTOSIZE=.F.
+  COMMAND4.TOP=INT_015*5
+  COMMAND4.LEFT=INT_015*131    
+  COMMAND4.HEIGHT=INT_015*25
+  COMMAND4.WIDTH=INT_015*40
+  COMMAND4.FONTSIZE=INT_015*9  
+  COMMAND4.CAPTION='最尾筆'
+  COMMAND4.TOOLTIPTEXT='移至最後一筆記錄'
+  COMMAND4.NAME='END_BOTT'
+  COMMAND5.AUTOSIZE=.F.
+  COMMAND5.TOP=INT_015*5
+  COMMAND5.LEFT=INT_015*173
+  COMMAND5.HEIGHT=INT_015*25
+  COMMAND5.WIDTH=INT_015*40
+  COMMAND5.FONTSIZE=INT_015*9  
+  COMMAND5.CAPTION='\<F.搜尋'
+  COMMAND5.TOOLTIPTEXT='快速搜尋單筆資料!快速鍵->ALT+F'
+  COMMAND5.NAME='SEEK_BOTT'
+  PROCEDURE INIT
+       WITH THIS
+                 .SETALL('MOUSEPOINTER',99,'COMMANDBUTTON')
+                 .SETALL('MOUSEICON','HARROW.CUR','COMMANDBUTTON')                            
+        ENDWITH
+  ENDPROC    
+  PROCEDURE INTERACTIVECHANGE
+     IF  ALLTRIM(FCH)='GRID2' .OR. ALLTRIM(FCH)='GRID3' .OR. ALLTRIM(FCH)='GRID4' .OR. ALLTRIM(FCH)='GRID5'  
+            SELECT  &AREA2
+     ELSE 
+            SELECT  &AREA1
+     ENDIF           
+     DO CASE
+          CASE THIS.VALUE=1
+                     GO TOP                  
+          CASE THIS.VALUE=2
+	             IF BOF()
+	                 GO TOP
+	             ELSE
+	                 SKIP-1                  
+	             ENDIF                   
+          CASE THIS.VALUE=3
+                     IF EOF()
+                        GO BOTT
+                     ELSE
+                        SKIP   
+                     ENDIF                   
+          CASE THIS.VALUE=4
+                     GO BOTTOM
+          CASE THIS.VALUE=5
+                     HEAD_SEEK=CREATEOBJECT("HEAD_SEEK")  
+                     HEAD_SEEK.SHOW    
+                     IF FLG='0'
+                          =MESSAGEBOX('找不到您指定的鍵值',0+48,'警示')
+                    ENDIF   
+                    FLG='0'
+                    CHK=''
+       ENDCASE                     
+       DO CASE
+             CASE ALLTRIM(FCH)='GRID1'
+                       THISFORM.GRID1.SETFOCUS() 
+             CASE ALLTRIM(FCH)='GRID2'
+                       THISFORM.GRID2.SETFOCUS() 
+             CASE ALLTRIM(FCH)='GRID3'
+                       THISFORM.GRID3.SETFOCUS() 
+             CASE ALLTRIM(FCH)='GRID4'
+                       THISFORM.GRID4.SETFOCUS() 
+             CASE ALLTRIM(FCH)='GRID5'
+                       THISFORM.GRID5.SETFOCUS() 
+      ENDCASE 
+  ENDPROC    
+ENDDEFINE  

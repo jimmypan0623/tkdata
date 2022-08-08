@@ -1,0 +1,353 @@
+**程式名稱:S20.刷卡資料轉入作業
+SET EXCL OFF
+CLOSE ALL
+CLEAR 
+PRG_NO='S20'
+DATE_SALARY = ''
+IF !USED('A02')		&&權限設定檔
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK SYS_OPER+'S20'    
+*!*	IF !USED('S15')	&&年度假日設定檔
+*!*	   SELE 0
+*!*	   USE S15 
+*!*	ELSE
+*!*	   SELE S15
+*!*	ENDIF
+*!*	SET ORDER TO S151
+*******
+S20FORM=CREATEOBJECT("TKS20")
+S20FORM.SHOW  
+DEFINE CLASS TKS20 AS FORM
+  CAPTION='S20.刷卡資料轉入作業'
+*!*	  AUTOCENTER=.T.
+  CONTROLBOX=.F.
+  BORDERSTYLE=1  
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  CONTROLCOUNT=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  WIDTH=INT_015*791
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='TKS20'
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      VISIBLE=.F.,;
+      LEFT=INT_015*131,;
+      TOP=INT_015*340,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<C.選擇',;
+      TOOLTIPTEXT='選擇此作業畫面!快速鍵->ALT+A'
+      NAME='CMND1'        
+  PROCEDURE  INIT       
+      v_scrx=SYSMETRIC(1)
+      v_scry=SYSMETRIC(2)
+      DO CASE
+           CASE  v_scrx=640 .and. v_scry=480 
+                      THISFORM.PICTURE='BMPS\XP800600.JPG' 
+           CASE  v_scrx=800 .and. v_scry=600 
+                      THISFORM.PICTURE='BMPS\XP800600.JPG' 
+           CASE  v_scrx=1024 .and. v_scry=768
+  	              THISFORM.PICTURE='BMPS\XP1024768.JPG' 
+           OTHERWISE
+     	              THISFORM.PICTURE='BMPS\XP1024768.JPG' 
+      ENDCASE  
+ ENDPROC
+ PROCEDURE ACTIVATE
+       THISFORM.CMND1.SETFOCUS
+       THISFORM.CMND1.CLICK	
+ ENDPROC
+ PROCEDURE CMND1.CLICK  
+      TKS20_TEMP=CREATEOBJECT("TKS20_TEMP")  
+      TKS20_TEMP.SHOW    
+      THISFORM.RELEASE      
+      IF !USED('A05')
+           SELE 0
+           USE A05
+      ELSE
+           SELE A05
+      ENDIF   
+      SET ORDER TO 1    
+      SEEK SYS_OPER+'S20'
+      IF FOUND()
+         DELETE 
+      ENDIF   
+      UNLOCK ALL                  
+      CLOSE TABLE ALL
+      THISFORM.RELEASE 
+      RETURN  
+ENDPROC                  
+ENDDEFINE
+*******
+DEFINE CLASS TKS20_TEMP AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='S20.刷卡資料轉入作業'
+  FONTSIZE=INT_015*9
+  TOP=INT_015*200
+  LEFT=INT_015*215  
+  HEIGHT=INT_015*95
+  WIDTH=INT_015*340
+  MOVABLE=.F.
+  MAXBUTTON=.F.
+  MINBUTTON=.F.  
+  CONTROLBOX=.F.
+  BORDERSTYLE=1
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='TKS20_TEMP'
+  ADD OBJECT LBLF01 AS LABEL WITH;
+      LEFT=INT_015*10,;
+      TOP=INT_015*20,;
+      WIDTH=INT_015*55,;
+      CAPTION='檔案來源'
+  ADD OBJECT TXTF01 AS TEXTBOX WITH;
+      LEFT=INT_015*65,;
+      TOP=INT_015*16,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*210,;
+      NAME='TXTF01'        
+  ADD OBJECT LBLF02 AS LABEL WITH;
+      LEFT=INT_015*10,;
+      TOP=INT_015*60,;
+      WIDTH=INT_015*75,;
+      CAPTION='出勤西元年月'
+  ADD OBJECT TXTF02 AS TEXTBOX WITH;
+      LEFT=INT_015*90,;
+      TOP=INT_015*54,;
+      MAXLENGTH=7,;
+      INPUTMASK='9999/99',;         
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*60,;
+      NAME='TXTF02'         
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*225,;
+      TOP=INT_015*55,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*50,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<Y.執行',;
+      TOOLTIPTEXT='執行所選取之內容->ALT+Y',;
+      NAME='CMND1'
+ ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*280,;
+      TOP=INT_015*55,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*50,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<X.離開',;
+      TOOLTIPTEXT='離開此作業!快速鍵->ALT+X'
+      NAME='CMND2'
+  ADD OBJECT CMND3 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*280,;
+      TOP=INT_015*15,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*50,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<C.選取..',;
+      TOOLTIPTEXT='選取檔案來源路徑->ALT+C',;
+      NAME='CMND3'      
+********************
+ PROCEDURE INIT 
+         THISFORM.SETALL('FONTSIZE',INT_015*10,'LABEL')
+         THISFORM.SETALL('FONTSIZE',INT_015*10,'TEXTBOX')
+         THISFORM.SETALL('FONTSIZE',INT_015*10,'COMMANDBUTTON')  
+         THISFORM.TXTF01.READONLY=.T.
+         THISFORM.TXTF02.READONLY=.F.
+         THISFORM.TXTF02.VALUE=LEFT(DTOS(DATE()),4) + '/' + SUBSTR(DTOS(DATE()),5,2)
+         THISFORM.TXTF02.SETFOCUS
+ ENDPROC   
+********確認鍵******
+PROCEDURE CMND1.CLICK     
+      IF LEN(ALLTRIM(THISFORM.TXTF02.VALUE))=1 
+	     =MESSAGEBOX('出勤西元年月不得為空白,請重新輸入!',0+64,'提示視窗')
+	     THISFORM.TXTF02.SETFOCUS
+	     RETURN
+      ENDIF             
+      IF LEN(ALLTRIM((THISFORM.TXTF02.VALUE)))<>7 OR VAL(RIGHT(ALLTRIM(THISFORM.TXTF02.VALUE),2))<=0 OR VAL(RIGHT(ALLTRIM(THISFORM.TXTF02.VALUE),2))>=13
+         =MESSAGEBOX('出勤西元年月格式不正確,請重新輸入',0+64,'提示視窗')
+         THISFORM.TXTF02.SETFOCUS
+         RETURN
+      ENDIF	
+      IF EMPTY(THISFORM.TXTF01.VALUE)
+         =MESSAGEBOX('檔案來源路徑不可空白,請查明後在執行!',0+64,'提示視窗')
+    	 THISFORM.CMND3.SETFOCUS
+    	 RETURN
+      ENDIF  	 
+      IF UPPER(RIGHT(ALLTRIM(THISFORM.TXTF01.VALUE),3))<>'TXT'
+	     =MESSAGEBOX('檔案來源必須為文字檔(TXT),請重新選取!',0+64,'提示視窗')
+	     THISFORM.TXTF01.SETFOCUS
+	     RETURN
+      ENDIF 
+      TableName='S21'+LEFT(ALLTRIM(THISFORM.TXTF02.VALUE),4)+RIGHT(ALLTRIM(THISFORM.TXTF02.VALUE),2) 
+      TableName1=ALLTRIM(INT_DAT)+'\'+ALLTRIM(TableName)
+      IndexName1=ALLTRIM('S211'+LEFT(ALLTRIM(THISFORM.TXTF02.VALUE),4)+RIGHT(ALLTRIM(THISFORM.TXTF02.VALUE),2))
+      IndexName2=ALLTRIM('S212'+LEFT(ALLTRIM(THISFORM.TXTF02.VALUE),4)+RIGHT(ALLTRIM(THISFORM.TXTF02.VALUE),2))
+      CREATE CURSOR S20_TEMP (F01 C(8),F02 C(4),F03 C(6),F04 C(40))
+      INDE ON F02 TAG S20_TEMP1 ASCENDING 
+      APPEND FROM  ALLTRIM(THISFORM.TXTF01.VALUE) TYPE DELIMITED      
+      IF FILE('&TableName'+'.DBF')=.T. 
+         IF USED('&TableName')=.T.
+            =MESSAGEBOX(ALLTRIM(THISFORM.TXTF02.VALUE)+'之S21.刷卡資料紀錄檔正在使用中,請稍後在執行!',0+64,'提示視窗') 
+            THISFORM.CMND2.SETFOCUS
+            RETURN 
+         ELSE
+            IF MESSAGEBOX('您所輸入之出勤年月'+ALLTRIM(THISFORM.TXTF02.VALUE)+'已存在,是否確定要覆蓋資料',4+32+256,'請選擇')=6
+	           CREATE TABLE &TableName1 (F01 C(4),F02 C(8),F03 C(6),F04 D(8),F05 C(1),F06 C(5))
+	           INDE ON F01+DTOS(F04)+F05+F06 TAG &IndexName1 ASCENDING 
+	           INDE ON F02+DTOS(F04)+F05+F06 TAG &IndexName2 ASCENDING 
+	           SELECT S20_TEMP 
+	           SET ORDER TO S20_TEMP1
+	           GO TOP
+	           DO WHILE !EOF() 
+	        	  IF AT('/',SUBSTR(ALLTRIM(S20_TEMP.F04),6,2)) = 0
+	                 DATE_SALARY = LEFT(DTOS(CTOD(LEFT(ALLTRIM(S20_TEMP.F04),10))),6)
+	              ELSE
+	                 DATE_SALARY = LEFT(ALLTRIM(S20_TEMP.F04),4) + '0' + SUBSTR(ALLTRIM(S20_TEMP.F04),6,1) 
+	              ENDIF
+	              IF ALLTRIM(DATE_SALARY) = ALLTRIM(LEFT(ALLTRIM(THISFORM.TXTF02.VALUE),4)+RIGHT(ALLTRIM(THISFORM.TXTF02.VALUE),2))
+	                 SELECT &TableName
+	                 APPEND BLANK
+	                 REPLACE F01 WITH S20_TEMP.F02
+	                 REPLACE F02 WITH S20_TEMP.F01
+	                 REPLACE F03 WITH S20_TEMP.F03
+	                 IF AT('/',RIGHT(LEFT(ALLTRIM(S20_TEMP.F04),LEN(ALLTRIM(S20_TEMP.F04)) - 14),2)) = 0
+	                    REPLACE F04 WITH CTOD(LEFT(ALLTRIM(S20_TEMP.F04),10))
+	                 ELSE
+	                    REPLACE F04 WITH CTOD(LEFT(ALLTRIM(DATE_SALARY),4) + '/'  + RIGHT(ALLTRIM(DATE_SALARY),2) + '/0'  + RIGHT(LEFT(ALLTRIM(S20_TEMP.F04),LEN(ALLTRIM(S20_TEMP.F04)) - 14),1))
+	                 ENDIF
+	                 REPLACE F05 WITH IIF(AT('上',S20_TEMP.F04)<>0,'1','2')
+	                 DA=ALLTRIM(LEFT(RIGHT(ALLTRIM(S20_TEMP.F04),8),5))	                 
+	                 REPLACE F06 WITH IIF(F05='1',DA,IIF(LEFT(DA,2)<>'12',ALLTRIM(STR(VAL(LEFT(DA,2))+12))+RIGHT(DA,3),DA))
+	              ENDIF    
+	              SELECT S20_TEMP
+	              SKIP   
+	           ENDDO
+	           SELECT S20_TEMP 
+	           USE            
+	           SELECT &TableName
+	           USE
+	           =MESSAGEBOX('刷卡資料已成功匯入S21.刷卡資料紀錄檔中,請至該紀錄檔中進行轉出!',0+64,'提示視窗')   
+	           THISFORM.TXTF01.VALUE=''
+	           THISFORM.TXTF02.VALUE=''
+	       ENDIF
+	     ENDIF    
+      ELSE
+	     CREATE TABLE &TableName1 (F01 C(4),F02 C(8),F03 C(6),F04 D(8),F05 C(1),F06 C(5))
+	     INDE ON F01 TAG  &IndexName1 ASCENDING 
+	     INDE ON F02 TAG  &IndexName2 ASCENDING 
+	     SELECT S20_TEMP 
+	     GO TOP
+	     DO WHILE !EOF() 
+	        IF AT('/',SUBSTR(ALLTRIM(S20_TEMP.F04),6,2)) = 0
+	           DATE_SALARY = LEFT(DTOS(CTOD(LEFT(ALLTRIM(S20_TEMP.F04),10))),6)
+	        ELSE
+	           DATE_SALARY = LEFT(ALLTRIM(S20_TEMP.F04),4) + '0' + SUBSTR(ALLTRIM(S20_TEMP.F04),6,1) 
+	        ENDIF	   
+	        IF ALLTRIM(DATE_SALARY) = ALLTRIM(LEFT(ALLTRIM(THISFORM.TXTF02.VALUE),4)+RIGHT(ALLTRIM(THISFORM.TXTF02.VALUE),2))
+	           SELECT &TableName
+	           APPEND BLANK
+	           REPLACE F01 WITH S20_TEMP.F02
+	           REPLACE F02 WITH S20_TEMP.F01
+	           REPLACE F03 WITH S20_TEMP.F03
+	           IF AT('/',RIGHT(LEFT(ALLTRIM(S20_TEMP.F04),LEN(ALLTRIM(S20_TEMP.F04)) - 14),2)) = 0
+	              REPLACE F04 WITH CTOD(LEFT(ALLTRIM(S20_TEMP.F04),10))
+	           ELSE
+	              REPLACE F04 WITH CTOD(LEFT(ALLTRIM(DATE_SALARY),4) + '/'  + RIGHT(ALLTRIM(DATE_SALARY),2) + '/0'  + RIGHT(LEFT(ALLTRIM(S20_TEMP.F04),LEN(ALLTRIM(S20_TEMP.F04)) - 14),1))
+	           ENDIF	              
+	           REPLACE F05 WITH IIF(AT('上',S20_TEMP.F04)<>0,'1','2')
+	           DA=ALLTRIM(LEFT(RIGHT(ALLTRIM(S20_TEMP.F04),8),5))	          
+	           REPLACE F06 WITH IIF(F05='1',DA,IIF(LEFT(DA,2)<>'12',ALLTRIM(STR(VAL(LEFT(DA,2))+12))+RIGHT(DA,3),DA))
+	        ENDIF
+	        SELECT S20_TEMP
+	        SKIP   
+	     ENDDO
+	     SELECT S20_TEMP 
+	     USE
+	     SELECT &TableName
+	     USE
+	     =MESSAGEBOX('刷卡資料已成功匯入S21.刷卡資料紀錄檔中,請至該紀錄檔中進行轉出!',0+64,'提示視窗')  
+	     THISFORM.TXTF01.VALUE=''
+	     THISFORM.TXTF02.VALUE=''                 
+      ENDIF       
+      THISFORM.CMND2.SETFOCUS
+ENDPROC       
+********離開鍵***********
+ PROCEDURE CMND2.CLICK     
+     IF MESSAGEBOX('您確定要離開此作業嗎?',4+48+0,'請確定')=6
+        IF !USED('A05')
+           SELECT 0
+           USE A05
+        ELSE
+           SELECT A05
+        ENDIF
+        SET ORDER TO 1
+        SEEK sys_oper+'S20'
+        IF FOUND()
+           DELETE 
+        ENDIF       
+          CLOSE TABLE ALL
+          THISFORM.RELEASE 
+          RETURN  
+     ELSE
+         THISFORM.CMND2.SETFOCUS
+     ENDIF    
+ ENDPROC    
+ *****檔案選取
+  PROCEDURE CMND3.CLICK     
+    THISFORM.TXTF01.VALUE=GETFILE("TXT","開啟來源檔案","開啟",0,"請選擇刷卡機所匯出之文字檔")
+ ENDPROC    
+ ***
+ PROC CMND1.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND1.TOP=INT_015*56
+             THISFORM.CMND1.LEFT=INT_015*226
+  ENDPROC     
+  PROC CMND1.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND1.TOP=INT_015*55
+             THISFORM.CMND1.LEFT=INT_015*225                
+  ENDPROC 
+ PROC CMND2.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND2.TOP=INT_015*56
+             THISFORM.CMND2.LEFT=INT_015*281
+  ENDPROC     
+  PROC CMND2.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND2.TOP=INT_015*55
+             THISFORM.CMND2.LEFT=INT_015*280
+ ENDPROC              
+ PROC CMND3.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND3.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND3.TOP=INT_015*16
+             THISFORM.CMND3.LEFT=INT_015*281
+  ENDPROC     
+  PROC CMND3.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND3.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND3.TOP=INT_015*15
+             THISFORM.CMND3.LEFT=INT_015*280               
+  ENDPROC                                  
+ENDDEFINE     

@@ -1,0 +1,7634 @@
+***程式名稱:S10.薪資計算作業
+CLOSE ALL
+CLEAR 
+FLG='0'
+FCH=''
+CHK=''
+R=0
+FLG_CK=''				&&懲處扣款使用,若FLG_CK='T'代表扣實領薪資故為零,等確認時才會帶入扣款金額
+PUNISHMENT_CHK='2'		&&懲處扣款使用
+CK_VIEW=''				&&列印時判斷 Y=直接列印,N=預覽
+S09_F12=0				&&其他所得發放扣稅額
+HK=''           		&&紀錄目前所在的薪資期間以便於各項資料使用
+AREA1='S10_1'
+AREA2='S10_A'
+IF !USED('A01')	&&操作人員資料設定
+   SELE 0
+   USE A01
+ELSE 
+   SELE A01
+ENDIF
+SET ORDER TO A01        
+IF !USED('A02')	&&權限設定檔
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021     
+SEEK SYS_OPER+'S05'  
+IF FOUND()  AND A02.F09='*'   &&判斷是否有權限可處理所有員工
+   ALL_CHK=.T.
+ELSE
+   ALL_CHK=.F.
+ENDIF    
+SELECT A02
+SEEK SYS_OPER+'S10'          
+IF !USED('A23')	&&月份檔
+    SELECT  0
+    USE A23
+ELSE 
+   SELECT  A23
+ENDIF
+SET ORDER TO A231
+IF !USED('S0B')	&&年假記錄檔 
+   SELECT  0
+   USE S0B
+ELSE
+   SELECT  S0B
+ENDIF
+SET ORDER TO S0B1
+IF !USED('S00')	&&薪資參數設定
+   SELE 0
+   USE S00 
+ELSE
+   SELE S00
+ENDIF
+SET ORDER TO S004
+IF !USED('S01')	&&薪資資料設定
+   SELE 0
+   USE S01 
+ELSE
+   SELE S01
+ENDIF
+SET ORDER TO S011
+IF !USED('S05')	&&人事薪資基本檔
+   SELE 0
+   USE S05 
+ELSE
+   SELE S05
+ENDIF
+SET ORDER TO S051   
+IF !USED('S06')	&&薪資項目及扣款項目
+   SELE 0
+   USE S06 
+ELSE
+   SELE S06
+ENDIF
+SET ORDER TO S061
+IF !USED('S07')	&&調薪修改作業
+   SELE 0
+   USE S07 
+ELSE
+   SELE S07
+ENDIF
+SET ORDER TO S071
+IF !USED('S08')	&&懲處作業 
+   SELE 0
+   USE S08 
+ELSE
+   SELE S08
+ENDIF
+SET ORDER TO S081
+IF !USED('S09')	&&其他所得發放作業
+   SELE 0
+   USE S09 
+ELSE
+   SELE S09
+ENDIF
+SET ORDER TO S091
+IF !USED('S12')	&&特殊其他所得發放作業
+   SELE 0
+   USE S12 
+ELSE
+   SELE S12
+ENDIF
+SET ORDER TO S121
+IF !USED('S0A')	&&年度缺勤天數累計
+   SELECT  0
+   USE S0A 
+ELSE
+   SELECT  S0A
+ENDIF
+SET ORDER TO S0A1
+IF !USED('S11')	&&薪資月報表
+   SELECT  0
+   USE S11 
+ELSE
+   SELECT  S11
+ENDIF
+SET ORDER TO S111
+IF !USED('S14')
+   SELE 0
+   USE S14 
+ELSE
+   SELE S14
+ENDIF
+SET ORDER TO S141	&& F01+DTOS(F08)   
+S10='S10'+LEFT(DTOS(DATE()),6)
+S101='S101'+LEFT(DTOS(DATE()),6)
+S102='S102'+LEFT(DTOS(DATE()),6)
+S103='S103'+LEFT(DTOS(DATE()),6)
+S104='S104'+LEFT(DTOS(DATE()),6)
+S105='S105'+LEFT(DTOS(DATE()),6)
+IF !USED('&S10')	&&薪資計算作業
+   SELE 0
+   USE (S10) ALIA S10
+ELSE
+   SELE S10
+ENDIF
+SET ORDER TO S101
+*********A:基本考勤
+SELECT F01,F03,F05,F06,F07,F08,F09,F10,F11,F97,F99 FROM S10 ORDER BY F01 WHERE F97='A'  INTO CURSOR S10_A READWRITE
+INDE ON F01 TAG S10_A1
+SELECT S10_A
+SET ORDER TO S10_A1    
+*********B:其他考勤
+SELECT F01,F03,F12,F13,F14,F15,F16,F17,F42,F97,F99 FROM S10 ORDER BY F01,F12 WHERE F97='B'  INTO CURSOR S10_B READWRITE
+INDE ON F01+F12+F42 TAG S10_B1
+SELECT S10_B
+SET ORDER TO S10_B1 
+*********C:薪資所得明細
+SELECT F01,F03,F18,F19,F20,F21,F22,F97,F99 FROM S10 ORDER BY F01,F18,F19 WHERE F97='C'  INTO CURSOR S10_C READWRITE
+INDE ON F01+F18+F19 TAG S10_C1
+SELECT S10_C
+SET ORDER TO S10_C1
+*********D:薪資扣款明細
+SELECT F01,F03,F24,F25,F26,F23,F97,F99 FROM S10 ORDER BY F01,F24,F25 WHERE F97='D'  INTO CURSOR S10_D READWRITE
+INDE ON F01+F24+F25 TAG S10_D1
+SELECT S10_D
+SET ORDER TO S10_D1 
+*********E:懲處扣款
+SELECT F01,F03,F27,F28,F29,F30,F31,F40,F41,F97,F99 FROM S10 ORDER BY F01,F27,F28 WHERE F97='E'  INTO CURSOR S10_E READWRITE
+INDE ON F01+DTOS(F27)+F28 TAG S10_E1
+SELECT S10_E
+SET ORDER TO S10_E1 
+*********F:加班明細
+SELECT F01,F03,F32,F33,F34,F35,F36,F37,F38,F39,F43,F44,F97,F99 FROM S10 ORDER BY F01,F32 WHERE F97='F'  INTO CURSOR S10_F READWRITE
+INDE ON F01+F32+F43 TAG S10_F1
+SELECT S10_F
+SET ORDER TO S10_F1 
+*********基本資料
+CREATE CURSOR S10_1;
+(F01 C(4),F02 C(8),F05 C(4),F06 C(8),F07 C(30),F09 D(8),F10 D(8),F15 C(1),F28 C(1),F29 C(30),F50 N(7),F51 N(7),F97 C(1),F98 C(1),F99 C(17))
+INDE ON F01 TAG S10_11
+INDE ON F02 TAG S10_12
+INDE ON F98 TAG S10_13
+SELECT S10.F01,S10.F02,S10.F03,S10.F04,S10.F98,S10.F99,S05.F07,S05.F09,S05.F10,S05.F15,S05.F28,S05.F29 FROM S10,S05;
+       WHERE S10.F01=S05.F01 AND IIF(ALL_CHK=.F.,S05.F27=.T.,.T.) ORDER BY S10.F01  GROUP BY S10.F01 INTO CURSOR S10_TEMP
+SELECT S10_TEMP
+GO TOP
+DO WHILE !EOF()
+	SELECT S10_1
+	APPEND BLANK 
+	REPLACE S10_1.F01 WITH S10_TEMP.F01		&&人員編號
+	REPLACE S10_1.F02 WITH S10_TEMP.F02		&&人員姓名
+	REPLACE S10_1.F05 WITH S10_TEMP.F03		&&部門編號
+	REPLACE S10_1.F06 WITH S10_TEMP.F04		&&部門名稱
+	REPLACE S10_1.F07 WITH S10_TEMP.F07		&&職務名稱
+	REPLACE S10_1.F09 WITH S10_TEMP.F09		&&到職日期
+	REPLACE S10_1.F10 WITH S10_TEMP.F10		&&異動日期
+	REPLACE S10_1.F15 WITH S10_TEMP.F15		&&發薪種類(M:月薪,D:日薪,T:時薪)
+	REPLACE S10_1.F28 WITH S10_TEMP.F28		&&任職狀況
+	REPLACE S10_1.F29 WITH IIF(INDEXSEEK('I'+S10_TEMP.F29,.T.,'S00','S005'),S00.F48+SPACE(4)+S00.F50+'～'+S00.F51,'') &&班別
+	REPLACE S10_1.F98 WITH S10_TEMP.F98    		&&判斷是否已確認
+	REPLACE S10_1.F99 WITH S10_TEMP.F99		&&安全資料
+	SELECT S10_TEMP
+	SKIP 
+ENDDO
+SELECT S10_TEMP
+USE 
+SELECT S10_1
+SET ORDER TO S10_11     
+GO TOP
+********
+S10FORM=CREATEOBJECT("TKS10")
+S10FORM.SHOW  
+DEFINE CLASS TKS10 AS FORM
+  CAPTION='S10.薪資計算作業'
+*!*	  AUTOCENTER=.T.
+  CONTROLBOX=.F.
+  BORDERSTYLE=1 
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  CONTROLCOUNT=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WIDTH=INT_015*791
+  WINDOWTYPE=1
+  NAME='TKS10'
+  ADD OBJECT SHAPE1 AS SHAPE1 WITH;
+      AUTOCENTER=.T.  
+  ADD OBJECT SHAPE2 AS SHAPE2 WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT SHAPE3 AS SHAPE3 WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT PAGEFRAME1 AS PAGEFRAME WITH;
+      LEFT=INT_015*236,;
+      WIDTH=INT_015*540,;
+      HEIGHT=INT_015*515,;
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      PAGECOUNT=7,;
+      TABSTRETCH=1,;
+      ACTIVEPAGE=1,;
+      VISIBLE=.T.,;
+      PAGE1.NAME='PAGE1',;
+      PAGE1.VISIBLE=.T.,;
+      PAGE1.CAPTION='基本資料',;            
+      PAGE2.NAME='PAGE2',;
+      PAGE2.VISIBLE=.T.,;
+      PAGE2.CAPTION='基本考勤',;      
+      PAGE3.NAME='PAGE3',;
+      PAGE3.VISIBLE=.T.,;
+      PAGE3.CAPTION='其他考勤',;        
+      PAGE4.NAME='PAGE4',;
+      PAGE4.VISIBLE=.T.,;
+      PAGE4.CAPTION='所得明細',;         
+      PAGE5.NAME='PAGE5',;
+      PAGE5.VISIBLE=.T.,;
+      PAGE5.CAPTION='扣款明細',;
+      PAGE6.NAME='PAGE6',;
+      PAGE6.VISIBLE=.T.,;
+      PAGE6.CAPTION='懲處明細',;
+      PAGE7.NAME='PAGE7',;
+      PAGE7.VISIBLE=.T.,;
+      PAGE7.CAPTION='加班明細'                               
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      AUTOCENTER=.T.,;
+      WIDTH=INT_015*130
+  ADD OBJECT MTH_LIST AS MTH_LIST WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      TOP=INT_015*30,;
+      LEFT=INT_015*10,;
+      HEIGHT=INT_015*385,;
+      WIDTH=INT_015*214,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID1',;     
+      COLUMNCOUNT=3,;            
+      RECORDSOURCE='S10_1',;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3'
+  ADD OBJECT GRID2 AS GRID WITH;
+      TOP=INT_015*202,;
+      LEFT=INT_015*236,;
+      HEIGHT=INT_015*318,;
+      WIDTH=INT_015*540,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID2',;   
+      COLUMNCOUNT=7,;            
+      RECORDSOURCE='S10_A',; 
+      LINKMASTER='S10_1',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S10_A1',;          
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5',;
+      COLUMN6.NAME='COLUMN6',;      
+      COLUMN7.NAME='COLUMN7'
+  ADD OBJECT GRID3 AS GRID WITH;
+      TOP=INT_015*202,;
+      LEFT=INT_015*236,;
+      HEIGHT=INT_015*318,;
+      WIDTH=INT_015*540,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID3',;  
+      COLUMNCOUNT=6,;            
+      RECORDSOURCE='S10_B',; 
+      LINKMASTER='S10_1',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S10_B1',;         
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5',;
+      COLUMN6.NAME='COLUMN6' 
+  ADD OBJECT GRID4 AS GRID WITH;
+      TOP=INT_015*202,;
+      LEFT=INT_015*236,;
+      HEIGHT=INT_015*318,;
+      WIDTH=INT_015*540,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID4',;    
+      COLUMNCOUNT=5,;            
+      RECORDSOURCE='S10_C',; 
+      LINKMASTER='S10_1',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S10_C1',;         
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5'      
+  ADD OBJECT GRID5 AS GRID WITH;
+      TOP=INT_015*202,;
+      LEFT=INT_015*236,;
+      HEIGHT=INT_015*318,;
+      WIDTH=INT_015*540,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID5',;    
+      COLUMNCOUNT=5,;            
+      RECORDSOURCE='S10_D',; 
+      LINKMASTER='S10_1',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S10_D1',;         
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5'  
+  ADD OBJECT GRID6 AS GRID WITH;
+      TOP=INT_015*202,;
+      LEFT=INT_015*236,;
+      HEIGHT=INT_015*318,;
+      WIDTH=INT_015*540,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID6',;    
+      COLUMNCOUNT=5,;            
+      RECORDSOURCE='S10_E',; 
+      LINKMASTER='S10_1',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S10_E1',;         
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5'              
+  ADD OBJECT GRID7 AS GRID WITH;
+      TOP=INT_015*202,;
+      LEFT=INT_015*236,;
+      HEIGHT=INT_015*318,;
+      WIDTH=INT_015*540,;
+      HEADERHEIGHT=INT_015*19,;
+      ROWHEIGHT=INT_015*18,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ALLOWCELLSELECTION=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      ALLOWROWSIZING=.F.,;
+      RECORDSOURCETYPE=1,;
+      NAME='GRID7',;    
+      COLUMNCOUNT=10,;            
+      RECORDSOURCE='S10_F',; 
+      LINKMASTER='S10_1',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S10_F1',;         
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5',;
+      COLUMN6.NAME='COLUMN6',;     
+      COLUMN7.NAME='COLUMN7',;   
+      COLUMN8.NAME='COLUMN8',; 
+      COLUMN9.NAME='COLUMN9',; 
+      COLUMN10.NAME='COLUMN10'      
+  ADD OBJECT CMDGROUP AS CMDGROUP1 WITH;
+	AUTOSIZE=.T. 
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+	AUTOSIZE=.T.             
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*165,;
+      LEFT=INT_015*640          
+  ADD OBJECT ANS_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*15,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*45,;      
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<A.確認',;
+      NAME='ANS_BOTT'          
+  ADD OBJECT  INVERSE_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*62,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*50,;      
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<I.反確認',;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      NAME='INVERSE_BOTT'         
+  ADD OBJECT  ALL_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*114,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*65,;      
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<A.全部確認',;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      NAME='ALL_BOTT'                  
+  ADD OBJECT COMBOBOX01 AS COMBOBOX01 WITH;  &&人員編號
+      TOP=INT_015*39,;  
+      LEFT=INT_015*302       
+  ADD OBJECT COMBOBOX13 AS COMBOBOX13 WITH;  &&B.缺勤項目
+      TOP=INT_015*39,;  
+      LEFT=INT_015*302         
+  ADD OBJECT COMBOBOX18 AS COMBOBOX18 WITH;  &&C.薪資類別 
+      TOP=INT_015*39,;  
+      LEFT=INT_015*302          
+  ADD OBJECT GRANT_COBOX AS GRANT_COBOX WITH; &&其他所得發放
+      TOP=INT_015*64,;
+      LEFT=INT_015*302    
+  ADD OBJECT COMBOBOX29 AS COMBOBOX29 WITH;  &&懲處編號+項目+日期
+      TOP=INT_015*39,;  
+      LEFT=INT_015*302           
+************基本資料            
+PROCEDURE PAGEFRAME1.PAGE1.INIT  
+  THIS.ADDOBJECT('LBLF01','LABEL')
+     WITH THIS.LBLF01
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*20
+         .WIDTH=INT_015*50
+         .CAPTION='員工編號'
+     ENDWITH         
+ THIS.ADDOBJECT('TXTF01','TEXTBOX')          
+     WITH THIS.TXTF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+          .WIDTH=INT_015*40
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=4
+      ENDWITH  
+  THIS.ADDOBJECT('LBLF02','LABEL')
+     WITH THIS.LBLF02
+         .VISIBLE=.T.
+         .LEFT=INT_015*120
+         .TOP=INT_015*20
+         .AUTOSIZE=.T.
+         .CAPTION=''
+     ENDWITH        
+ THIS.ADDOBJECT('LBLF05','LABEL')
+     WITH THIS.LBLF05
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*45
+         .WIDTH=INT_015*50
+         .CAPTION='部門編號'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF05','TEXTBOX')          
+     WITH THIS.TXTF05
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*39
+          .WIDTH=INT_015*40
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=4
+      ENDWITH       
+ THIS.ADDOBJECT('LBLF06','LABEL')
+     WITH THIS.LBLF06
+         .VISIBLE=.T.
+         .LEFT=INT_015*120
+         .TOP=INT_015*45
+         .AUTOSIZE=.T.
+         .CAPTION=''
+     ENDWITH               
+ THIS.ADDOBJECT('LBLF15','LABEL')
+     WITH THIS.LBLF15
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*70
+         .WIDTH=INT_015*50
+         .CAPTION='發薪種類'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF15','TEXTBOX')          
+     WITH THIS.TXTF15
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*64
+          .WIDTH=INT_015*40
+          .HEIGHT=INT_015*25
+      ENDWITH      
+  THIS.ADDOBJECT('LBLF29','LABEL')
+     WITH THIS.LBLF29
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*95
+         .WIDTH=INT_015*50
+         .CAPTION='班        別'
+     ENDWITH      
+ THIS.ADDOBJECT('TXTF29','TEXTBOX')          
+     WITH THIS.TXTF29
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*89
+          .WIDTH=INT_015*110
+          .HEIGHT=INT_015*25
+      ENDWITH           
+  THIS.ADDOBJECT('LBLF07','LABEL')
+     WITH THIS.LBLF07
+         .VISIBLE=.T.
+         .LEFT=INT_015*250
+         .TOP=INT_015*20
+         .WIDTH=INT_015*50
+         .CAPTION='職        稱'
+     ENDWITH       
+ THIS.ADDOBJECT('TXTF07','TEXTBOX')          
+     WITH THIS.TXTF07
+          .VISIBLE=.T.
+          .LEFT=INT_015*300
+          .TOP=INT_015*14
+          .WIDTH=INT_015*140
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+      ENDWITH  
+ THIS.ADDOBJECT('LBLF09','LABEL')
+     WITH THIS.LBLF09
+         .VISIBLE=.T.
+         .LEFT=INT_015*250
+         .TOP=INT_015*45
+         .WIDTH=INT_015*50
+         .CAPTION='到職日期'
+     ENDWITH     
+ THIS.ADDOBJECT('TXTF09','TEXTBOX')          
+     WITH THIS.TXTF09
+          .VISIBLE=.T.
+          .LEFT=INT_015*300
+          .TOP=INT_015*39
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+      ENDWITH       
+ THIS.ADDOBJECT('LBLF28','LABEL')
+     WITH THIS.LBLF28
+         .VISIBLE=.T.
+         .LEFT=INT_015*250
+         .TOP=INT_015*70
+         .WIDTH=INT_015*50
+         .CAPTION='任職狀況'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF28','TEXTBOX')          
+     WITH THIS.TXTF28
+          .VISIBLE=.T.
+          .LEFT=INT_015*300
+          .TOP=INT_015*64
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+      ENDWITH          
+ THIS.ADDOBJECT('LBLF10','LABEL')
+     WITH THIS.LBLF10
+         .VISIBLE=.T.
+         .LEFT=INT_015*250
+         .TOP=INT_015*95
+         .WIDTH=INT_015*50
+         .CAPTION='異動日期'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF10','TEXTBOX')          
+     WITH THIS.TXTF10
+          .VISIBLE=.T.
+          .LEFT=INT_015*300
+          .TOP=INT_015*89
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+      ENDWITH        
+ THIS.ADDOBJECT('LBLF98','LABEL')
+     WITH THIS.LBLF98
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*120
+         .WIDTH=INT_015*50
+         .CAPTION='狀        態'
+     ENDWITH   
+ THIS.ADDOBJECT('LBLF981','LABEL')
+     WITH THIS.LBLF981
+         .VISIBLE=.T.
+         .LEFT=INT_015*65
+         .TOP=INT_015*120
+         .AUTOSIZE=.T.
+         .CAPTION=''
+     ENDWITH                    
+ THIS.ADDOBJECT('LBLF99','LABEL') 
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*15
+          .TOP=INT_015*145
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH  
+  THIS.ADDOBJECT('LBLF991','LABEL') 
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*145
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH                                            
+ ENDPROC
+************A:基本考勤 
+PROCEDURE PAGEFRAME1.PAGE2.INIT  
+  THIS.ADDOBJECT('LBLF05','LABEL')
+     WITH THIS.LBLF05
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*20
+         .WIDTH=INT_015*50
+         .CAPTION='上班天數'
+     ENDWITH   
+ THIS.ADDOBJECT('SPINNER05','SPINNER')      &&IIF(INDEXSEEK('Z',.T.,'S00','S001'),S00.F02,0)
+    WITH THIS.SPINNER05
+          .VISIBLE=.T.
+	  .TOP=INT_015*14
+	  .LEFT=INT_015*65
+          .HEIGHT=INT_015*25     
+	  .WIDTH=INT_015*55  
+	  .KEYBOARDLOWVALUE=0
+	  .KEYBOARDHIGHVALUE=31
+	  .SPINNERLOWVALUE=0
+	  .SPINNERHIGHVALUE=31
+	  .INPUTMASK='99.9'     
+     ENDWITH             
+ THIS.ADDOBJECT('LBLF06','LABEL')
+     WITH THIS.LBLF06
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*45
+         .WIDTH=INT_015*50
+         .CAPTION='遲到分鐘'
+     ENDWITH 
+ THIS.ADDOBJECT('SPINNER06','SPINNER06')      
+    WITH THIS.SPINNER06
+	  .TOP=INT_015*39
+	  .LEFT=INT_015*65
+     ENDWITH          
+ THIS.ADDOBJECT('LBLF061','LABEL')
+     WITH THIS.LBLF061
+         .VISIBLE=.T.
+         .LEFT=INT_015*125
+         .TOP=INT_015*45
+         .AUTOSIZE=.T.
+         .CAPTION=''
+     ENDWITH         
+ THIS.ADDOBJECT('LBLF07','LABEL')
+     WITH THIS.LBLF07
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*70
+         .WIDTH=INT_015*50
+         .CAPTION='早退分鐘'
+     ENDWITH  
+ THIS.ADDOBJECT('SPINNER07','SPINNER07')      
+    WITH THIS.SPINNER07
+	  .TOP=INT_015*64
+	  .LEFT=INT_015*65
+     ENDWITH     
+ THIS.ADDOBJECT('LBLF071','LABEL')
+     WITH THIS.LBLF071
+         .VISIBLE=.T.
+         .LEFT=INT_015*125
+         .TOP=INT_015*70
+         .AUTOSIZE=.T.
+         .CAPTION=''
+     ENDWITH     
+  THIS.ADDOBJECT('LBLF08','LABEL')
+     WITH THIS.LBLF08
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*95
+         .WIDTH=INT_015*50
+         .CAPTION='全勤狀況'
+     ENDWITH           
+ THIS.ADDOBJECT('TXTF08','TEXTBOX')          
+     WITH THIS.TXTF08
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*89
+          .WIDTH=INT_015*55
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=6
+      ENDWITH 
+ THIS.ADDOBJECT('TXTF081','TEXTBOX')       &&有無全勤
+     WITH THIS.TXTF081
+          .VISIBLE=.F.
+          .LEFT=INT_015*65
+          .TOP=INT_015*89
+          .WIDTH=INT_015*55
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=1
+      ENDWITH       
+  THIS.ADDOBJECT('LBLF11','LABEL')
+     WITH THIS.LBLF11
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*120
+         .WIDTH=INT_015*50
+         .CAPTION='個人備註'
+     ENDWITH           
+ THIS.ADDOBJECT('TXTF11','TEXTBOX')          
+     WITH THIS.TXTF11
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*114
+          .WIDTH=INT_015*340
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=40
+      ENDWITH          
+  THIS.ADDOBJECT('LBLF08A','LABEL')
+     WITH THIS.LBLF08A
+         .VISIBLE=.T.
+         .LEFT=INT_015*330
+         .TOP=INT_015*20
+         .WIDTH=INT_015*65
+         .CAPTION='是否有全勤?'
+     ENDWITH        
+ THIS.ADDOBJECT('OPTIONGROUP08A','OPTIONGROUP08A')
+     WITH THIS.OPTIONGROUP08A 
+   	   .VISIBLE=.T.
+      	   .TOP=INT_015*14
+   	   .LEFT=INT_015*403   	   
+     ENDWITH         
+  THIS.ADDOBJECT('LBLF09','LABEL')
+     WITH THIS.LBLF09
+         .VISIBLE=.T.
+         .LEFT=INT_015*305
+         .TOP=INT_015*45
+         .WIDTH=INT_015*100
+         .CAPTION='遲到額外扣款金額'
+     ENDWITH           
+ THIS.ADDOBJECT('TXTF09','TEXTBOX')          
+     WITH THIS.TXTF09
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*403
+          .TOP=INT_015*39
+          .WIDTH=INT_015*55
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=7
+      ENDWITH          
+  THIS.ADDOBJECT('LBLF10','LABEL')
+     WITH THIS.LBLF10
+         .VISIBLE=.T.
+         .LEFT=INT_015*305
+         .TOP=INT_015*70
+         .WIDTH=INT_015*100
+         .CAPTION='早退額外扣款金額'
+     ENDWITH           
+ THIS.ADDOBJECT('TXTF10','TEXTBOX')          
+     WITH THIS.TXTF10
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*403
+          .TOP=INT_015*64
+          .WIDTH=INT_015*55
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=7
+      ENDWITH                           
+ THIS.ADDOBJECT('LBLF99','LABEL') 
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*15
+          .TOP=INT_015*145
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH  
+  THIS.ADDOBJECT('LBLF991','LABEL') 
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*145
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH         
+ ENDPROC 
+************B:其他考勤
+PROCEDURE PAGEFRAME1.PAGE3.INIT  
+ THIS.ADDOBJECT('TXTF12','TEXTBOX')   &&缺勤編號       
+     WITH THIS.TXTF12
+          .VISIBLE=.F.
+          .LEFT=INT_015*365
+          .TOP=INT_015*14
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=2
+      ENDWITH  
+  THIS.ADDOBJECT('LBLF13','LABEL')
+     WITH THIS.LBLF13
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*20
+         .WIDTH=INT_015*50
+         .CAPTION='缺勤項目'
+     ENDWITH   
+ THIS.ADDOBJECT('TXTF13','TEXTBOX')          
+     WITH THIS.TXTF13
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+          .WIDTH=INT_015*140
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=30
+      ENDWITH      
+ THIS.ADDOBJECT('LBLF14','LABEL')
+     WITH THIS.LBLF14
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*45
+         .WIDTH=INT_015*50
+         .CAPTION='缺勤數值'
+     ENDWITH   
+ THIS.ADDOBJECT('TXTF14','TXTF14')          
+     WITH THIS.TXTF14
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*65
+          .TOP=INT_015*39
+      ENDWITH        
+ THIS.ADDOBJECT('LBLF15','LABEL')
+     WITH THIS.LBLF15
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*70
+         .WIDTH=INT_015*50
+         .CAPTION='計數單位'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF15','TEXTBOX')          
+     WITH THIS.TXTF15
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*64
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=4
+      ENDWITH    
+ THIS.ADDOBJECT('TXTF151','TEXTBOX')          
+     WITH THIS.TXTF151
+          .VISIBLE=.F.
+          .LEFT=INT_015*65
+          .TOP=INT_015*64
+          .WIDTH=INT_015*75
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=1
+      ENDWITH          
+  THIS.ADDOBJECT('LBLF16','LABEL')
+     WITH THIS.LBLF16
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*95
+         .WIDTH=INT_015*50
+         .CAPTION='扣款金額'
+     ENDWITH           
+ THIS.ADDOBJECT('TXTF16','TEXTBOX')          
+     WITH THIS.TXTF16
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*65
+          .TOP=INT_015*89
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=7
+      ENDWITH   
+  THIS.ADDOBJECT('LBLF17','LABEL')
+     WITH THIS.LBLF17
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*120
+         .WIDTH=INT_015*50
+         .CAPTION='全勤扣款'
+     ENDWITH           
+ THIS.ADDOBJECT('TXTF17','TEXTBOX')          
+     WITH THIS.TXTF17
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*65
+          .TOP=INT_015*114
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=7
+      ENDWITH         
+  THIS.ADDOBJECT('LBLF42','LABEL')	&&S18.請假作業單號    
+     WITH THIS.LBLF42
+         .VISIBLE=.F.
+         .LEFT=INT_015*250
+         .TOP=INT_015*20
+         .WIDTH=INT_015*75
+         .CAPTION='請假作業單號'
+     ENDWITH         
+ THIS.ADDOBJECT('TXTF42','TEXTBOX')       
+     WITH THIS.TXTF42
+          .VISIBLE=.F.
+          .LEFT=INT_015*325
+          .TOP=INT_015*14
+          .WIDTH=INT_015*75
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+      ENDWITH                            
+ THIS.ADDOBJECT('LBLF99','LABEL') 
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*15
+          .TOP=INT_015*145
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH  
+  THIS.ADDOBJECT('LBLF991','LABEL') 
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*145
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH         
+ ENDPROC  
+************C:薪資所得明細
+PROCEDURE PAGEFRAME1.PAGE4.INIT  
+  THIS.ADDOBJECT('LBLF18','LABEL')
+     WITH THIS.LBLF18
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*20
+         .WIDTH=INT_015*50
+         .CAPTION='薪資類別'
+     ENDWITH   
+ THIS.ADDOBJECT('TXTF18','TEXTBOX')          
+     WITH THIS.TXTF18
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+          .WIDTH=INT_015*140
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+      ENDWITH            
+ THIS.ADDOBJECT('LBLF19','LABEL')
+     WITH THIS.LBLF19
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*45
+         .WIDTH=INT_015*50
+         .CAPTION='薪資項目'
+     ENDWITH 
+ THIS.ADDOBJECT('TXTF19','TEXTBOX')          
+     WITH THIS.TXTF19
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*39
+          .WIDTH=INT_015*140
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=30
+      ENDWITH        
+ THIS.ADDOBJECT('COMBOBOX19','COMBOBOX_CDF')        
+     WITH THIS.COMBOBOX19
+          .LEFT=INT_015*65
+          .TOP=INT_015*39
+      ENDWITH                  
+ THIS.ADDOBJECT('LBLF20','LABEL')
+     WITH THIS.LBLF20
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*70
+         .WIDTH=INT_015*50
+         .CAPTION='薪資所得'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF20','TEXTBOX')          
+     WITH THIS.TXTF20
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*65
+          .TOP=INT_015*64
+          .WIDTH=INT_015*60
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=7
+      ENDWITH    
+ THIS.ADDOBJECT('LBLF21','LABEL')
+     WITH THIS.LBLF21
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*95
+         .WIDTH=INT_015*50
+         .CAPTION='基本薪資'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF21','TEXTBOX')          
+     WITH THIS.TXTF21
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*65
+          .TOP=INT_015*89
+          .WIDTH=INT_015*60
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=7
+      ENDWITH                     
+ THIS.ADDOBJECT('TXTF22','TEXTBOX')         
+     WITH THIS.TXTF22
+          .VISIBLE=.F.
+          .LEFT=INT_015*351
+          .TOP=INT_015*14
+          .WIDTH=INT_015*75
+          .HEIGHT=INT_015*25
+      ENDWITH                 
+ THIS.ADDOBJECT('LBLF99','LABEL') 
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*15
+          .TOP=INT_015*145
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH  
+  THIS.ADDOBJECT('LBLF991','LABEL') 
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*145
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH         
+ ENDPROC 
+************D:薪資扣款明細
+PROCEDURE PAGEFRAME1.PAGE5.INIT  
+  THIS.ADDOBJECT('LBLF24','LABEL')
+     WITH THIS.LBLF24
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*20
+         .WIDTH=INT_015*50
+         .CAPTION='扣款類別'
+     ENDWITH   
+ THIS.ADDOBJECT('TXTF24','TEXTBOX')          
+     WITH THIS.TXTF24
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+          .WIDTH=INT_015*140
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=20
+      ENDWITH    
+ THIS.ADDOBJECT('COMBOBOX24','COMBOBOX24')        
+     WITH THIS.COMBOBOX24
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+      ENDWITH           
+ THIS.ADDOBJECT('LBLF25','LABEL')
+     WITH THIS.LBLF25
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*45
+         .WIDTH=INT_015*50
+         .CAPTION='扣款項目'
+     ENDWITH 
+ THIS.ADDOBJECT('TXTF25','TEXTBOX')          
+     WITH THIS.TXTF25
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*39
+          .WIDTH=INT_015*140
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=30
+      ENDWITH        
+ THIS.ADDOBJECT('COMBOBOX25','COMBOBOX_CDF')        
+     WITH THIS.COMBOBOX25
+          .LEFT=INT_015*65
+          .TOP=INT_015*39
+      ENDWITH        
+ THIS.ADDOBJECT('LBLF26','LABEL')
+     WITH THIS.LBLF26
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*70
+         .WIDTH=INT_015*50
+         .CAPTION='扣款金額'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF26','TEXTBOX')          
+     WITH THIS.TXTF26
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*65
+          .TOP=INT_015*64
+          .WIDTH=INT_015*60
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=7
+      ENDWITH                
+ THIS.ADDOBJECT('LBLF23','LABEL')
+     WITH THIS.LBLF23
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*95
+         .WIDTH=INT_015*50
+         .CAPTION='基本扣款'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF23','TEXTBOX')          
+     WITH THIS.TXTF23
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*65
+          .TOP=INT_015*89
+          .WIDTH=INT_015*60
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=7
+      ENDWITH         
+ THIS.ADDOBJECT('LBLF99','LABEL') 
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*15
+          .TOP=INT_015*145
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH  
+  THIS.ADDOBJECT('LBLF991','LABEL') 
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*145
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH         
+ ENDPROC
+************E:懲處扣款
+PROCEDURE PAGEFRAME1.PAGE6.INIT  
+ THIS.ADDOBJECT('TXTF28','TEXTBOX')          &&懲處編號
+     WITH THIS.TXTF28
+          .VISIBLE=.F.
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=2
+      ENDWITH      
+  THIS.ADDOBJECT('LBLF29','LABEL')
+     WITH THIS.LBLF29
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*20
+         .WIDTH=INT_015*50
+         .CAPTION='懲處項目'
+     ENDWITH   
+ THIS.ADDOBJECT('TXTF29','TEXTBOX')          
+     WITH THIS.TXTF29
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+          .WIDTH=INT_015*140
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=30
+      ENDWITH            
+ THIS.ADDOBJECT('COMBOBOX29','COMBOBOX29')        
+     WITH THIS.COMBOBOX29
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+      ENDWITH             
+  THIS.ADDOBJECT('LBLF27','LABEL')
+     WITH THIS.LBLF27
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*45
+         .WIDTH=INT_015*50
+         .CAPTION='懲處日期'
+     ENDWITH   
+ THIS.ADDOBJECT('TXTF27','TEXTBOX')          
+     WITH THIS.TXTF27
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*39
+          .WIDTH=INT_015*75
+          .HEIGHT=INT_015*25
+      ENDWITH                     
+ THIS.ADDOBJECT('LBLF30','LABEL')
+     WITH THIS.LBLF30
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*70
+         .WIDTH=INT_015*50
+         .CAPTION='扣款小計'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF30','TEXTBOX')          
+     WITH THIS.TXTF30
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*65
+          .TOP=INT_015*64
+          .WIDTH=INT_015*75
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+      ENDWITH             
+ THIS.ADDOBJECT('LBLF31','LABEL') 
+     WITH THIS.LBLF31
+          .VISIBLE=.T.
+          .LEFT=INT_015*280
+          .TOP=INT_015*45
+          .WIDTH=INT_015*80
+          .BACKCOLOR=RGB(0,255,255) 
+          .CAPTION='連續扣款月數：'          
+     ENDWITH  
+  THIS.ADDOBJECT('LBLF311','LABEL') 
+     WITH THIS.LBLF311
+          .VISIBLE=.T.
+          .LEFT=INT_015*359
+          .TOP=INT_015*45
+          .BACKCOLOR=RGB(0,255,255)           
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH      
+ THIS.ADDOBJECT('TXTF40','TEXTBOX')		&&扣款底數   
+     WITH THIS.TXTF40
+          .VISIBLE=.F.
+          .LEFT=INT_015*265
+          .TOP=INT_015*64
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=1
+      ENDWITH   
+ THIS.ADDOBJECT('TXTF41','TEXTBOX')          &&扣款比例
+     WITH THIS.TXTF41
+          .VISIBLE=.F.
+          .LEFT=INT_015*265
+          .TOP=INT_015*64
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+      ENDWITH              
+ THIS.ADDOBJECT('LBLF96','LABEL') 
+     WITH THIS.LBLF96
+          .VISIBLE=.T.
+          .LEFT=INT_015*280
+          .TOP=INT_015*70
+          .WIDTH=INT_015*80
+          .BACKCOLOR=RGB(0,255,255) 
+          .CAPTION='扣款剩餘月數：'          
+     ENDWITH  
+  THIS.ADDOBJECT('LBLF961','LABEL') 
+     WITH THIS.LBLF961
+          .VISIBLE=.T.
+          .LEFT=INT_015*359
+          .TOP=INT_015*70
+          .BACKCOLOR=RGB(0,255,255)           
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH                          
+ THIS.ADDOBJECT('LBLF99','LABEL') 
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*15
+          .TOP=INT_015*145
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH  
+  THIS.ADDOBJECT('LBLF991','LABEL') 
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*145
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH         
+ ENDPROC  
+************F:加班明細
+PROCEDURE PAGEFRAME1.PAGE7.INIT  
+ THIS.ADDOBJECT('TXTF32','TEXTBOX')        &&加班類別  
+     WITH THIS.TXTF32
+          .VISIBLE=.F.
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=2
+      ENDWITH 
+  THIS.ADDOBJECT('LBLF33','LABEL')
+     WITH THIS.LBLF33
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*20
+         .WIDTH=INT_015*50
+         .CAPTION='加班時段'
+     ENDWITH   
+ THIS.ADDOBJECT('TXTF33','TEXTBOX')          
+     WITH THIS.TXTF33
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+          .WIDTH=INT_015*110
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=30
+      ENDWITH     
+ THIS.ADDOBJECT('TXTF331','TEXTBOX')          
+     WITH THIS.TXTF331
+          .VISIBLE=.F.
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=1
+      ENDWITH          
+ THIS.ADDOBJECT('COMBOBOX33','COMBOBOX33')        
+     WITH THIS.COMBOBOX33
+          .LEFT=INT_015*65
+          .TOP=INT_015*14
+      ENDWITH        
+ THIS.ADDOBJECT('LBLF35','LABEL')
+     WITH THIS.LBLF35
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*45
+         .WIDTH=INT_015*50
+         .CAPTION='加班數值'
+     ENDWITH 
+ THIS.ADDOBJECT('TXTF35','TXTF35')          
+     WITH THIS.TXTF35
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*65
+          .TOP=INT_015*39
+          .WIDTH=INT_015*60
+          .HEIGHT=INT_015*25
+      ENDWITH        
+ THIS.ADDOBJECT('LBLF34','LABEL')
+     WITH THIS.LBLF34
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*70
+         .WIDTH=INT_015*50
+         .CAPTION='單        位'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF34','TEXTBOX')          
+     WITH THIS.TXTF34
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*64
+          .WIDTH=INT_015*60
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=4
+      ENDWITH    
+ THIS.ADDOBJECT('TXTF341','TEXTBOX')          
+     WITH THIS.TXTF341
+          .VISIBLE=.F.
+          .LEFT=INT_015*65
+          .TOP=INT_015*64 
+          .WIDTH=INT_015*60
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=1
+      ENDWITH                   
+ THIS.ADDOBJECT('LBLF39','LABEL')
+     WITH THIS.LBLF39
+         .VISIBLE=.T.
+         .LEFT=INT_015*15
+         .TOP=INT_015*95
+         .WIDTH=INT_015*50
+         .CAPTION='加班小計'
+     ENDWITH  
+ THIS.ADDOBJECT('TXTF39','TEXTBOX')          
+     WITH THIS.TXTF39
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*65
+          .TOP=INT_015*89
+          .WIDTH=INT_015*60
+          .HEIGHT=INT_015*25
+      ENDWITH       
+ THIS.ADDOBJECT('LBLF38','LABEL') 
+     WITH THIS.LBLF38
+          .VISIBLE=.T.
+          .LEFT=INT_015*15
+          .TOP=INT_015*120
+          .WIDTH=INT_015*140
+          .CAPTION='加班總所得(含津貼金額)：'          
+     ENDWITH  
+  THIS.ADDOBJECT('LBLF381','LABEL') 
+     WITH THIS.LBLF381
+          .VISIBLE=.T.
+          .LEFT=INT_015*160
+          .TOP=INT_015*120
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH         
+  THIS.ADDOBJECT('LBLF44','LABEL')
+     WITH THIS.LBLF44
+         .VISIBLE=.T.
+         .LEFT=INT_015*250
+         .TOP=INT_015*20
+         .WIDTH=INT_015*50
+         .CAPTION='加班天數'
+     ENDWITH         
+ THIS.ADDOBJECT('TXTF44','TXTF44')          
+     WITH THIS.TXTF44
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*300
+          .TOP=INT_015*14
+          .WIDTH=INT_015*40
+          .HEIGHT=INT_015*25 
+          .MAXLENGTH=3
+      ENDWITH                           
+  THIS.ADDOBJECT('LBLF36','LABEL')
+     WITH THIS.LBLF36
+         .VISIBLE=.T.
+         .LEFT=INT_015*250
+         .TOP=INT_015*45
+         .WIDTH=INT_015*50
+         .CAPTION='津貼補助'
+     ENDWITH   
+ THIS.ADDOBJECT('TXTF36','TEXTBOX')          
+     WITH THIS.TXTF36
+          .VISIBLE=.T.
+          .LEFT=INT_015*300
+          .TOP=INT_015*39
+          .WIDTH=INT_015*140
+          .HEIGHT=INT_015*25 
+          .MAXLENGTH=30
+      ENDWITH    
+ THIS.ADDOBJECT('COMBOBOX36','COMBOBOX_CDF')        
+     WITH THIS.COMBOBOX36
+          .LEFT=INT_015*300
+          .TOP=INT_015*39
+      ENDWITH       
+ THIS.ADDOBJECT('LBLF37','LABEL')
+     WITH THIS.LBLF37
+         .VISIBLE=.T.
+         .LEFT=INT_015*250
+         .TOP=INT_015*70
+         .WIDTH=INT_015*50
+         .CAPTION='津貼金額'
+     ENDWITH 
+ THIS.ADDOBJECT('TXTF37','TXTF37')          
+     WITH THIS.TXTF37
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*300
+          .TOP=INT_015*64
+      ENDWITH     
+ THIS.ADDOBJECT('LBLF371','LABEL')
+     WITH THIS.LBLF371
+         .VISIBLE=.T.
+         .LEFT=INT_015*250
+         .TOP=INT_015*95
+         .WIDTH=INT_015*50
+         .CAPTION='津貼小計'
+     ENDWITH       
+ THIS.ADDOBJECT('TXTF371','TEXTBOX')          
+     WITH THIS.TXTF371
+          .VISIBLE=.T.
+          .ALIGNMENT=1
+          .LEFT=INT_015*300
+          .TOP=INT_015*89
+          .WIDTH=INT_015*60
+          .HEIGHT=INT_015*25          
+      ENDWITH               
+ THIS.ADDOBJECT('LBLF43','LABEL') 
+     WITH THIS.LBLF43
+          .VISIBLE=.T.
+          .LEFT=INT_015*250
+          .TOP=INT_015*120
+          .BACKCOLOR=RGB(255,255,0)
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH                 
+ THIS.ADDOBJECT('LBLF99','LABEL') 
+     WITH THIS.LBLF99
+          .VISIBLE=.T.
+          .LEFT=INT_015*15
+          .TOP=INT_015*145
+          .WIDTH=INT_015*50
+          .CAPTION='安全資料'          
+     ENDWITH  
+  THIS.ADDOBJECT('LBLF991','LABEL') 
+     WITH THIS.LBLF991
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*145
+          .AUTOSIZE=.T.
+          .CAPTION=''          
+     ENDWITH         
+ ENDPROC      
+******** 
+  PROC INIT       
+       HK=LEFT(ALLTRIM(THISFORM.MTH_LIST.DISPLAYVALUE),5)
+       THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.T.
+       THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,255)          
+       THISFORM.PAGEFRAME1.PAGE1.FONTSIZE=INT_015*10
+       THISFORM.PAGEFRAME1.PAGE2.FONTSIZE=INT_015*10  
+       THISFORM.PAGEFRAME1.PAGE3.FONTSIZE=INT_015*10
+       THISFORM.PAGEFRAME1.PAGE4.FONTSIZE=INT_015*10  
+       THISFORM.PAGEFRAME1.PAGE5.FONTSIZE=INT_015*10
+       THISFORM.PAGEFRAME1.PAGE6.FONTSIZE=INT_015*10   
+       THISFORM.PAGEFRAME1.PAGE7.FONTSIZE=INT_015*10                      
+       THISFORM.SETALL('HEIGHT',INT_015*25,'TEXTBOX')
+       THISFORM.SETALL('HEIGHT',INT_015*17,'LABEL')     
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'TEXTBOX')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')         
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')    
+       THISFORM.SETALL('READONLY',.T.,'SPINNER')  
+       THISFORM.SHRGROUP.VISIBLE=.F.
+       THISFORM.SHRGROUP.ENABLED=.F.
+       THISFORM.GRID1.VISIBLE=.T.
+       THISFORM.GRID2.VISIBLE=.T.
+       THISFORM.GRID3.VISIBLE=.F.
+       THISFORM.GRID4.VISIBLE=.F.
+       THISFORM.GRID5.VISIBLE=.F.
+       THISFORM.GRID6.VISIBLE=.F.
+       THISFORM.GRID7.VISIBLE=.F.
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+       THISFORM.GRID2.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID2.SETALL('FONTSIZE',INT_015*9,'HEADER')          
+       THISFORM.GRID3.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID3.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+       THISFORM.GRID4.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID4.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+       THISFORM.GRID5.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID5.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+       THISFORM.GRID6.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID6.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+       THISFORM.GRID7.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID7.SETALL('FONTSIZE',INT_015*9,'HEADER')      
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID2.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)   
+       THISFORM.GRID3.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)   
+       THISFORM.GRID4.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)   
+       THISFORM.GRID5.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)   
+       THISFORM.GRID6.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)   
+       THISFORM.GRID7.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)                  
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='員工編號'
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='員工姓名'
+       THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='任職狀況'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S10_1.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='S10_1.F02'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE="BILL_MODE(S10_1.F28)"
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*50
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*55          
+       THISFORM.GRID1.COLUMN3.WIDTH=INT_015*55 
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(S10_1.F98<>'Y',RGB(255,0,0),'')","COLUMN")     
+       THISFORM.GRID2.LINKMASTER='S10_1'
+       THISFORM.GRID2.RELATIONALEXPR='F01'
+       THISFORM.GRID2.COLUMN1.WIDTH=INT_015*55
+       THISFORM.GRID2.COLUMN2.WIDTH=INT_015*65
+       THISFORM.GRID2.COLUMN3.WIDTH=INT_015*65
+       THISFORM.GRID2.COLUMN4.WIDTH=INT_015*55
+       THISFORM.GRID2.COLUMN5.WIDTH=INT_015*75
+       THISFORM.GRID2.COLUMN6.WIDTH=INT_015*75                
+       THISFORM.GRID2.COLUMN7.WIDTH=INT_015*110                 
+       THISFORM.GRID2.COLUMN1.HEADER1.CAPTION=IIF(S10_1.F15='T','上班時數','上班天數')
+       THISFORM.GRID2.COLUMN2.HEADER1.CAPTION='遲到分鐘數'
+       THISFORM.GRID2.COLUMN3.HEADER1.CAPTION='早退分鐘數'
+       THISFORM.GRID2.COLUMN4.HEADER1.CAPTION='全勤狀況'
+       THISFORM.GRID2.COLUMN5.HEADER1.CAPTION='遲到額外扣款'
+       THISFORM.GRID2.COLUMN6.HEADER1.CAPTION='早退額外扣款'                
+       THISFORM.GRID2.COLUMN7.HEADER1.CAPTION='安全資料'                  
+       THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S10_A.F05'
+       THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S10_A.F06'
+       THISFORM.GRID2.COLUMN3.CONTROLSOURCE='S10_A.F07'
+       THISFORM.GRID2.COLUMN4.CONTROLSOURCE="IIF(S10_A.F08='Y','無全勤','有全勤')"
+       THISFORM.GRID2.COLUMN5.CONTROLSOURCE='S10_A.F09'
+       THISFORM.GRID2.COLUMN6.CONTROLSOURCE='S10_A.F10'                
+       THISFORM.GRID2.COLUMN7.CONTROLSOURCE='S10_A.F99'                                           
+       THISFORM.GRID1.READONLY=.T.      
+       THISFORM.GRID2.READONLY=.T.  
+       THISFORM.GRID3.READONLY=.T. 
+       THISFORM.GRID4.READONLY=.T. 
+       THISFORM.GRID5.READONLY=.T. 
+       THISFORM.GRID6.READONLY=.T. 
+       THISFORM.GRID7.READONLY=.T.          
+       THISFORM.GRID1.SETFOCUS
+       THISFORM.ANS_BOTT.VISIBLE=.T.    
+       THISFORM.ALL_BOTT.VISIBLE=.T.   
+       THISFORM.INVERSE_BOTT.VISIBLE=.T.      
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)  &&判斷有無新增的權限     
+       IF THISFORM.GRID1.ACTIVEROW=0
+	      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+          THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+	      THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+          THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.
+		  THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.
+		  THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.	
+          THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+		  THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+		  THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+		  THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.    
+		  THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.	 
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.           
+		  THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F. 	
+		  THISFORM.ANS_BOTT.ENABLED=.F.
+		  THISFORM.ALL_BOTT.ENABLED=.F.
+		  THISFORM.INVERSE_BOTT.ENABLED=.F.    	   
+		  THISFORM.PAGEFRAME1.PAGE1.LBLF10.VISIBLE=.F.       
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF10.VISIBLE=.F.
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF15.VALUE=''       	
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=''     
+		  THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION=''
+		  THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION=''
+		  THISFORM.PAGEFRAME1.PAGE1.LBLF981.CAPTION=''     
+		  THISFORM.PAGEFRAME1.PAGE1.LBLF991.CAPTION=''    	   
+       ELSE
+		  THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.
+	      THISFORM.PAGEFRAME1.PAGE3.ENABLED=.T.
+		  THISFORM.PAGEFRAME1.PAGE4.ENABLED=.T.
+	      THISFORM.PAGEFRAME1.PAGE5.ENABLED=.T.
+		  THISFORM.PAGEFRAME1.PAGE6.ENABLED=.T.
+		  THISFORM.PAGEFRAME1.PAGE7.ENABLED=.T.	 
+	      THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+		  THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+		  THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+		  THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.    
+		  THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.		      
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.)	    	     
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  					 &&判斷有無列印的權限    
+		  THISFORM.ANS_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.) AND  S10_1.F98<>'Y'				&&確認
+		  THISFORM.ALL_BOTT.ENABLED=IIF(A02.F10='*',.T.,.F.) AND  IIF(INDEXSEEK('N',.F.,'S10_1','S10_13'),.T.,.F.)	&&全部確認
+		  THISFORM.INVERSE_BOTT.ENABLED=IIF(A02.F09='*',.T.,.F.) AND S10_1.F98='Y'                	&&反確認 
+       ENDIF           
+       JK='員工編號'
+       SELE S10_1
+       GO TOP
+       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=S10_1.F01       
+  ENDPROC      
+  ***********基本資料
+  PROCEDURE PAGEFRAME1.PAGE1.ACTIVATE
+    R=0
+    SELECT S10_1
+    DO CASE 
+        CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工編號排列'
+             SET ORDER TO S10_11
+        CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工姓名排列'
+             SET ORDER TO S10_12
+    ENDCASE              
+    THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.T.
+    THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,255)
+    THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+    THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+    THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE7.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE7.FORECOLOR=RGB(0,0,0)            
+    THISFORM.GRID2.VISIBLE=.T.
+    THISFORM.GRID3.VISIBLE=.F.
+    THISFORM.GRID4.VISIBLE=.F.
+    THISFORM.GRID5.VISIBLE=.F.
+    THISFORM.GRID6.VISIBLE=.F.
+    THISFORM.GRID7.VISIBLE=.F.            
+	THISFORM.KEY_LIST.ENABLED=.T.  	
+	THISFORM.MTH_LIST.ENABLED=.T. 	         
+    THISFORM.ANS_BOTT.VISIBLE=.T.  
+    THISFORM.ALL_BOTT.VISIBLE=.T. 
+    THISFORM.INVERSE_BOTT.VISIBLE=.T. 
+    THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)		 &&判斷有無新增的權限
+    THISFORM.GRID1.ENABLED=.T. 
+    THISFORM.GRID1.SETFOCUS   
+    IF THISFORM.GRID1.ACTIVEROW=0 AND  THISFORM.SHRGROUP.VISIBLE=.F.           
+       THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+       THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+       THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+       THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.    
+       THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.	              
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.	
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F. 
+	   THISFORM.ANS_BOTT.ENABLED=.F.
+	   THISFORM.ALL_BOTT.ENABLED=.F.
+	   THISFORM.INVERSE_BOTT.ENABLED=.F.        
+	   THISFORM.PAGEFRAME1.PAGE1.LBLF10.VISIBLE=.F.       
+	   THISFORM.PAGEFRAME1.PAGE1.TXTF10.VISIBLE=.F.
+	   THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE1.TXTF15.VALUE=''       	
+	   THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=''     
+	   THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION=''
+	   THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION=''
+	   THISFORM.PAGEFRAME1.PAGE1.LBLF981.CAPTION=''     
+	   THISFORM.PAGEFRAME1.PAGE1.LBLF991.CAPTION=''                 	    
+    ELSE
+       THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.       
+       THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+       THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+       THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.    
+       THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.	              
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.)	
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  					 &&判斷有無列印的權限    
+       THISFORM.ANS_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.) AND  S10_1.F98<>'Y'
+       THISFORM.ALL_BOTT.ENABLED=IIF(A02.F10='*',.T.,.F.) AND  IIF(INDEXSEEK('N',.F.,'S10_1','S10_13'),.T.,.F.)	&&全部確認	       
+       THISFORM.INVERSE_BOTT.ENABLED=IIF(A02.F09='*',.T.,.F.) AND S10_1.F98='Y'             
+       THISFORM.PAGEFRAME1.PAGE1.LBLF10.VISIBLE=IIF(EMPTY(S10_1.F10),.F.,.T.)        
+       THISFORM.PAGEFRAME1.PAGE1.TXTF10.VISIBLE=IIF(EMPTY(S10_1.F10),.F.,.T.)     	
+    ENDIF              
+    THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)  &&判斷有無新增的權限   
+    THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.       		                 
+*!*	        THISFORM.REFRESH    
+  ENDPROC     
+**********A:基本考勤            
+  PROCEDURE PAGEFRAME1.PAGE2.ACTIVATE
+	SELECT S10_A
+	SET ORDER TO S10_A1
+    AREA2='S10_A'	
+    THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.T.
+    THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,255)  
+    THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+    THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE7.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE7.FORECOLOR=RGB(0,0,0)           
+    THISFORM.GRID2.VISIBLE=.T.
+    THISFORM.GRID3.VISIBLE=.F.
+    THISFORM.GRID4.VISIBLE=.F.
+    THISFORM.GRID5.VISIBLE=.F.
+    THISFORM.GRID6.VISIBLE=.F.
+    THISFORM.GRID7.VISIBLE=.F.        
+	THISFORM.KEY_LIST.ENABLED=.F.  	
+	THISFORM.MTH_LIST.ENABLED=.F. 	
+    THISFORM.ANS_BOTT.VISIBLE=.F.  	  
+    THISFORM.ALL_BOTT.VISIBLE=.F.  	
+    THISFORM.INVERSE_BOTT.VISIBLE=.F.
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+	THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.           
+	THISFORM.PAGEFRAME1.PAGE2.SPINNER06.READONLY=.T.
+	THISFORM.PAGEFRAME1.PAGE2.SPINNER07.READONLY=.T.     
+    THISFORM.PAGEFRAME1.PAGE2.TXTF081.VISIBLE=.F.	  
+    THISFORM.PAGEFRAME1.PAGE2.SPINNER05.FONTSIZE=INT_015*9    
+    THISFORM.PAGEFRAME1.PAGE2.SPINNER06.FONTSIZE=INT_015*9
+    THISFORM.PAGEFRAME1.PAGE2.SPINNER07.FONTSIZE=INT_015*9       
+    THISFORM.GRID2.COLUMN1.WIDTH=INT_015*55
+    THISFORM.GRID2.COLUMN2.WIDTH=INT_015*65
+    THISFORM.GRID2.COLUMN3.WIDTH=INT_015*65
+    THISFORM.GRID2.COLUMN4.WIDTH=INT_015*55
+    THISFORM.GRID2.COLUMN5.WIDTH=INT_015*75
+    THISFORM.GRID2.COLUMN6.WIDTH=INT_015*75                
+    THISFORM.GRID2.COLUMN7.WIDTH=INT_015*110                 
+    THISFORM.GRID2.COLUMN1.HEADER1.CAPTION=IIF(S10_1.F15='T','上班時數','上班天數')
+    THISFORM.GRID2.COLUMN2.HEADER1.CAPTION='遲到分鐘數'
+    THISFORM.GRID2.COLUMN3.HEADER1.CAPTION='早退分鐘數'
+    THISFORM.GRID2.COLUMN4.HEADER1.CAPTION='全勤狀況'
+    THISFORM.GRID2.COLUMN5.HEADER1.CAPTION='遲到額外扣款'
+    THISFORM.GRID2.COLUMN6.HEADER1.CAPTION='早退額外扣款'                
+    THISFORM.GRID2.COLUMN7.HEADER1.CAPTION='安全資料'                  
+    THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S10_A.F05'
+    THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S10_A.F06'
+    THISFORM.GRID2.COLUMN3.CONTROLSOURCE='S10_A.F07'
+    THISFORM.GRID2.COLUMN4.CONTROLSOURCE="IIF(S10_A.F08='Y','無全勤','有全勤')"
+    THISFORM.GRID2.COLUMN5.CONTROLSOURCE='S10_A.F09'
+    THISFORM.GRID2.COLUMN6.CONTROLSOURCE='S10_A.F10'                
+    THISFORM.GRID2.COLUMN7.CONTROLSOURCE='S10_A.F99'   
+    THISFORM.GRID2.ENABLED=.T.          	
+    THISFORM.GRID2.SETFOCUS 
+    IF THISFORM.GRID2.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F.	
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.         		      
+       THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE=0
+       THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE=0
+       THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE=0
+       THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=''	     
+   	   THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=''
+   	   THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=''   	
+   	   THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=''      	      			     
+       THISFORM.PAGEFRAME1.PAGE2.LBLF061.CAPTION=''
+       THISFORM.PAGEFRAME1.PAGE2.LBLF071.CAPTION=''	     	     
+	   THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION=''
+	ELSE		  	   
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) AND IIF(S10_1.F98<>'Y',.T.,.F.)   &&判斷有無修改的權限
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.)   &&判斷有無刪除的權限	            		      
+	   THISFORM.GRID2.AFTERROWCOLCHANGE 
+	ENDIF
+	THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.  
+	THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&判斷有無列印的權限    
+    R=RECNO('&AREA1') 
+    THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+    THISFORM.GRID1.ENABLED=.F.  	                 
+*!*	        THISFORM.REFRESH    
+  ENDPROC      
+*********** B:其他考勤 
+  PROCEDURE PAGEFRAME1.PAGE3.ACTIVATE
+    SELECT S10_B
+	SET ORDER TO S10_B1
+    AREA2='S10_B'	      
+    THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+    THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.T.
+    THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,255)      
+    THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE7.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE7.FORECOLOR=RGB(0,0,0)           
+    THISFORM.GRID2.VISIBLE=.F.
+    THISFORM.GRID3.VISIBLE=.T.
+    THISFORM.GRID4.VISIBLE=.F.
+    THISFORM.GRID5.VISIBLE=.F.
+    THISFORM.GRID6.VISIBLE=.F.
+    THISFORM.GRID7.VISIBLE=.F.            
+	THISFORM.KEY_LIST.ENABLED=.F.  	
+	THISFORM.MTH_LIST.ENABLED=.F. 	 
+    THISFORM.ANS_BOTT.VISIBLE=.F.  	
+    THISFORM.ALL_BOTT.VISIBLE=.F.  
+    THISFORM.INVERSE_BOTT.VISIBLE=.F.
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.		       
+    THISFORM.GRID3.COLUMN1.WIDTH=INT_015*130
+    THISFORM.GRID3.COLUMN2.WIDTH=INT_015*55
+    THISFORM.GRID3.COLUMN3.WIDTH=INT_015*55
+    THISFORM.GRID3.COLUMN4.WIDTH=INT_015*55
+    THISFORM.GRID3.COLUMN5.WIDTH=INT_015*55        
+    THISFORM.GRID3.COLUMN6.WIDTH=INT_015*110                 
+    THISFORM.GRID3.COLUMN1.HEADER1.CAPTION='缺勤項目'
+    THISFORM.GRID3.COLUMN2.HEADER1.CAPTION='缺勤數值'
+    THISFORM.GRID3.COLUMN3.HEADER1.CAPTION='計數單位'
+    THISFORM.GRID3.COLUMN4.HEADER1.CAPTION='扣款金額'
+    THISFORM.GRID3.COLUMN5.HEADER1.CAPTION='全勤扣款'        
+    THISFORM.GRID3.COLUMN6.HEADER1.CAPTION='安全資料'                  
+    THISFORM.GRID3.COLUMN1.CONTROLSOURCE='S10_B.F13'
+    THISFORM.GRID3.COLUMN2.CONTROLSOURCE='S10_B.F14'
+    THISFORM.GRID3.COLUMN3.CONTROLSOURCE="IIF(S10_B.F15='S','次',IIF(S10_B.F15='H','小時','日'))"
+    THISFORM.GRID3.COLUMN4.CONTROLSOURCE='S10_B.F16'
+    THISFORM.GRID3.COLUMN5.CONTROLSOURCE='S10_B.F17'        
+    THISFORM.GRID3.COLUMN6.CONTROLSOURCE='S10_B.F99'     
+    THISFORM.GRID3.ENABLED=.T.        	
+    THISFORM.GRID3.SETFOCUS 
+    IF THISFORM.GRID3.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F.	        
+	   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.      
+	   THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	      
+	   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	   THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE3.TXTF15.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=''	       
+	   THISFORM.PAGEFRAME1.PAGE3.TXTF42.VALUE=''	
+	   THISFORM.PAGEFRAME1.PAGE3.LBLF991.CAPTION=''
+	ELSE
+	   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.	
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.			     	   		   	   
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.)  AND EMPTY(S10_B.F42)&&判斷有無修改的權限
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   AND IIF(S10_1.F98<>'Y',.T.,.F.)   &&判斷有無刪除的權限	   
+	   THISFORM.GRID3.AFTERROWCOLCHANGE 
+	ENDIF
+    THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)	AND  IIF(S10_1.F98<>'Y',.T.,.F.)  &&判斷有無新增的權限   
+    THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&判斷有無列印的權限           	
+    R=RECNO('&AREA1') 
+    THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+    THISFORM.GRID1.ENABLED=.F.  	                 
+*!*	        THISFORM.REFRESH    
+  ENDPROC 
+***********  C:薪資所得明細
+  PROCEDURE PAGEFRAME1.PAGE4.ACTIVATE 
+    SELECT S10_C
+    SET ORDER TO S10_C1 
+    AREA2='S10_C'	
+    THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+    THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+    THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.T.
+    THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,255)    
+    THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)  
+    THISFORM.PAGEFRAME1.PAGE7.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE7.FORECOLOR=RGB(0,0,0)           
+    THISFORM.GRID2.VISIBLE=.F.
+    THISFORM.GRID3.VISIBLE=.F.
+    THISFORM.GRID4.VISIBLE=.T.
+    THISFORM.GRID5.VISIBLE=.F.
+    THISFORM.GRID6.VISIBLE=.F.
+    THISFORM.GRID7.VISIBLE=.F.            
+	THISFORM.KEY_LIST.ENABLED=.F.  	
+	THISFORM.MTH_LIST.ENABLED=.F. 	
+    THISFORM.ANS_BOTT.VISIBLE=.F.  
+    THISFORM.ALL_BOTT.VISIBLE=.F.  
+    THISFORM.INVERSE_BOTT.VISIBLE=.F.  
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.	         
+    THISFORM.GRID4.COLUMN1.WIDTH=INT_015*130
+    THISFORM.GRID4.COLUMN2.WIDTH=INT_015*130
+    THISFORM.GRID4.COLUMN3.WIDTH=INT_015*80   
+    THISFORM.GRID4.COLUMN4.WIDTH=INT_015*60        
+    THISFORM.GRID4.COLUMN5.WIDTH=INT_015*110                 
+    THISFORM.GRID4.COLUMN1.HEADER1.CAPTION='薪資類別'
+    THISFORM.GRID4.COLUMN2.HEADER1.CAPTION='薪資項目'
+    THISFORM.GRID4.COLUMN3.HEADER1.CAPTION='本月薪資所得'
+    THISFORM.GRID4.COLUMN4.HEADER1.CAPTION='基本薪資'        
+    THISFORM.GRID4.COLUMN5.HEADER1.CAPTION='安全資料'               
+    THISFORM.GRID4.COLUMN1.CONTROLSOURCE="SALARY_CLASS(S10_C.F18)"
+    THISFORM.GRID4.COLUMN2.CONTROLSOURCE='S10_C.F19'
+    THISFORM.GRID4.COLUMN3.CONTROLSOURCE='S10_C.F20' 
+    THISFORM.GRID4.COLUMN4.CONTROLSOURCE="IIF(EMPTY(S10_C.F21),'',S10_C.F21)"         
+    THISFORM.GRID4.COLUMN5.CONTROLSOURCE='S10_C.F99'     
+    THISFORM.GRID4.ENABLED=.T.        	
+    THISFORM.GRID4.SETFOCUS 
+    IF THISFORM.GRID4.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F.	        
+       THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+       THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.      
+	   THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	      
+	   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	   THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE='' 	     
+	   THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE='' 	     
+	   THISFORM.PAGEFRAME1.PAGE4.LBLF991.CAPTION=''
+	ELSE
+	   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.	
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.			     	   		   	   
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) AND IIF(S10_1.F98<>'Y',.T.,.F.)  &&AND S10_C.F18<>'A'  AND S10_C.F18<>'B'  AND S10_C.F18<>'C'  AND S10_C.F18<>'F' &&判斷有無修改的權限(A:底薪,B:日薪,C:時薪,F:全勤獎金不可修改)
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.)  &&AND S10_C.F18<>'A'  AND S10_C.F18<>'B'  AND S10_C.F18<>'C'  AND S10_C.F18<>'F' &&判斷有無刪除的權限(A:底薪,B:日薪,C:時薪,F:全勤獎金不可刪除)	        
+	   THISFORM.GRID4.AFTERROWCOLCHANGE 
+	ENDIF
+    THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.) AND IIF(S10_1.F98<>'Y',.T.,.F.) 	&&判斷有無新增的權限 
+    THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&判斷有無列印的權限             	
+    R=RECNO('&AREA1') 
+    THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+    THISFORM.GRID1.ENABLED=.F.  	                 
+*!*	        THISFORM.REFRESH    
+  ENDPROC      
+***********  D:薪資扣款明細
+  PROCEDURE PAGEFRAME1.PAGE5.ACTIVATE
+	SELECT S10_D
+	SET ORDER TO S10_D1
+    AREA2='S10_D'	
+    THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+    THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+    THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.T.
+    THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,255)    
+    THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE7.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE7.FORECOLOR=RGB(0,0,0)           
+    THISFORM.GRID2.VISIBLE=.F.
+    THISFORM.GRID3.VISIBLE=.F.
+    THISFORM.GRID4.VISIBLE=.F.
+    THISFORM.GRID5.VISIBLE=.T.
+    THISFORM.GRID6.VISIBLE=.F.
+    THISFORM.GRID7.VISIBLE=.F.            
+	THISFORM.KEY_LIST.ENABLED=.F.  	
+	THISFORM.MTH_LIST.ENABLED=.F. 	
+    THISFORM.ANS_BOTT.VISIBLE=.F.    
+    THISFORM.ALL_BOTT.VISIBLE=.F.  
+    THISFORM.INVERSE_BOTT.VISIBLE=.F.
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.	       
+    THISFORM.GRID5.COLUMN1.WIDTH=INT_015*130
+    THISFORM.GRID5.COLUMN2.WIDTH=INT_015*130
+    THISFORM.GRID5.COLUMN3.WIDTH=INT_015*80   
+    THISFORM.GRID5.COLUMN4.WIDTH=INT_015*60
+    THISFORM.GRID5.COLUMN5.WIDTH=INT_015*110                 
+    THISFORM.GRID5.COLUMN1.HEADER1.CAPTION='扣款類別'
+    THISFORM.GRID5.COLUMN2.HEADER1.CAPTION='扣款項目'
+    THISFORM.GRID5.COLUMN3.HEADER1.CAPTION='本月扣款金額'
+    THISFORM.GRID5.COLUMN4.HEADER1.CAPTION='基本扣款'  
+    THISFORM.GRID5.COLUMN5.HEADER1.CAPTION='安全資料'               
+    THISFORM.GRID5.COLUMN1.CONTROLSOURCE="SALARY_CLASS(S10_D.F24)"
+    THISFORM.GRID5.COLUMN2.CONTROLSOURCE='S10_D.F25'
+    THISFORM.GRID5.COLUMN3.CONTROLSOURCE='S10_D.F26' 
+    THISFORM.GRID5.COLUMN4.CONTROLSOURCE="IIF(EMPTY(S10_D.F23),'',S10_D.F23)"  
+    THISFORM.GRID5.COLUMN5.CONTROLSOURCE='S10_D.F99'    
+    THISFORM.GRID5.ENABLED=.T.         	
+    THISFORM.GRID5.SETFOCUS 
+    IF THISFORM.GRID5.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F.	        
+	   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.      
+	   THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	      
+	   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	   THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE='' 	    
+	   THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE='' 	 
+	   THISFORM.PAGEFRAME1.PAGE5.LBLF991.CAPTION=''
+	ELSE
+	   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.	
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.			     	   		   	   
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) AND IIF(S10_1.F98<>'Y',.T.,.F.)  &&判斷有無修改的權限
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.)  AND S10_D.F24<>'J'  AND S10_D.F24<>'K' &&判斷有無刪除的權限(J:勞保費,K:健保費不可刪除)	     
+	   THISFORM.GRID5.AFTERROWCOLCHANGE 
+	ENDIF
+    THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)	AND IIF(S10_1.F98<>'Y',.T.,.F.)  &&判斷有無新增的權限    
+    THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&判斷有無列印的權限         	
+    R=RECNO('&AREA1') 
+    THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+    THISFORM.GRID1.ENABLED=.F.  	                 
+*!*	        THISFORM.REFRESH    
+  ENDPROC    
+*********** E:懲處扣款 
+  PROCEDURE PAGEFRAME1.PAGE6.ACTIVATE
+	SELECT S10_E
+	SET ORDER TO S10_E1
+    AREA2='S10_E'	
+    THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+    THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+    THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.T.
+    THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,255)
+    THISFORM.PAGEFRAME1.PAGE7.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE7.FORECOLOR=RGB(0,0,0)           
+    THISFORM.GRID2.VISIBLE=.F.
+    THISFORM.GRID3.VISIBLE=.F.
+    THISFORM.GRID4.VISIBLE=.F.
+    THISFORM.GRID5.VISIBLE=.F.
+    THISFORM.GRID6.VISIBLE=.T.
+    THISFORM.GRID7.VISIBLE=.F.            
+	THISFORM.KEY_LIST.ENABLED=.F.  	
+	THISFORM.MTH_LIST.ENABLED=.F. 	
+    THISFORM.ANS_BOTT.VISIBLE=.F.  	  
+    THISFORM.ALL_BOTT.VISIBLE=.F.  
+    THISFORM.INVERSE_BOTT.VISIBLE=.F.
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.	
+    THISFORM.GRID6.COLUMN1.WIDTH=INT_015*65              
+    THISFORM.GRID6.COLUMN2.WIDTH=INT_015*130
+    THISFORM.GRID6.COLUMN3.WIDTH=INT_015*70   
+    THISFORM.GRID6.COLUMN4.WIDTH=INT_015*75                   
+    THISFORM.GRID6.COLUMN5.WIDTH=INT_015*110       
+    THISFORM.GRID6.COLUMN1.HEADER1.CAPTION='懲處日期'                  
+    THISFORM.GRID6.COLUMN2.HEADER1.CAPTION='懲處項目'
+    THISFORM.GRID6.COLUMN3.HEADER1.CAPTION='扣款小計'       
+    THISFORM.GRID6.COLUMN4.HEADER1.CAPTION='連續扣款月數'         
+    THISFORM.GRID6.COLUMN5.HEADER1.CAPTION='安全資料'       
+    THISFORM.GRID6.COLUMN1.CONTROLSOURCE='S10_E.F27'                
+    THISFORM.GRID6.COLUMN2.CONTROLSOURCE='S10_E.F29'
+    THISFORM.GRID6.COLUMN3.CONTROLSOURCE="IIF(S10_E.F40='T' AND EMPTY(S10_E.F30),'扣薪資總額',S10_E.F30)"
+    THISFORM.GRID6.COLUMN4.CONTROLSOURCE='S10_E.F31'                      
+    THISFORM.GRID6.COLUMN5.CONTROLSOURCE='S10_E.F99' 
+    THISFORM.GRID6.ENABLED=.T.            	
+    THISFORM.GRID6.SETFOCUS 
+    IF THISFORM.GRID6.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F.	        
+	   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.      
+	   THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	      
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	   THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE6.TXTF29.VALUE=''
+	   THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE=''	
+	   THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE=''	
+	   THISFORM.PAGEFRAME1.PAGE6.TXTF41.VALUE=''		     
+	   THISFORM.PAGEFRAME1.PAGE6.LBLF311.CAPTION=''	 
+	   THISFORM.PAGEFRAME1.PAGE6.LBLF961.CAPTION=''         	     
+	   THISFORM.PAGEFRAME1.PAGE6.LBLF991.CAPTION=''
+    ELSE
+	   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.	
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.			     	   		   	   
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   AND IIF(S10_1.F98<>'Y',.T.,.F.) &&判斷有無刪除的權限	     
+	   THISFORM.GRID6.AFTERROWCOLCHANGE  
+	ENDIF
+    THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)	 AND IIF(S10_1.F98<>'Y',.T.,.F.)  &&判斷有無新增的權限             		
+    THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.      
+    THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&判斷有無列印的權限     	
+    R=RECNO('&AREA1') 
+    THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+    THISFORM.GRID1.ENABLED=.F.  	                 
+*!*	        THISFORM.REFRESH    
+  ENDPROC     
+***********  F:加班明細
+  PROCEDURE PAGEFRAME1.PAGE7.ACTIVATE
+	SELECT S10_F
+	SET ORDER TO S10_F1
+    AREA2='S10_F'	
+    THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)  
+    THISFORM.PAGEFRAME1.PAGE3.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE3.FORECOLOR=RGB(0,0,0)      
+    THISFORM.PAGEFRAME1.PAGE4.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE4.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE5.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE5.FORECOLOR=RGB(0,0,0)    
+    THISFORM.PAGEFRAME1.PAGE6.FONTITALIC=.F.
+    THISFORM.PAGEFRAME1.PAGE6.FORECOLOR=RGB(0,0,0)
+    THISFORM.PAGEFRAME1.PAGE7.FONTITALIC=.T.
+    THISFORM.PAGEFRAME1.PAGE7.FORECOLOR=RGB(0,0,255)           
+    THISFORM.GRID2.VISIBLE=.F.
+    THISFORM.GRID3.VISIBLE=.F.
+    THISFORM.GRID4.VISIBLE=.F.
+    THISFORM.GRID5.VISIBLE=.F.
+    THISFORM.GRID6.VISIBLE=.F.
+    THISFORM.GRID7.VISIBLE=.T.            
+	THISFORM.KEY_LIST.ENABLED=.F.  	
+	THISFORM.MTH_LIST.ENABLED=.F. 	
+    THISFORM.ANS_BOTT.VISIBLE=.F.  	  
+    THISFORM.ALL_BOTT.VISIBLE=.F.  
+    THISFORM.INVERSE_BOTT.VISIBLE=.F.
+	THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.	         
+    THISFORM.GRID7.COLUMN1.WIDTH=INT_015*105
+    THISFORM.GRID7.COLUMN2.WIDTH=INT_015*53
+    THISFORM.GRID7.COLUMN3.WIDTH=INT_015*33   
+    THISFORM.GRID7.COLUMN4.WIDTH=INT_015*53
+    THISFORM.GRID7.COLUMN5.WIDTH=INT_015*53 
+    THISFORM.GRID7.COLUMN6.WIDTH=INT_015*105          
+    THISFORM.GRID7.COLUMN7.WIDTH=INT_015*53   
+    THISFORM.GRID7.COLUMN8.WIDTH=INT_015*53 
+    THISFORM.GRID7.COLUMN9.WIDTH=INT_015*110   
+    THISFORM.GRID7.COLUMN10.WIDTH=INT_015*110                              
+    THISFORM.GRID7.COLUMN1.HEADER1.CAPTION='加班時段'
+    THISFORM.GRID7.COLUMN2.HEADER1.CAPTION='加班數值'
+    THISFORM.GRID7.COLUMN3.HEADER1.CAPTION='單位'      
+    THISFORM.GRID7.COLUMN4.HEADER1.CAPTION='加班小計'     
+    THISFORM.GRID7.COLUMN5.HEADER1.CAPTION='加班天數'   
+    THISFORM.GRID7.COLUMN6.HEADER1.CAPTION='津貼補助項目'
+    THISFORM.GRID7.COLUMN7.HEADER1.CAPTION='津貼金額'       
+    THISFORM.GRID7.COLUMN8.HEADER1.CAPTION='津貼小計'   
+    THISFORM.GRID7.COLUMN9.HEADER1.CAPTION='加班總所得'         
+    THISFORM.GRID7.COLUMN10.HEADER1.CAPTION='安全資料'               
+    THISFORM.GRID7.COLUMN1.CONTROLSOURCE="S10_F.F32+SPACE(4)+IIF(S10_F.F33='1','平日加班','假日加班')"
+    THISFORM.GRID7.COLUMN2.CONTROLSOURCE='S10_F.F35'
+    THISFORM.GRID7.COLUMN3.CONTROLSOURCE="IIF(S10_F.F34='H','小時','日')"  
+    THISFORM.GRID7.COLUMN4.CONTROLSOURCE='S10_F.F39' 
+    THISFORM.GRID7.COLUMN5.CONTROLSOURCE='S10_F.F44' 
+    THISFORM.GRID7.COLUMN6.CONTROLSOURCE='S10_F.F36' 
+    THISFORM.GRID7.COLUMN7.CONTROLSOURCE="IIF(EMPTY(S10_F.F37),'',S10_F.F37)"
+    THISFORM.GRID7.COLUMN8.CONTROLSOURCE='S10_F.F37*S10_F.F44' 
+    THISFORM.GRID7.COLUMN9.CONTROLSOURCE='S10_F.F38'  
+    THISFORM.GRID7.COLUMN10.CONTROLSOURCE='S10_F.F99' 
+    THISFORM.GRID7.ENABLED=.T. 
+    THISFORM.GRID7.SETFOCUS 
+    IF THISFORM.GRID7.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F.	       
+	   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.      
+	   THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.	
+	   THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.       	           
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+	   THISFORM.PAGEFRAME1.PAGE7.TXTF32.VALUE=''  
+	   THISFORM.PAGEFRAME1.PAGE7.TXTF331.VALUE=''  
+	   THISFORM.PAGEFRAME1.PAGE7.TXTF33.VALUE=''  
+	   THISFORM.PAGEFRAME1.PAGE7.TXTF34.VALUE='' 
+	   THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE='' 	 	
+	   THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE='' 	
+	   THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE='' 	   
+	   THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE='' 	  
+	   THISFORM.PAGEFRAME1.PAGE7.TXTF39.VALUE=''     
+	   THISFORM.PAGEFRAME1.PAGE7.TXTF44.VALUE=''   
+	   THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=''	
+	   THISFORM.PAGEFRAME1.PAGE7.LBLF43.CAPTION=''          	     
+	   THISFORM.PAGEFRAME1.PAGE7.LBLF991.CAPTION=''
+	ELSE
+	   THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+	   THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+	   THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.	
+	   THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.	
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) AND IIF(S10_1.F98<>'Y',.T.,.F.) &&判斷有無修改的權限     		     	   		   	   
+	   THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.) &&判斷有無刪除的權限	    
+	   THISFORM.GRID7.AFTERROWCOLCHANGE    
+	ENDIF
+    THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.)  &&判斷有無新增的權限    	
+    THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&判斷有無列印的權限
+    R=RECNO('&AREA1') 
+    THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+    THISFORM.GRID1.ENABLED=.F.  	                 
+*!*	        THISFORM.REFRESH    
+  ENDPROC        
+**********基本資料  
+  PROC GRID1.AFTERROWCOLCHANGE
+      LPARAMETERS NCOLINDEX
+        SELECT S10_1 
+        THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(S10_1.F98<>'Y',RGB(255,0,0),'')","COLUMN")      
+        THISFORM.GRID1.TOOLTIPTEXT=IIF(S10_1.F98<>'Y','尚未確認','已確認')                   
+        THISFORM.PAGEFRAME1.PAGE1.LBLF10.VISIBLE=IIF(EMPTY(S10_1.F10),.F.,.T.)        
+        THISFORM.PAGEFRAME1.PAGE1.TXTF10.VISIBLE=IIF(EMPTY(S10_1.F10),.F.,.T.)  
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=S10_1.F01
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=S10_1.F05 
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=S10_1.F07
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=S10_1.F09
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=S10_1.F10
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF15.VALUE=IIF(S10_1.F15='M','月薪',IIF(S10_1.F15='D','日薪','時薪'))       	
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE=BILL_MODE(S10_1.F28)
+       	THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=S10_1.F29        
+        THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION=S10_1.F02   
+        THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION=S10_1.F06  
+        THISFORM.PAGEFRAME1.PAGE1.LBLF981.CAPTION=IIF(S10_1.F98<>'Y','尚未確認','已確認')                        	
+        THISFORM.PAGEFRAME1.PAGE1.LBLF981.BACKCOLOR=IIF(S10_1.F98<>'Y',RGB(255,0,0),RGB(58,186,152))
+        THISFORM.PAGEFRAME1.PAGE1.LBLF991.CAPTION=S10_1.F99  
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F. 	&&判斷有無修改的權限     	
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.) AND   IIF(S10_1.F98<>'Y',.T.,.F.)  &&判斷有無刪除的權限
+       	IF THISFORM.GRID1.ACTIVEROW=0     	       	     
+		    THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+		    THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+		    THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+		    THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+		    THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+		    THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.	 
+		    THISFORM.ANS_BOTT.ENABLED=.F.    
+		    THISFORM.ALL_BOTT.ENABLED=.F.  
+		    THISFORM.INVERSE_BOTT.ENABLED=.F. 
+		    THISFORM.PAGEFRAME1.PAGE1.LBLF10.VISIBLE=.F.
+	        THISFORM.PAGEFRAME1.PAGE1.TXTF10.VISIBLE=.F.  
+		    THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+		    THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=''	       
+		    THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=''
+		    THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=''	    
+		    THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=''	  
+		    THISFORM.PAGEFRAME1.PAGE1.TXTF15.VALUE='' 
+		    THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE=''    
+		    THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=''         	        
+            THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION=''	   
+            THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION=''	 
+            THISFORM.PAGEFRAME1.PAGE1.LBLF981.CAPTION=''
+            THISFORM.PAGEFRAME1.PAGE1.LBLF991.CAPTION=''
+ 	    ELSE
+		    THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+		    THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+		    THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+		    THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+		    THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T. 
+		    THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&判斷有無列印的權限 	
+		    THISFORM.ANS_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.) AND  IIF(S10_1.F98<>'Y',.T.,.F.) 
+		    THISFORM.ALL_BOTT.ENABLED=IIF(A02.F10='*',.T.,.F.) AND  IIF(INDEXSEEK('N',.F.,'S10_1','S10_13'),.T.,.F.)	&&全部確認	    
+		    THISFORM.INVERSE_BOTT.ENABLED=IIF(A02.F09='*',.T.,.F.) AND  IIF(S10_1.F98='Y',.T.,.F.) 
+        ENDIF	      
+        FCH='GRID1'
+        JK=THIS.COLUMN1.HEADER1.CAPTION  
+        IF THIS.ACTIVEROW=0
+           THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        ELSE
+           THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+        ENDIF   
+        CHK=''     
+*!*	       THISFORM.REFRESH
+  ENDPROC     
+**********A基本考勤資料	  
+  PROC GRID2.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+	   	 THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE=S10_A.F05
+	   	 THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE=S10_A.F06  
+	   	 THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE=S10_A.F07  
+	   	 THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=IIF(S10_A.F08='Y','無全勤','有全勤')   
+	   	 THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE=S10_A.F08
+	   	 THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=IIF(S10_A.F08='Y',2,1)    	 			 		
+	   	 THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=S10_A.F09  
+	   	 THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=S10_A.F10   
+	   	 THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=S10_A.F11      	 
+		 THISFORM.PAGEFRAME1.PAGE2.LBLF061.CAPTION=IIF(IIF(INDEXSEEK('C',.T.,'S00','S001'),S10_A.F06>=S00.F14 AND S00.F13='Y',.F.),'已符合遲到額外扣款標準','')
+		 THISFORM.PAGEFRAME1.PAGE2.LBLF061.BACKCOLOR=IIF(IIF(INDEXSEEK('C',.T.,'S00','S001'),S10_A.F06>=S00.F14 AND S00.F13='Y',.F.),RGB(255,0,0),RGB(192,192,192))		 		
+		 THISFORM.PAGEFRAME1.PAGE2.LBLF071.CAPTION=IIF(IIF(INDEXSEEK('D',.T.,'S00','S001'),S10_A.F07>=S00.F14 AND S00.F13='Y',.F.),'已符合早退額外扣款標準','')
+		 THISFORM.PAGEFRAME1.PAGE2.LBLF071.BACKCOLOR=IIF(IIF(INDEXSEEK('D',.T.,'S00','S001'),S10_A.F07>=S00.F14 AND S00.F13='Y',.F.),RGB(255,0,0),RGB(192,192,192)) 					 		 	 		
+	   	 THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION=S10_A.F99      
+         IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+            THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+         ENDIF       
+         FCH='GRID2'
+         JK=THIS.COLUMN1.HEADER1.CAPTION
+         CHK=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+*       THISFORM.REFRESH
+  ENDPROC
+  *********B.缺勤項目明細	     	 		
+  PROC GRID3.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+	   	 THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE=S10_B.F12
+	   	 THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE=S10_B.F13
+	   	 THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=S10_B.F14  
+	   	 THISFORM.PAGEFRAME1.PAGE3.TXTF15.VALUE=IIF(S10_B.F15='S','次',IIF(S10_B.F15='H','小時','日'))
+	   	 THISFORM.PAGEFRAME1.PAGE3.TXTF151.VALUE=S10_B.F15   	 		
+	   	 THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=S10_B.F16
+	   	 THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=S10_B.F17	 
+	   	 THISFORM.PAGEFRAME1.PAGE3.TXTF42.VALUE=S10_B.F42			
+	   	 THISFORM.PAGEFRAME1.PAGE3.LBLF991.CAPTION=S10_B.F99   
+	   	 THISFORM.PAGEFRAME1.PAGE3.LBLF42.VISIBLE=IIF(EMPTY(S10_B.F42),.F.,.T.)
+	   	 THISFORM.PAGEFRAME1.PAGE3.TXTF42.VISIBLE=IIF(EMPTY(S10_B.F42),.F.,.T.)
+     	 THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.)  AND EMPTY(S10_B.F42)&&判斷有無修改的權限   	 
+         IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+             THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+         ENDIF       
+         FCH='GRID3'
+         JK=THIS.COLUMN1.HEADER1.CAPTION
+         CHK=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE         
+*       THISFORM.REFRESH
+  ENDPROC     	 		
+  ********C.薪資所得明細               
+  PROC GRID4.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+	   	THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE=SALARY_CLASS(S10_C.F18)
+	   	THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE=S10_C.F19  
+	   	THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=S10_C.F20
+	   	THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=IIF(EMPTY(S10_C.F21),'',S10_C.F21)  
+	   	THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE=S10_C.F22
+	   	THISFORM.PAGEFRAME1.PAGE4.LBLF991.CAPTION=S10_C.F99  
+	   	THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) AND IIF(S10_1.F98<>'Y',.T.,.F.)  &&AND S10_C.F18<>'A'  AND S10_C.F18<>'B'  AND S10_C.F18<>'C'  AND S10_C.F18<>'F' &&判斷有無修改的權限(A:底薪,B:日薪,C:時薪,F:全勤獎金不可修改)
+		THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.) AND  IIF(S10_1.F98<>'Y',.T.,.F.)  &&AND S10_C.F18<>'A'  AND S10_C.F18<>'B'  AND S10_C.F18<>'C'  AND S10_C.F18<>'F' &&判斷有無刪除的權限(A:底薪,B:日薪,C:時薪,F:全勤獎金不可刪除)		                  
+        IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+            THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        ENDIF       
+        FCH='GRID4'
+        JK=THIS.COLUMN1.HEADER1.CAPTION
+        CHK=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE        
+*       THISFORM.REFRESH
+  ENDPROC  	                
+********D.薪資扣款明細	  
+  PROC GRID5.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+	   	THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE=SALARY_CLASS(S10_D.F24)
+	   	THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE=S10_D.F25  
+	   	THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE=S10_D.F26
+	   	THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE=IIF(EMPTY(S10_D.F23),'',S10_D.F23) 
+	   	THISFORM.PAGEFRAME1.PAGE5.LBLF991.CAPTION=S10_D.F99
+		THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.) AND  IIF(S10_1.F98<>'Y',.T.,.F.)  &&AND S10_D.F24<>'J'  AND S10_D.F24<>'K'  &&判斷有無刪除的權限(J:勞保費,K:健保費不可刪除)		                     	 		
+        IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+            THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        ENDIF       
+        FCH='GRID5'
+        JK=THIS.COLUMN1.HEADER1.CAPTION
+        CHK=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE        
+*       THISFORM.REFRESH
+  ENDPROC  	     
+  ***********E.懲處項目	           
+  PROC GRID6.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+        THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE=S10_E.F27
+        THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE=S10_E.F28 
+	   	THISFORM.PAGEFRAME1.PAGE6.TXTF29.VALUE=S10_E.F29                         
+	   	THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE=IIF(S10_E.F40='T' AND EMPTY(S10_E.F30),'扣薪資總額',S10_E.F30)
+	   	THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE=S10_E.F40 
+	   	THISFORM.PAGEFRAME1.PAGE6.TXTF41.VALUE=S10_E.F41 	 	
+	   	THISFORM.PAGEFRAME1.PAGE6.LBLF311.CAPTION=SPACE(4)+ALLTRIM(STR(S10_E.F31))
+		THISFORM.PAGEFRAME1.PAGE6.LBLF961.CAPTION=SPACE(4)+IIF(INDEXSEEK(S10_E.F01+DTOS(S10_E.F27)+S10_E.F28,.T.,'S08','S081'),ALLTRIM(STR(S08.F12)),'') &&懲處剩餘次數  	 		
+	   	THISFORM.PAGEFRAME1.PAGE6.LBLF991.CAPTION=S10_E.F99            
+        IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+           THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        ENDIF       
+        FCH='GRID6'
+        JK=THIS.COLUMN1.HEADER1.CAPTION
+        CHK=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE        
+*       THISFORM.REFRESH
+  ENDPROC     
+********F.加班明細	  	 		
+  PROC GRID7.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+        THISFORM.PAGEFRAME1.PAGE7.TXTF32.VALUE=S10_F.F32
+	   	THISFORM.PAGEFRAME1.PAGE7.TXTF33.VALUE=S10_F.F32+SPACE(4)+IIF(S10_F.F33='1','平日加班','假日加班')
+	   	THISFORM.PAGEFRAME1.PAGE7.TXTF331.VALUE=S10_F.F33
+	   	THISFORM.PAGEFRAME1.PAGE7.TXTF34.VALUE=IIF(S10_F.F34='H','小時','日')
+	   	THISFORM.PAGEFRAME1.PAGE7.TXTF341.VALUE=S10_F.F34    	 		
+	   	THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE= S10_F.F35  
+	   	THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE=S10_F.F36   
+	   	THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE=S10_F.F37
+	   	THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE=S10_F.F37*S10_F.F44
+	   	THISFORM.PAGEFRAME1.PAGE7.TXTF39.VALUE=S10_F.F39
+	   	THISFORM.PAGEFRAME1.PAGE7.TXTF44.VALUE=S10_F.F44
+	   	THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(S10_F.F38))
+	   	THISFORM.PAGEFRAME1.PAGE7.LBLF43.VISIBLE=IIF(EMPTY(S10_F.F43),.F.,.T.)
+	   	THISFORM.PAGEFRAME1.PAGE7.LBLF43.CAPTION=IIF(EMPTY(S10_F.F43),'','此為S14.出勤紀錄所帶入之加班資料')
+	   	THISFORM.PAGEFRAME1.PAGE7.LBLF991.CAPTION=S10_F.F99			    			 
+        IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+            THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        ENDIF       
+        FCH='GRID7'
+        JK=THIS.COLUMN1.HEADER1.CAPTION
+        CHK=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE        
+*       THISFORM.REFRESH
+  ENDPROC   
+**********    
+  PROC KEY_LIST.INIT 
+       WITH THIS 
+           .ADDITEM('依員工編號排列')
+           .ADDITEM('依員工姓名排列')
+           .VALUE=1
+       ENDWITH             
+  ENDPROC
+********* 
+  PROC KEY_LIST.INTERACTIVECHANGE                 
+       SELECT  S10_1 
+       DO CASE
+          CASE THIS.DISPLAYVALUE='依員工編號排列'
+               SET ORDER TO S10_11 
+		       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='員工編號'
+		       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='員工姓名'
+		       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S10_1.F01'
+		       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='S10_1.F02'
+		       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*50
+		       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*55 
+          CASE THIS.DISPLAYVALUE='依員工姓名排列'
+               SET ORDER TO S10_12
+		       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='員工姓名'
+		       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='員工編號'
+		       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S10_1.F02'
+		       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='S10_1.F01'
+		       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*55
+		       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*50
+       ENDCASE 
+       THISFORM.GRID1.SETFOCUS
+  ENDPROC      
+**************  
+  PROC MTH_LIST.INTERACTIVECHANGE
+       HK=LEFT(ALLTRIM(THISFORM.MTH_LIST.DISPLAYVALUE),5)
+       THISFORM.GRID1.RECORDSOURCE=''
+       THISFORM.GRID2.RECORDSOURCE=''
+       THISFORM.GRID2.LINKMASTER=''
+       THISFORM.GRID2.RELATIONALEXPR=''
+       THISFORM.GRID2.CHILDORDER=''  
+       THISFORM.GRID3.RECORDSOURCE=''
+       THISFORM.GRID3.LINKMASTER=''
+       THISFORM.GRID3.RELATIONALEXPR=''
+       THISFORM.GRID3.CHILDORDER=''  
+       THISFORM.GRID4.RECORDSOURCE=''
+       THISFORM.GRID4.LINKMASTER=''
+       THISFORM.GRID4.RELATIONALEXPR=''
+       THISFORM.GRID4.CHILDORDER=''  
+       THISFORM.GRID5.RECORDSOURCE=''
+       THISFORM.GRID5.LINKMASTER=''
+       THISFORM.GRID5.RELATIONALEXPR=''
+       THISFORM.GRID5.CHILDORDER=''  
+       THISFORM.GRID6.RECORDSOURCE=''
+       THISFORM.GRID6.LINKMASTER=''
+       THISFORM.GRID6.RELATIONALEXPR=''
+       THISFORM.GRID6.CHILDORDER=''                       
+       THISFORM.GRID7.RECORDSOURCE=''
+       THISFORM.GRID7.LINKMASTER=''
+       THISFORM.GRID7.RELATIONALEXPR=''
+       THISFORM.GRID7.CHILDORDER=''  
+       	SELECT S10_1
+		USE              
+		SELECT S10_A
+		USE       
+		SELECT S10_B
+		USE
+		SELECT S10_C
+		USE
+		SELECT S10_D
+		USE
+		SELECT S10_E
+		USE			
+		SELECT S10_F
+		USE			
+        SELECT S10
+        USE
+		S10='S10'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+		S101='S101'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+		S102='S102'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+		S103='S103'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+		S104='S104'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+		S105='S105'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+		IF !USED('&S10')
+		   SELE 0
+		   USE (S10) ALIA S10
+		ELSE
+		   SELE S10
+		ENDIF
+		SET ORDER TO S101
+		*********A:基本考勤
+		SELECT F01,F03,F05,F06,F07,F08,F09,F10,F11,F97,F99 FROM S10 ORDER BY F01 WHERE F97='A'  INTO CURSOR S10_A READWRITE 
+		INDE ON F01 TAG S10_A1
+		SELECT S10_A
+		SET ORDER TO S10_A1    
+		*********B:其他考勤
+		SELECT F01,F03,F12,F13,F14,F15,F16,F17,F42,F97,F99 FROM S10 ORDER BY F01,F12 WHERE F97='B'  INTO CURSOR S10_B READWRITE 
+		INDE ON F01+F12+F42 TAG S10_B1
+		SELECT S10_B
+		SET ORDER TO S10_B1 
+		*********C:薪資所得明細
+		SELECT F01,F03,F18,F19,F20,F21,F22,F97,F99 FROM S10 ORDER BY F01,F18,F19 WHERE F97='C'  INTO CURSOR S10_C READWRITE 
+		INDE ON F01+F18+F19 TAG S10_C1
+		SELECT S10_C
+		SET ORDER TO S10_C1
+		*********D:薪資扣款明細
+		SELECT F01,F03,F24,F25,F26,F23,F97,F99 FROM S10 ORDER BY F01,F24,F25 WHERE F97='D'  INTO CURSOR S10_D READWRITE 
+		INDE ON F01+F24+F25 TAG S10_D1
+		SELECT S10_D
+		SET ORDER TO S10_D1 
+		*********E:懲處扣款
+		SELECT F01,F03,F27,F28,F29,F30,F31,F40,F41,F97,F99 FROM S10 ORDER BY F01,F27,F28 WHERE F97='E'  INTO CURSOR S10_E READWRITE 
+		INDE ON F01+DTOS(F27)+F28 TAG S10_E1
+		SELECT S10_E
+		SET ORDER TO S10_E1 
+		*********F:加班明細
+		SELECT F01,F03,F32,F33,F34,F35,F36,F37,F38,F39,F43,F44,F97,F99 FROM S10 ORDER BY F01,F32 WHERE F97='F'  INTO CURSOR S10_F READWRITE 
+		INDE ON F01+F32+F43 TAG S10_F1
+		SELECT S10_F
+		SET ORDER TO S10_F1 
+		*********基本資料
+		CREATE CURSOR S10_1;
+		(F01 C(4),F02 C(8),F05 C(4),F06 C(8),F07 C(30),F09 D(8),F10 D(8),F15 C(1),F28 C(1),F29 C(30),F50 N(7),F51 N(7),F97 C(1),F98 C(1),F99 C(17))
+		INDE ON F01 TAG S10_11
+		INDE ON F02 TAG S10_12
+		INDE ON F98 TAG S10_13
+		SELECT S10.F01,S10.F02,S10.F03,S10.F04,S10.F99,S05.F07,S05.F09,S05.F10,S05.F15,S05.F28,S05.F29 FROM S10,S05;
+		       WHERE S10.F01=S05.F01 AND IIF(ALL_CHK=.F.,S05.F27=.T.,.T.) ORDER BY S10.F01  GROUP BY S10.F01 INTO CURSOR S10_TEMP
+		SELECT S10_TEMP
+		GO TOP
+		DO WHILE !EOF()
+			SELECT S10_1
+			APPEND BLANK 
+			REPLACE S10_1.F01 WITH S10_TEMP.F01		&&人員編號
+			REPLACE S10_1.F02 WITH S10_TEMP.F02		&&人員姓名
+			REPLACE S10_1.F05 WITH S10_TEMP.F03		&&部門編號
+			REPLACE S10_1.F06 WITH S10_TEMP.F04		&&部門名稱
+			REPLACE S10_1.F07 WITH S10_TEMP.F07		&&職務名稱
+			REPLACE S10_1.F09 WITH S10_TEMP.F09		&&到職日期
+			REPLACE S10_1.F10 WITH S10_TEMP.F10		&&異動日期
+			REPLACE S10_1.F15 WITH S10_TEMP.F15		&&發薪種類(M:月薪,D:日薪,T:時薪)
+			REPLACE S10_1.F28 WITH S10_TEMP.F28		&&任職狀況
+			REPLACE S10_1.F29 WITH IIF(INDEXSEEK('I'+S10_TEMP.F29,.T.,'S00','S005'),S00.F48+SPACE(4)+S00.F50+'～'+S00.F51,'') &&班別
+			REPLACE S10_1.F98 WITH IIF(SEEK(S10_TEMP.F01+'A','S10'),S10.F98,'N')    &&判斷是否已確認
+			REPLACE S10_1.F99 WITH S10_TEMP.F99		&&安全資料
+			SELECT S10_TEMP
+			SKIP 
+		ENDDO
+		SELECT S10_TEMP
+		USE 
+		SELECT S10_1
+		SET ORDER TO S10_11     
+		GO TOP	
+	**********
+       THISFORM.GRID1.RECORDSOURCE='S10_1'  	     
+       THISFORM.GRID2.RECORDSOURCE='S10_A'
+       THISFORM.GRID2.LINKMASTER='S10_1'
+       THISFORM.GRID2.RELATIONALEXPR='F01'
+       THISFORM.GRID2.CHILDORDER='S10_A1'        
+       THISFORM.GRID3.RECORDSOURCE='S10_B'
+       THISFORM.GRID3.LINKMASTER='S10_1'
+       THISFORM.GRID3.RELATIONALEXPR='F01'
+       THISFORM.GRID3.CHILDORDER='S10_B1' 
+       THISFORM.GRID4.RECORDSOURCE='S10_C'
+       THISFORM.GRID4.LINKMASTER='S10_1'
+       THISFORM.GRID4.RELATIONALEXPR='F01'
+       THISFORM.GRID4.CHILDORDER='S10_C1' 
+       THISFORM.GRID5.RECORDSOURCE='S10_D'
+       THISFORM.GRID5.LINKMASTER='S10_1'
+       THISFORM.GRID5.RELATIONALEXPR='F01'
+       THISFORM.GRID5.CHILDORDER='S10_D1' 
+       THISFORM.GRID6.RECORDSOURCE='S10_E'
+       THISFORM.GRID6.LINKMASTER='S10_1'
+       THISFORM.GRID6.RELATIONALEXPR='F01'
+       THISFORM.GRID6.CHILDORDER='S10_E1' 
+       THISFORM.GRID7.RECORDSOURCE='S10_F'
+       THISFORM.GRID7.LINKMASTER='S10_1'
+       THISFORM.GRID7.RELATIONALEXPR='F01'
+       THISFORM.GRID7.CHILDORDER='S10_F1'  
+       THISFORM.GRID1.READONLY=.T.      
+       THISFORM.GRID2.READONLY=.T.  
+       THISFORM.GRID3.READONLY=.T. 
+       THISFORM.GRID4.READONLY=.T. 
+       THISFORM.GRID5.READONLY=.T. 
+       THISFORM.GRID6.READONLY=.T. 
+       THISFORM.GRID7.READONLY=.T.  
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='員工編號'
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='員工姓名'
+       THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='任職狀況'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S10_1.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='S10_1.F02'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE="BILL_MODE(S10_1.F28)"
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*50
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*55          
+       THISFORM.GRID1.COLUMN3.WIDTH=INT_015*55   
+       THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S10_A.F05'
+       THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S10_A.F06'
+       THISFORM.GRID2.COLUMN3.CONTROLSOURCE='S10_A.F07'
+       THISFORM.GRID2.COLUMN4.CONTROLSOURCE="IIF(S10_A.F08='Y','無全勤','有全勤')"
+       THISFORM.GRID2.COLUMN5.CONTROLSOURCE='S10_A.F09'
+       THISFORM.GRID2.COLUMN6.CONTROLSOURCE='S10_A.F10'                
+       THISFORM.GRID2.COLUMN7.CONTROLSOURCE='S10_A.F99'          
+       THISFORM.GRID1.SETFOCUS         
+       THISFORM.KEY_LIST.INTERACTIVECHANGE             
+       THISFORM.ANS_BOTT.VISIBLE=.T.    
+       THISFORM.ALL_BOTT.VISIBLE=.T.  
+       THISFORM.INVERSE_BOTT.VISIBLE=.T.      
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)  &&判斷有無新增的權限     
+       IF THISFORM.GRID1.ACTIVEROW=0
+	  	  THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+          THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+	      THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+          THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.
+	      THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.
+	      THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.	
+          THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+	      THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+	      THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.    
+	      THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.	 
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.           
+		  THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F. 	
+		  THISFORM.ANS_BOTT.ENABLED=.F.
+		  THISFORM.ALL_BOTT.ENABLED=.F.
+		  THISFORM.INVERSE_BOTT.ENABLED=.F.    	   
+		  THISFORM.PAGEFRAME1.PAGE1.LBLF10.VISIBLE=.F.       
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF10.VISIBLE=.F.
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF15.VALUE=''       	
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE=''
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=''     
+		  THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION=''
+		  THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION=''
+		  THISFORM.PAGEFRAME1.PAGE1.LBLF981.CAPTION=''     
+		  THISFORM.PAGEFRAME1.PAGE1.LBLF991.CAPTION=''    	   
+       ELSE
+	   	  THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.
+          THISFORM.PAGEFRAME1.PAGE3.ENABLED=.T.
+	   	  THISFORM.PAGEFRAME1.PAGE4.ENABLED=.T.
+          THISFORM.PAGEFRAME1.PAGE5.ENABLED=.T.
+	      THISFORM.PAGEFRAME1.PAGE6.ENABLED=.T.
+	      THISFORM.PAGEFRAME1.PAGE7.ENABLED=.T.	 
+          THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+		  THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+		  THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+		  THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.    
+		  THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.		      
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.)	    	     
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限    
+		  THISFORM.ANS_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.) AND  S10_1.F98<>'Y'			&&確認
+		  THISFORM.ALL_BOTT.ENABLED=IIF(A02.F10='*',.T.,.F.) AND  IIF(INDEXSEEK('N',.F.,'S10_1','S10_13'),.T.,.F.)	&&全部確認
+		  THISFORM.INVERSE_BOTT.ENABLED=IIF(A02.F09='*',.T.,.F.) AND S10_1.F98='Y'                	&&反確認 
+       ENDIF           
+       THISFORM.KEY_LIST.DISPLAYVALUE='依員工編號排列'      
+       JK='員工編號'
+       SELECT  S10_1
+       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=S10_1.F01	   
+       THISFORM.REFRESH          
+  ENDPROC       
+***********新增
+PROCEDURE ORPGROUP.NEW_BOTT.CLICK   
+     THISFORM.MTH_LIST.ENABLED=.F. 
+     THISFORM.KEY_LIST.ENABLED=.F.      
+     THISFORM.GRID1.ENABLED=.F.  
+     THISFORM.GRID2.ENABLED=.F.  
+     THISFORM.GRID3.ENABLED=.F.  
+     THISFORM.GRID4.ENABLED=.F.  
+     THISFORM.GRID5.ENABLED=.F.  
+     THISFORM.GRID6.ENABLED=.F.  
+     THISFORM.GRID7.ENABLED=.F.  
+     THISFORM.ANS_BOTT.ENABLED=.F.   
+     THISFORM.ALL_BOTT.ENABLED=.F.        
+     THISFORM.INVERSE_BOTT.ENABLED=.F.      
+     DO CASE
+        CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=1  &&A:基本考勤      
+	        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.  
+	        THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.  
+	        THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.  
+	        THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.  
+	        THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.     	  
+	        THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.         	  		
+ 	  		THISFORM.SETALL('READONLY',.T.,'TEXTBOX') 
+ 	  		THISFORM.PAGEFRAME1.PAGE1.TXTF01.VISIBLE=.F.
+ 	  		THISFORM.COMBOBOX01.VISIBLE=.T.  
+			THISFORM.COMBOBOX01.CLICK      
+			THISFORM.COMBOBOX01.VALUE=1  
+ 	  		THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+ 	  		THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=''
+ 	  		THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=''
+ 	  		THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=''
+ 	  		THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=''
+ 	  		THISFORM.PAGEFRAME1.PAGE1.TXTF15.VALUE=''
+ 	  		THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE=''
+ 	  		THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=''
+ 	  		THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION=''   
+ 	  		THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION=''  
+ 	  		THISFORM.PAGEFRAME1.PAGE1.LBLF981.CAPTION=''  
+ 	  		THISFORM.PAGEFRAME1.PAGE1.TXTF01.SETFOCUS     	  		
+ 	  		THISFORM.COMBOBOX01.SETFOCUS
+        CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2   &&A:基本考勤  
+	        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.  
+	        THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.  
+	        THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.  
+	        THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.  
+	        THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.     	  
+	        THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.            	  		
+ 	  		THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.ENABLED=.T.    	  		
+   	 		THISFORM.PAGEFRAME1.PAGE2.SPINNER05.READONLY=.F.
+   	 		THISFORM.PAGEFRAME1.PAGE2.SPINNER06.READONLY=.F.
+   	 		THISFORM.PAGEFRAME1.PAGE2.SPINNER07.READONLY=.F.   
+   	 		THISFORM.PAGEFRAME1.PAGE2.TXTF081.READONLY=.F. 
+   	 		THISFORM.PAGEFRAME1.PAGE2.TXTF11.READONLY=.F. 
+   	 		THISFORM.PAGEFRAME1.PAGE2.LBLF05.CAPTION=IIF(S10_1.F15='T','上班時數','上班天數')
+   	 		S00Z_F02=IIF(SEEK('Z','S00'),S00.F02,MONTH(CTOD(HK+'/01')))	&&每月工作日數 
+   	 		***帶入S14.年度出勤紀錄檔(上下班紀錄)     
+   	 		SELECT S14
+   	 		SET ORDER TO S141
+   	 		SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(CTOD(HK+'/01'))
+   	 		IF FOUND() 	 	
+   	 		    IF  (RIGHT(ALLTRIM(HK),2) = '02' AND S14.F07 < 28) OR (RIGHT(ALLTRIM(HK),2) <> '02'  AND S14.F07 < S00Z_F02)
+   	 		         THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE = S14.F07   
+   	 		    ELSE
+   	 		          THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE = S00Z_F02    
+   	 		    ENDIF
+   	 		    THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE=S14.F05
+   	 		    THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE=S14.F06				    
+			    SELECT S00
+			    SEEK 'C'			     &&遲到設定參數
+			    IF FOUND() 
+			        LATE_F11=S00.F11 &&遲到分鐘數
+				LATE_F12=S00.F12 &&是否影響全勤    
+				LATE_F13=S00.F13 &&是否有超過規定分鐘數需另扣金額     
+				LATE_F14=S00.F14 &&超過分鐘數      
+				LATE_F15=S00.F15 &&扣款底數   
+				LATE_F16=S00.F16 &&扣款比例    
+				LATE_F17=S00.F17 &&扣款金額
+			    ELSE
+				LATE_F11=0 
+				LATE_F12=''   
+				LATE_F13=''      
+				LATE_F14=0     
+				LATE_F15=''  
+				LATE_F16=0 
+				LATE_F17=0 
+			    ENDIF    
+			    SEEK 'D'  			      &&早退設定參數
+			    IF FOUND() 
+				LEAVE_F11=S00.F11 &&早退分鐘數
+				LEAVE_F12=S00.F12 &&是否影響全勤     
+				LEAVE_F13=S00.F13 &&是否有超過規定分鐘數需另扣金額      
+				LEAVE_F14=S00.F14 &&超過分鐘數        
+				LEAVE_F15=S00.F15 &&扣款底數   
+				LEAVE_F16=S00.F16 &&扣款比例 
+				LEAVE_F17=S00.F17 &&扣款金額
+			    ELSE
+				LEAVE_F11=0 
+				LEAVE_F12=''    
+				LEAVE_F13=''    
+				LEAVE_F14=0    
+				LEAVE_F15=''
+				LEAVE_F16=0 
+				LEAVE_F17=0       
+			    ENDIF 
+			    ****     
+     			MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+      			DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     			TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)  			     			      
+			    ****判斷全勤扣款
+			    IF THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE>=LATE_F11  && AND  LATE_F11<>0 && 判斷是否達到遲到標準
+			         IF  LATE_F12='Y'  		&&是否影響全勤(有無全勤)
+			                THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='無全勤'
+			                THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'
+			                THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=2
+			         ELSE					&&若遲到不影響全勤則在判斷早退是否影響
+			                IF THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE>=LEAVE_F11  					&& 判斷是否達到早退標準
+			                    THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=IIF(LEAVE_F12='Y','無全勤','有全勤')      &&是否影響全勤(有無全勤)
+			                    THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE=IIF(LEAVE_F12='Y','Y','N')  
+			                    THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=IIF(LEAVE_F12='Y',2,1)
+			                 ELSE
+			                    THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='有全勤'   
+			                    THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'
+			                    THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1
+			                 ENDIF          
+			           ENDIF
+			      ELSE						&&若沒達到遲到標準則在判斷是否達到早退標準
+			           IF THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE>=LEAVE_F11 && AND LEAVE_F11<>0	&& 判斷是否達到早退標準
+			                THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=IIF(LEAVE_F12='Y','無全勤','有全勤')         		&&是否影響全勤(有無全勤)
+			                THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE=IIF(LEAVE_F12='Y','Y','N')   
+			                THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=IIF(LEAVE_F12='Y',2,1)   
+			            ELSE
+			                THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='有全勤'    
+			                THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'
+			                THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1
+			            ENDIF  
+			      ENDIF   
+			      **判斷遲到額外扣款
+			      IF THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE>=LATE_F14 AND LATE_F13='Y' 	 &&超過等於額外扣款分鐘數 AND 是否需要額外扣款      
+			           THISFORM.PAGEFRAME1.PAGE2.LBLF061.CAPTION='已符合遲到額外扣款標準'
+			           THISFORM.PAGEFRAME1.PAGE2.LBLF061.BACKCOLOR=RGB(255,0,0)
+			           DO CASE
+			                 CASE  LATE_F15='T'  		&&額外扣款底數為時薪
+			                 	    THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=ROUND(TIME_MONEY*(LATE_F16/100),0)
+			                 CASE  LATE_F15='D'  		&&額外扣款底數為日薪
+			                            THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=ROUND(DAY_MONEY*(LATE_F16/100),0)
+			                 CASE  LATE_F15='B'  		&&額外扣款底數為底薪
+			                            THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=ROUND(MONTH_MONEY*(LATE_F16/100),0)                            
+			                 CASE  EMPTY(LATE_F15)  &&額外扣款為金額
+			                            THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=LATE_F17
+			            ENDCASE
+			    ELSE
+			           THISFORM.PAGEFRAME1.PAGE2.LBLF061.CAPTION=''
+			           THISFORM.PAGEFRAME1.PAGE2.LBLF061.BACKCOLOR=RGB(192,192,192)
+			           THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=0
+			    ENDIF      			     	
+			    **判斷早退額外扣款
+			    IF THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE>=LEAVE_F14 AND LEAVE_F13='Y' 	 &&超過等於額外扣款分鐘數 AND 是否需要額外扣款       
+			         THISFORM.PAGEFRAME1.PAGE2.LBLF071.CAPTION='已符合早退額外扣款標準'
+			         THISFORM.PAGEFRAME1.PAGE2.LBLF071.BACKCOLOR=RGB(255,0,0)     
+			         DO CASE
+			                CASE LEAVE_F15='T'  		&&額外扣款底數為時薪
+			                 	  THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=ROUND(TIME_MONEY*(LATE_F16/100),0)  
+			                CASE LEAVE_F15='D'  		&&額外扣款底數為日薪
+			                          THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=ROUND(DAY_MONEY*(LATE_F16/100),0)
+			                CASE LEAVE_F15='B'  		&&額外扣款底數為底薪
+			                          THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=ROUND(MONTH_MONEY*(LATE_F16/100),0)   
+			                CASE EMPTY(LEAVE_F15)       &&額外扣款為金額
+			                          THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=LEAVE_F17
+			          ENDCASE
+			    ELSE
+			          THISFORM.PAGEFRAME1.PAGE2.LBLF071.CAPTION=''
+			          THISFORM.PAGEFRAME1.PAGE2.LBLF071.BACKCOLOR=RGB(192,192,192)
+			          THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=0                  
+			    ENDIF             			    		 		
+   	 		ELSE	
+   	 		    THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE=IIF(S10_1.F15='M',IIF(INDEXSEEK('Z',.T.,'S00','S001'),S00.F02,0),0)
+   	 		    THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE=0
+   	 		    THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE=0
+   	 		    THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='有全勤'    	
+   	 		    THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'     	 		 		
+   	 		    THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=0 
+   	 		    THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=0  
+   	 		    THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=''    	 
+   	 		    THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1
+   	 		ENDIF
+     			THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION=''    
+     			THISFORM.PAGEFRAME1.PAGE2.SPINNER05.SETFOCUS
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3    &&B:其他考勤  	  		
+		        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.     	  
+		        THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.            			
+     			THISFORM.SETALL('READONLY',.T.,'TEXTBOX')  			
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF12.VISIBLE=.F. 
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF13.VISIBLE=.F. 
+	   	 		THISFORM.PAGEFRAME1.PAGE3.LBLF42.VISIBLE=.F.  
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF42.VISIBLE=.F.      	
+     	  		THISFORM.COMBOBOX13.VISIBLE=.T.  
+				THISFORM.COMBOBOX13.CLICK      
+				THISFORM.COMBOBOX13.VALUE=1     	 				
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF14.READONLY=.F. 
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE=''
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE=''
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=0
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF15.VALUE=''
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF151.VALUE=''
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=0   	 		
+	   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=0   	 		
+     			THISFORM.PAGEFRAME1.PAGE3.LBLF991.CAPTION=''    
+     			THISFORM.COMBOBOX13.SETFOCUS           
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4   &&C:薪資所得明細   	  		
+		        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.     	  
+		        THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.            			
+     			THISFORM.SETALL('READONLY',.F.,'TEXTBOX')
+	   	 		THISFORM.PAGEFRAME1.PAGE4.TXTF18.VISIBLE=.F.  
+	   	 		THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.T.
+	   	 		THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.F. 
+		        THISFORM.COMBOBOX18.VISIBLE=.T.    
+		        THISFORM.COMBOBOX18.CLICK          
+		        THISFORM.COMBOBOX18.VALUE=1     	   	 		
+				THISFORM.GRANT_COBOX.VISIBLE=.F.  
+				THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.T. 
+				THISFORM.PAGEFRAME1.PAGE4.TXTF21.READONLY=.T.
+	   	 		THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE=''  
+	   	 		THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE=''   	 
+	   	 		THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=0 	 
+	   	 		THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=''    
+	   	 		THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE='' 	 				
+     			THISFORM.PAGEFRAME1.PAGE4.LBLF991.CAPTION=''     
+     			THISFORM.COMBOBOX18.SETFOCUS           
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5  &&D:薪資扣款明細   	  		
+		        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.     	  
+		        THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.      			
+     			THISFORM.SETALL('READONLY',.F.,'TEXTBOX')
+	   	 		THISFORM.PAGEFRAME1.PAGE5.TXTF24.VISIBLE=.F.  
+	   	 		THISFORM.PAGEFRAME1.PAGE5.COMBOBOX24.VISIBLE=.T. 
+	   	 		THISFORM.PAGEFRAME1.PAGE5.TXTF25.VISIBLE=.T.
+	   	 		THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.VISIBLE=.F.
+	   	 		THISFORM.PAGEFRAME1.PAGE5.TXTF25.READONLY=.T. 
+	   	 		THISFORM.PAGEFRAME1.PAGE5.TXTF23.READONLY=.T.
+	   	 		THISFORM.PAGEFRAME1.PAGE5.COMBOBOX24.VALUE=1 
+	   	 		THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE='' 
+	   	 		THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE=''   	 
+	   	 		THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE=0
+     			THISFORM.PAGEFRAME1.PAGE5.LBLF991.CAPTION=''    
+     			THISFORM.PAGEFRAME1.PAGE5.COMBOBOX24.SETFOCUS
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=6  &&E:懲處扣款 
+		        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.     	  
+		        THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F. 		        
+		        THISFORM.COMBOBOX29.CLICK          
+		        THISFORM.COMBOBOX29.VALUE=2    
+		        IF EMPTY(THISFORM.COMBOBOX29.DISPLAYVALUE)
+		            THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+		            THISFORM.PAGEFRAME1.PAGE6.ACTIVATE
+		            =MESSAGEBOX('此人員已無懲處資料,請查明後在新增!',0+48,'提示訊息視窗')
+		        ELSE	  		
+	     		    THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+		   	 	    THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE=''       
+		   	 	    THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE=''   
+		   	 	    THISFORM.PAGEFRAME1.PAGE6.TXTF29.VALUE='' 
+		   	 	    THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE=''  	 		
+		   	 	    THISFORM.PAGEFRAME1.PAGE6.LBLF311.CAPTION='' 
+		   	 	    THISFORM.PAGEFRAME1.PAGE6.LBLF961.CAPTION='' 
+		   	 	    THISFORM.PAGEFRAME1.PAGE6.LBLF991.CAPTION=''
+		   	 	    THISFORM.PAGEFRAME1.PAGE6.TXTF29.VISIBLE=.F.    
+		   	 	    THISFORM.COMBOBOX29.VISIBLE=.T.   
+				    THISFORM.COMBOBOX29.CLICK          
+				    THISFORM.COMBOBOX29.VALUE=1    
+				    THISFORM.COMBOBOX29.SETFOCUS	 		
+   	 		    ENDIF
+          CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=7   &&F:加班明細
+		        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.     	  
+		        THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F. 
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF32.VALUE=''
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF33.VALUE=''
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF331.VALUE=''
+	   	 		THISFORM.PAGEFRAME1.PAGE7.COMBOBOX33.VALUE=1
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF34.VALUE=''
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF341.VALUE=''
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE=0 
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE='' 
+	   	 		THISFORM.PAGEFRAME1.PAGE7.COMBOBOX36.VALUE=1
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE=0 
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE=0 
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF39.VALUE=''   	
+	   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF44.VALUE=0 
+     			THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION='' 
+     			THISFORM.PAGEFRAME1.PAGE7.LBLF43.CAPTION='' 
+     			THISFORM.PAGEFRAME1.PAGE7.LBLF991.CAPTION=''  					        
+			SELECT S14
+			SET ORDER TO S141	&& F01+DTOS(F08)
+			SEEK  THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(CTOD(HK+'/01'))
+			IF FOUND() AND S14.F11<>'3' AND (S14.F09<>0 OR S14.F10<>0) 
+			    IF MESSAGEBOX('S14.出勤紀錄中已有此人員之加班資料,請問是否要帶入此資料?',4+32+256,'請選擇')=6 
+               	   THISFORM.SHRGROUP.SHURE1_BOTT.VISIBLE=.F.
+               	   THISFORM.SHRGROUP.FINISH_BOTT.VISIBLE=.F.  	 		    		    
+			       TKS14A=CREATEOBJECT("TKS14A")  
+       			   TKS14A.SHOW
+       			   THISFORM.SHRGROUP.ABANDON_BOTT.CLICK     
+			    ELSE
+     			   THISFORM.SETALL('READONLY',.F.,'TEXTBOX')
+	     		   THISFORM.PAGEFRAME1.PAGE7.TXTF32.VISIBLE=.F. 
+	   	 	       THISFORM.PAGEFRAME1.PAGE7.TXTF331.VISIBLE=.F.  
+   	 	           THISFORM.PAGEFRAME1.PAGE7.TXTF341.VISIBLE=.F.  
+   	 	           THISFORM.PAGEFRAME1.PAGE7.COMBOBOX33.VISIBLE=.T. 
+   	 	           THISFORM.PAGEFRAME1.PAGE7.COMBOBOX36.VISIBLE=.T.     		   	 		
+   	 	           THISFORM.PAGEFRAME1.PAGE7.TXTF34.READONLY=.T.
+   	 	           THISFORM.PAGEFRAME1.PAGE7.TXTF35.READONLY=.F.
+   	 		       THISFORM.PAGEFRAME1.PAGE7.TXTF37.READONLY=.F.
+   	 		       THISFORM.PAGEFRAME1.PAGE7.TXTF371.READONLY=.T.
+   	 		       THISFORM.PAGEFRAME1.PAGE7.TXTF39.READONLY=.T.
+   	 		       THISFORM.PAGEFRAME1.PAGE7.TXTF44.READONLY=.F.
+     			   THISFORM.PAGEFRAME1.PAGE7.COMBOBOX33.SETFOCUS 
+     			ENDIF
+     		ELSE
+     			THISFORM.SETALL('READONLY',.F.,'TEXTBOX')
+	     		THISFORM.PAGEFRAME1.PAGE7.TXTF32.VISIBLE=.F. 
+	   	 	    THISFORM.PAGEFRAME1.PAGE7.TXTF331.VISIBLE=.F.  
+	   	 	    THISFORM.PAGEFRAME1.PAGE7.TXTF341.VISIBLE=.F.  
+	   	 	    THISFORM.PAGEFRAME1.PAGE7.COMBOBOX33.VISIBLE=.T. 
+	   	 	    THISFORM.PAGEFRAME1.PAGE7.COMBOBOX36.VISIBLE=.T.    	 		   	 		
+	   	 	    THISFORM.PAGEFRAME1.PAGE7.TXTF34.READONLY=.T.
+	   	 	    THISFORM.PAGEFRAME1.PAGE7.TXTF35.READONLY=.F.
+   	 		    THISFORM.PAGEFRAME1.PAGE7.TXTF37.READONLY=.F.
+   	 		    THISFORM.PAGEFRAME1.PAGE7.TXTF371.READONLY=.T.
+   	 		    THISFORM.PAGEFRAME1.PAGE7.TXTF39.READONLY=.T.
+   	 		    THISFORM.PAGEFRAME1.PAGE7.TXTF44.READONLY=.F.
+     			THISFORM.PAGEFRAME1.PAGE7.COMBOBOX33.SETFOCUS      			
+     		ENDIF        			
+     ENDCASE 
+  ENDPROC
+************新增確認
+PROCEDURE SHRGROUP.SHURE1_BOTT.CLICK                 
+     DO CASE
+   	     CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=1  &&基本資料
+   	     		SELECT S10_1
+   	     		SET ORDER TO 1
+   	     		COD=SYS(21)
+   	     		IF EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+			       =MESSAGEBOX('人員編號不得白!',0+64,'提示訊息視窗')
+			       THISFORM.COMBOBOX01.SETFOCUS
+			       SET ORDER TO &COD
+			       RETURN        	  
+			    ENDIF   
+			    IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,'S10_1')=.T.
+			       =MESSAGEBOX('此人員編號已存在,請重新輸入!',0+64,'提示訊息視窗')
+			       THISFORM.COMBOBOX01.SETFOCUS
+			       SET ORDER TO &COD
+			        RETURN    			
+			   ENDIF
+			   SELECT S10_1
+				APPEND BLANK 
+				LOCK()
+				IF RLOCK()
+				    REPLACE F01 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+				    REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+				    REPLACE F05 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE) 
+				    REPLACE F06 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+				    REPLACE F07 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE) 
+				    REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE 
+				    REPLACE F10 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE 
+				    REPLACE F15 WITH IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S05','S051'),S05.F15,'')
+				    REPLACE F28 WITH IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S05','S051'),S05.F28,'')
+				    REPLACE F29 WITH IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S05','S051'),S05.F29,'')
+				    REPLACE F98 WITH 'N'
+				    REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+			    ENDIF
+    			UNLOCK ALL
+    			THISFORM.GRID1.ENABLED=.T.
+    			THISFORM.GRID1.SETFOCUS   
+    			THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=S10_1.F01
+    			THISFORM.PAGEFRAME1.PAGE1.TXTF01.VISIBLE=.T.
+     	  		THISFORM.COMBOBOX01.VISIBLE=.F. 
+		        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+		        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.  
+		        THISFORM.PAGEFRAME1.ACTIVEPAGE=2
+		        THISFORM.ORPGROUP.NEW_BOTT.CLICK		
+         CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2  &&A:基本考勤   
+  			  SELECT  S10_A
+    		  COD=SYS(21)
+    		  SET ORDER TO 1 
+    		  SELECT S10_A
+   			  APPEND BLANK
+   			  LOCK()
+    		  IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			     REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE
+			     REPLACE F06 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE
+			     REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE  
+			     REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE
+			     REPLACE F10 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE    
+			     REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE       	
+			     IF THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'  AND THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1
+			        REPLACE F08 WITH 'N'
+			        THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'
+			     ELSE
+			        REPLACE F08 WITH 'Y'
+			        THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'
+			     ENDIF 	   
+			     REPLACE F97 WITH 'A'  
+			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    		  ENDIF    
+    		  SELECT S10
+   			  APPEND BLANK
+   			  LOCK()
+    		  IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			     REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+			     REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE
+			     REPLACE F06 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE
+			     REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE  
+			     REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE
+			     REPLACE F10 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE    
+			     REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE     
+			     IF THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'  AND THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1
+			        REPLACE F08 WITH 'N'
+			        THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'
+			     ELSE
+			        REPLACE F08 WITH 'Y'
+			        THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'
+			     ENDIF    			     			     
+    			 REPLACE F97 WITH 'A'  
+    			 REPLACE F98 WITH 'N'
+    			 REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    	      ENDIF 
+    	      *****
+              MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+              DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+              TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)       		    			
+    			*****帶入此人員之薪資項目明細
+			  SELECT * FROM S06 WHERE F05='1'  AND ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) ORDER BY F06 INTO CURSOR S06_TEMP
+			  SELECT S06_TEMP
+			  GO TOP
+			  DO WHILE !EOF()
+			       SELECT S10_C
+			       APPEND BLANK
+			       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+			       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			       REPLACE F18 WITH S06_TEMP.F06
+			       REPLACE F19 WITH S06_TEMP.F07
+			       REPLACE F20 WITH IIF(THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'  AND S06_TEMP.F06='F',0,S06_TEMP.F08)	&&若無全勤則歸零
+			       REPLACE F21 WITH S06_TEMP.F08    			       
+			       REPLACE F97 WITH 'C'
+			       REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+			       SELECT S10
+			       APPEND BLANK
+			       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+			       REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+			       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			       REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+			       REPLACE F18 WITH S06_TEMP.F06
+			       REPLACE F19 WITH S06_TEMP.F07
+			       REPLACE F20 WITH IIF(THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'  AND S06_TEMP.F06='F',0,S06_TEMP.F08)
+			       REPLACE F21 WITH S06_TEMP.F08    			       
+			       REPLACE F97 WITH 'C'
+			       REPLACE F98 WITH 'N'
+			       REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+			       SELECT  S06_TEMP
+			       SKIP
+			  ENDDO
+			  SELECT S06_TEMP
+			  USE
+			*****帶入此人員之其他所得發放(此發放需為合併該月份發放之所得)
+			SELECT * FROM S09 WHERE  ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND F07<>'1' ;
+			       AND LEFT(DTOS(F08),6)=LEFT(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),6) AND !EMPTY(F08);
+			       AND F15='Y' AND (F16='1' OR F16='3')  ORDER BY F05 INTO CURSOR S09_TEMP
+			SELECT S09_TEMP
+			GO TOP
+			DO WHILE !EOF()
+		       SELECT S10_C
+		       APPEND BLANK
+		       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		       REPLACE F18 WITH 'I'
+		       REPLACE F19 WITH S09_TEMP.F06   	
+		       REPLACE F20 WITH S09_TEMP.F13 		              
+		       REPLACE F22 WITH S09_TEMP.F05   			       
+		       REPLACE F97 WITH 'C'
+		       REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		       SELECT S10
+		       APPEND BLANK
+		       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		       REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+		       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		       REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+		       REPLACE F18 WITH 'I'
+		       REPLACE F19 WITH S09_TEMP.F06  
+		       REPLACE F20 WITH S09_TEMP.F13 			              
+		       REPLACE F22 WITH S09_TEMP.F05   			       
+		       REPLACE F97 WITH 'C'
+		       REPLACE F98 WITH 'N'
+		       REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		       ********帶入扣稅金額
+		       IF (S09_TEMP.F12)<>0		&&稅率不為零則有扣稅金額
+		            SELECT S10_D
+		            APPEND BLANK
+		            REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		            REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		            REPLACE F24 WITH 'N'
+		            REPLACE F25 WITH ALLTRIM(S09_TEMP.F06)+'扣稅額'
+	                REPLACE F26 WITH S09_TEMP.F13-S09_TEMP.F17
+		            REPLACE F97 WITH 'D'
+		            REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		            SELECT S10
+		            APPEND BLANK
+		            REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		            REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+		            REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		            REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+		            REPLACE F24 WITH 'N'
+		            REPLACE F25 WITH ALLTRIM(S09_TEMP.F06)+'扣稅額'
+	                REPLACE F26 WITH S09_TEMP.F13-S09_TEMP.F17
+		            REPLACE F97 WITH 'D'
+		            REPLACE F98 WITH 'N'
+		            REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		       ENDIF    			       
+		       SELECT  S09_TEMP
+		       SKIP
+			ENDDO
+			SELECT S09_TEMP
+			USE		
+			*****帶入此人員之特殊其他所得發放(此發放需為合併該月份發放之所得)
+			SELECT * FROM S12 WHERE  ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND F08<>'1' ;
+			       AND LEFT(DTOS(F09),6)=LEFT(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),6) AND !EMPTY(F09);
+			       AND F19='Y' AND (F20='1' OR F20='3')  ORDER BY F05 INTO CURSOR S12_TEMP
+			SELECT S12_TEMP
+			GO TOP
+			DO WHILE !EOF()
+		       SELECT S10_C
+		       APPEND BLANK
+		       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		       REPLACE F18 WITH 'I'
+		       REPLACE F19 WITH IIF(S12_TEMP.F06='1','年終獎金發放','未休年假獎金發放')
+		       REPLACE F20 WITH S12_TEMP.F16		              
+		       REPLACE F22 WITH S12_TEMP.F05   			       
+		       REPLACE F97 WITH 'C'
+		       REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		       SELECT S10
+		       APPEND BLANK
+		       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		       REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+		       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		       REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+		       REPLACE F18 WITH 'I'
+		       REPLACE F19 WITH IIF(S12_TEMP.F06='1','年終獎金發放','未休年假獎金發放')
+		       REPLACE F20 WITH S12_TEMP.F16 			              
+		       REPLACE F22 WITH S12_TEMP.F05   			       
+		       REPLACE F97 WITH 'C'
+		       REPLACE F98 WITH 'N'
+		       REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		       ********帶入扣稅金額
+		       IF (S12_TEMP.F15)<>0		&&稅率不為零則有扣稅金額
+		            SELECT S10_D
+		            APPEND BLANK
+		            REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		            REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		            REPLACE F24 WITH 'N'
+		            REPLACE F25 WITH IIF(S12_TEMP.F06='1','年終獎金發放','未休年假獎金發放')+'扣稅額'
+	                REPLACE F26 WITH S12_TEMP.F16-S12_TEMP.F17
+		            REPLACE F97 WITH 'D'
+		            REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		            SELECT S10
+		            APPEND BLANK
+		            REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		            REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+		            REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		            REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+		            REPLACE F24 WITH 'N'
+		            REPLACE F25 WITH IIF(S12_TEMP.F06='1','年終獎金發放','未休年假獎金發放')+'扣稅額'
+			        REPLACE F26 WITH S12_TEMP.F16-S12_TEMP.F17
+		            REPLACE F97 WITH 'D'
+		            REPLACE F98 WITH 'N'
+		            REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		       ENDIF    			       
+		       SELECT  S12_TEMP
+		       SKIP
+			ENDDO
+			SELECT S12_TEMP
+			USE						
+			*****帶入此人員之薪資扣款項目明細
+			SELECT * FROM S06 WHERE F05='2'  AND ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) ORDER BY F06 INTO CURSOR S06_TEMP
+			SELECT S06_TEMP
+			GO TOP
+			DO WHILE !EOF()
+		       SELECT S10_D
+		       APPEND BLANK
+		       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		       REPLACE F24 WITH S06_TEMP.F06
+		       REPLACE F25 WITH S06_TEMP.F07
+		       IF S06_TEMP.F06='J'  &&勞保費需照天數計算
+			      REPLACE F26 WITH  ROUND(IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S05','S051'),S05.F18,0)*((IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F02,0)+IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F06,0))/100)*(IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F03,0)/100)/30*IIF(THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE>30,30,THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE),0)
+			   ELSE
+			      REPLACE F26 WITH S06_TEMP.F08
+			   ENDIF
+		       REPLACE F23 WITH S06_TEMP.F08
+		       REPLACE F97 WITH 'D'
+		       REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		       SELECT S10
+		       APPEND BLANK
+		       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		       REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+		       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		       REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+		       REPLACE F24 WITH S06_TEMP.F06
+		       REPLACE F25 WITH S06_TEMP.F07
+		       IF S06_TEMP.F06='J'  &&勞保費需照天數計算
+				  REPLACE F26 WITH  ROUND(IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S05','S051'),S05.F18,0)*((IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F02,0)+IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F06,0))/100)*(IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F03,0)/100)/30*IIF(THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE>30,30,THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE),0)
+		       ELSE
+		           REPLACE F26 WITH S06_TEMP.F08
+		       ENDIF
+		       REPLACE F23 WITH S06_TEMP.F08
+		       REPLACE F97 WITH 'D'
+		       REPLACE F98 WITH 'N'
+		       REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		       SELECT  S06_TEMP
+		       SKIP
+			ENDDO 
+			SELECT S06_TEMP
+			USE		
+			*****帶入此人員之S18.請假作業明細
+			SELECT * FROM S0A WHERE  ALLTRIM(LEFT(DTOC(F08),5))=ALLTRIM(HK) AND ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(F10) ORDER BY F05 INTO CURSOR S0A_TEMP
+			SELECT S0A_TEMP
+			GO TOP
+			DO WHILE !EOF() 
+			   SELECT S10_B
+			   APPEND BLANK 
+		       REPLACE S10_B.F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		       REPLACE S10_B.F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		       REPLACE S10_B.F12 WITH S0A_TEMP.F05
+		       REPLACE S10_B.F13 WITH S0A_TEMP.F06
+		       REPLACE S10_B.F14 WITH S0A_TEMP.F07
+		       REPLACE S10_B.F15 WITH S0A_TEMP.F09
+		       REPLACE S10_B.F42 WITH S0A_TEMP.F10
+		       REPLACE S10_B.F97 WITH 'B'
+		       REPLACE S10_B.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		       SELECT S00
+		       SET ORDER TO S003 
+		       SEEK 'G'+S10_B.F12
+		       IF FOUND()
+		          DO CASE 		&&判斷扣款比例或金額
+					 CASE S00.F30='H'		&&底數為時薪
+					      REPLACE S10_B.F16 WITH ROUND(TIME_MONEY*(S00.F31/100)*S0A_TEMP.F07,0)
+					 CASE S00.F30='D'		&&底數為日薪
+					   	  REPLACE S10_B.F16 WITH ROUND(DAY_MONEY*(S00.F31/100)*S0A_TEMP.F07,0)
+					 CASE S00.F30='B'		&&底數為底薪
+					      REPLACE S10_B.F16 WITH ROUND(MONTH_MONEY*(S00.F31/100)*S0A_TEMP.F07,0)
+					 CASE EMPTY(S00.F30)	
+			   	          REPLACE S10_B.F16 WITH ROUND(S00.F32*S0A_TEMP.F07,0)	
+	              ENDCASE  
+				  ****是否扣全勤
+		           IF S00.F33='Y'   &&判斷是否扣全勤
+		              NON_LEAVE_DAY=IIF(INDEXSEEK(S10_B.F01+'F',.T.,'S06','S061'),S06.F08,0) &&全勤獎金
+		              IF S0A_TEMP.F07>S00.F34             &&不扣全勤緩衝數        
+			             DO CASE
+				            CASE S0A_TEMP.F07=S00.F35	&&全勤扣款方式一,扣當月所得之全勤金額比例
+		         	             REPLACE S10_B.F17 WITH IIF(NON_LEAVE_DAY<>0,ROUND(NON_LEAVE_DAY*(S00.F36/100),0),0)
+		         	        CASE S0A_TEMP.F07=S00.F37	&&全勤扣款方式二,扣當月所得之全勤金額比例
+		         	             REPLACE S10_B.F17 WITH IIF(NON_LEAVE_DAY<>0,ROUND(NON_LEAVE_DAY*(S00.F38/100),0),0)
+		         	        OTHERWISE
+		         	             REPLACE S10_B.F17 WITH NON_LEAVE_DAY
+		         	     ENDCASE        
+			          ELSE
+			         	 REPLACE S10_B.F17 WITH 0
+			          ENDIF 
+			       ELSE
+			          REPLACE S10_B.F17 WITH 0     
+			       ENDIF 			           	   
+    		   ENDIF
+    			   S10B_F17 = S10_B.F17 
+    		   ****
+		       SELECT S10
+		       APPEND BLANK
+		       REPLACE S10.F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		       REPLACE S10.F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+		       REPLACE S10.F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+		       REPLACE S10.F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)	
+		       REPLACE S10.F12 WITH S10_B.F12
+		       REPLACE S10.F13 WITH S10_B.F13
+		       REPLACE S10.F14 WITH S10_B.F14
+		       REPLACE S10.F15 WITH S10_B.F15
+		       REPLACE S10.F16 WITH S10_B.F16
+		       REPLACE S10.F17 WITH S10_B.F17
+		       REPLACE S10.F42 WITH S10_B.F42		       
+		       REPLACE S10.F98 WITH 'N'
+		       REPLACE S10.F97 WITH 'B'
+		       REPLACE S10.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+		       ***若此缺勤項目需扣全勤則扣除
+		       SELECT S10  
+		       SET ORDER TO S102	&& F01+F97+F18+F19+DTOS(F22)
+		       SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'C'+'F'
+		       IF FOUND()
+		           REPLACE S10.F20 WITH IIF((S10.F20-S10B_F17)<=0,0,S10.F20-S10B_F17)
+		           IF S10.F20 = 0
+		              SELECT S10
+		              SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE + 'A'
+		              IF FOUND()
+		                 REPLACE S10.F08 WITH 'Y'
+		              ENDIF
+		              SELECT S10_A
+		              SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+		              IF FOUND()
+		                 REPLACE S10_A.F08 WITH 'Y'
+		              ENDIF    			                
+		           ENDIF
+		       ENDIF      	
+			       SELECT S10_C
+			       SET ORDER TO S10_C1
+			       SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'F'
+			       IF FOUND()
+			           REPLACE S10_C.F20 WITH IIF((S10_C.F20-S10B_F17)<=0,0,S10_C.F20-S10B_F17)
+			       ENDIF        			       		       
+			       SELECT S0A_TEMP
+			       SKIP			       		         			       
+    			ENDDO 
+    			SELECT S0A_TEMP
+    			USE			
+			********帶入此人員之懲處項目明細
+				SELECT * FROM S08 WHERE F15='Y' AND F12<>0 AND ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) ORDER BY F05 INTO CURSOR S08_TEMP 	
+				SELECT S08_TEMP
+				GO TOP
+				DO WHILE !EOF()
+			       SELECT S10_E
+			       APPEND BLANK
+			       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+			       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE			       
+			       REPLACE F27 WITH S08_TEMP.F05
+			       REPLACE F28 WITH S08_TEMP.F06
+			       REPLACE F29 WITH S08_TEMP.F07
+			       DO CASE 
+			             CASE S08_TEMP.F08='H'  &&時薪
+			             	  REPLACE F30 WITH ROUND(TIME_MONEY*(S08_TEMP.F09/100),0)
+			             CASE S08_TEMP.F08='D'  &&日薪
+			                         REPLACE F30 WITH ROUND(DAY_MONEY*(S08_TEMP.F09/100),0)
+			             CASE S08_TEMP.F08='B'  &&底薪
+			                         REPLACE F30 WITH ROUND(MONTH_MONEY*(S08_TEMP.F09/100),0)
+			             CASE S08_TEMP.F08='T'  &&實領薪資
+			                         REPLACE F30 WITH 0
+			             CASE EMPTY(S08_TEMP.F08)  &&扣款金額
+						 REPLACE F30 WITH S08_TEMP.F10
+			       ENDCASE		 			          
+			       REPLACE F31 WITH S08_TEMP.F13
+			       REPLACE F40 WITH S08_TEMP.F08
+			       REPLACE F41 WITH S08_TEMP.F09		       		       
+			       REPLACE F97 WITH 'E'	
+			       REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+			       SELECT S10
+			       APPEND BLANK
+			       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+			       REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+			       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			       REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)			       
+			       REPLACE F27 WITH S08_TEMP.F05
+			       REPLACE F28 WITH S08_TEMP.F06
+			       REPLACE F29 WITH S08_TEMP.F07
+			       DO CASE 
+			             CASE  S08_TEMP.F08='H'  &&時薪
+			             		 REPLACE F30 WITH ROUND(TIME_MONEY*(S08_TEMP.F09/100),0)
+			             CASE  S08_TEMP.F08='D'  &&日薪
+			                         REPLACE F30 WITH ROUND(DAY_MONEY*(S08_TEMP.F09/100),0)
+			             CASE  S08_TEMP.F08='B'  &&底薪
+			                         REPLACE F30 WITH ROUND(MONTH_MONEY*(S08_TEMP.F09/100),0)
+			             CASE  S08_TEMP.F08='T'  &&實領薪資
+			                         REPLACE F30 WITH 0
+			             CASE  EMPTY(S08_TEMP.F08)  &&扣款金額
+						 REPLACE F30 WITH S08_TEMP.F10
+			       ENDCASE			 			          
+			       REPLACE F31 WITH S08_TEMP.F13	
+			       REPLACE F40 WITH S08_TEMP.F08
+			       REPLACE F41 WITH S08_TEMP.F09			             		       
+			       REPLACE F97 WITH 'E'	
+			       REPLACE F98 WITH 'N'
+			       REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')		       
+			       SELECT S08_TEMP
+			       SKIP
+			ENDDO
+			SELECT S08_TEMP
+			USE
+    			UNLOCK ALL
+    			SELECT S10_A
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+       			THISFORM.PAGEFRAME1.PAGE2.ACTIVATE
+    			THISFORM.GRID2.SETFOCUS		      		          	    	              
+    			THISFORM.SHRGROUP.ABANDON_BOTT.CLICK       
+		        ********
+			SELECT S14
+			SET ORDER TO S141	&& F01+DTOS(F08)   
+			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(CTOD(HK+'/01'))
+			IF FOUND() 
+			    IF  S14.F09<>0 OR S14.F10<>0
+			         =MESSAGEBOX('此人員本月份有加班資料,請至加班明細中新增!',0+64,'提示訊息視窗')
+			         THISFORM.PAGEFRAME1.ACTIVEPAGE=7
+			    ENDIF
+			ENDIF  			    			
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3   &&B:其他考勤    
+  			SELE S10_B
+    			COD=SYS(21)
+    			SET ORDER TO S10_B1 	
+		        IF  THISFORM.COMBOBOX13.VALUE=1
+			     =MESSAGEBOX('缺勤項目不得為空白!',0+64,'提示訊息視窗')
+			     THISFORM.COMBOBOX13.SETFOCUS
+			     SET ORDER TO &COD
+			     RETURN        	  
+			ENDIF       					
+*!*			        IF  INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE+SPACE(10),.F.,'S10_B','S10_B1')=.T.
+*!*				      =MESSAGEBOX('此缺勤項目已存在,不得重複輸入!',0+64,'提示訊息視窗')
+*!*				      THISFORM.COMBOBOX13.SETFOCUS
+*!*				      SET ORDER TO &COD
+*!*				      RETURN     	  
+*!*				ENDIF    		
+		        IF  INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE,.F.,'S10_B','S10_B1')=.T.
+			      =MESSAGEBOX('此缺勤項目已存在,不得重複輸入!',0+64,'提示訊息視窗')
+			      THISFORM.COMBOBOX13.SETFOCUS
+			      SET ORDER TO &COD
+			      RETURN     	  
+			ENDIF    			    			
+		        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE)
+			     =MESSAGEBOX('缺勤數值不得為零!',0+64,'提示訊息視窗')
+			     THISFORM.PAGEFRAME1.PAGE3.TXTF14.SETFOCUS
+			     SET ORDER TO &COD
+			     RETURN        	   
+			ENDIF   
+			IF !EMPTY(THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE) AND ALLTRIM(THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE)='年假'
+		             IF  IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S05','S051'),IIF(S05.F11-(S05.F12+THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE)<0,.T.,.F.),.T.)
+			           =MESSAGEBOX('缺勤數值已超過此人員可休年假之天數,請查明後再輸入!',0+64,'提示訊息視窗')
+			           THISFORM.PAGEFRAME1.PAGE3.TXTF14.SETFOCUS
+			           SET ORDER TO &COD
+			           RETURN        	  
+			     ENDIF 
+			ENDIF 
+    			SELECT S10_B
+   			APPEND BLANK
+   			LOCK()
+    			IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			     REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE
+    			     REPLACE F13 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE
+    			     REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE
+    			     REPLACE F15 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF151.VALUE   
+    			     REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE
+    			     REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE 
+    			     REPLACE F42 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE3.TXTF42.VALUE)
+    			     REPLACE F97 WITH 'B'       
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF    
+    			SELECT S10
+   			APPEND BLANK
+   			LOCK()
+    			IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			     REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+			     REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE
+    			     REPLACE F13 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE
+    			     REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE
+    			     REPLACE F15 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF151.VALUE  
+    			     REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE
+    			     REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE 
+    			     REPLACE F42 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE3.TXTF42.VALUE) 
+    			     REPLACE F97 WITH 'B'    	
+    			     REPLACE F98 WITH 'N'		     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF
+    			***若此缺勤項目需扣全勤則扣除
+    			SELECT S10  
+    			SET ORDER TO S102	&& F01+F97+F18+F19+DTOS(F22)
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'C'+'F'
+    			IF FOUND()
+    			     REPLACE S10.F20 WITH IIF((S10.F20-THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE)<=0,0,S10.F20-THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE)
+    			ENDIF    			
+    			SELECT S10_C
+    			SET ORDER TO S10_C1
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'F'
+    			IF FOUND()
+    			    REPLACE S10_C.F20 WITH IIF((S10_C.F20-THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE)<=0,0,S10_C.F20-THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE)
+    			ENDIF    
+    			UNLOCK ALL
+    			SELECT S10_B 	
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE    					
+       			THISFORM.PAGEFRAME1.PAGE3.ACTIVATE
+ 		        THISFORM.ORPGROUP.NEW_BOTT.CLICK
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4   &&C:薪資所得明細
+  			SELECT  S10_C
+    			COD=SYS(21)
+    			SET ORDER TO S10_C1
+		        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE)
+          		     =MESSAGEBOX('薪資類別不得空白!',0+64,'提示訊息視窗')
+          		     THISFORM.COMBOBOX18.SETFOCUS
+          		     SET ORDER TO &COD
+          		     RETURN
+    	 	        ENDIF
+    	 	        DO CASE
+    	 	              CASE THISFORM.COMBOBOX18.VALUE=7		&&自設項目
+    	 	                         IF  EMPTY(THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE)
+          		                       =MESSAGEBOX('薪資項目不得空白!',0+64,'提示訊息視窗')
+	          		              THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.SETFOCUS
+	          		              SET ORDER TO &COD
+	          		              RETURN
+	    	 	                  ENDIF
+			    	          IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'H'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,'S10_C')=.T.
+	      		          	       =MESSAGEBOX('此薪資項目已存在,請重新輸入!',0+64,'提示訊息視窗')
+	      		          	       THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.SETFOCUS
+	      		           	       SET ORDER TO &COD
+	      		           	       RETURN
+	      		    	          ENDIF
+	      		      CASE  THISFORM.COMBOBOX18.VALUE=8		&&其他所得發放	   
+    	 	                          IF  EMPTY(THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE)
+          		                       =MESSAGEBOX('薪資項目不得空白!',0+64,'提示訊息視窗')
+	          		               THISFORM.GRANT_COBOX.SETFOCUS
+	          		               SET ORDER TO &COD
+	          		               RETURN        	   
+	    	 	                  ENDIF
+			    	          IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'I'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,'S10_C')=.T.
+	      		          	       =MESSAGEBOX('此薪資項目已存在,請重新輸入!',0+64,'提示訊息視窗')
+	      		          	       THISFORM.GRANT_COBOX.SETFOCUS
+	      		           	       SET ORDER TO &COD
+	      		           	       RETURN
+	      		    	          ENDIF	      		                	               	 	          
+    	 	              OTHERWISE	 	    
+			    	           IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE,'S10_C')=.T.
+	      		          	        =MESSAGEBOX('此薪資類別已存在,請重新輸入!',0+64,'提示訊息視窗')
+	      		          	        THISFORM.COMBOBOX18.SETFOCUS
+	      		           	        SET ORDER TO &COD
+	      		           	        RETURN
+	      		    	            ENDIF
+      		        ENDCASE
+		        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE)
+          		     =MESSAGEBOX('薪資所得不得為零!',0+64,'提示訊息視窗')
+          		     THISFORM.PAGEFRAME1.PAGE4.TXTF20.SETFOCUS
+          		     SET ORDER TO &COD
+          		     RETURN        	  
+    	 	        ENDIF        		        
+    			SELECT S10_C
+   			APPEND BLANK
+   			LOCK()
+    			IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+    			     REPLACE F18 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE
+    			     REPLACE F19 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE
+    			     REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE 
+    			     REPLACE F21 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE
+    			     REPLACE F22 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE 
+    			     REPLACE F97 WITH 'C'    	     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF    
+    			SELECT S10
+   			APPEND BLANK
+   			LOCK()
+    			IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			     REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+    			     REPLACE F18 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE
+    			     REPLACE F19 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE
+    			     REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE 
+    			     REPLACE F21 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE
+    			     REPLACE F22 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE 			     
+    			     REPLACE F97 WITH 'C'    	
+    			     REPLACE F98 WITH 'N'		     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF  
+    			IF THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE='I'	AND  !EMPTY(S09_F12) 	&&若為其他所得發放 AND 有扣稅額則將扣稅額加入扣款明細中 
+    			     SELECT S10_D
+    			     APPEND BLANK 
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+    			     REPLACE F24 WITH 'N'
+    			     REPLACE F25 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE)+'扣稅額'
+    			     REPLACE F26 WITH S09_F12  
+    			     REPLACE F97 WITH 'D'    		     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')    	
+    			     SELECT S10
+    			     APPEND BLANK 
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			     REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+    			     REPLACE F24 WITH 'N'
+    			     REPLACE F25 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE)+'扣稅額'
+    			     REPLACE F26 WITH S09_F12  
+    			     REPLACE F97 WITH 'D'    	
+    			     REPLACE F98 WITH 'N'		     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')        			     		     
+    			ENDIF
+    			UNLOCK ALL
+    			SELECT S10_C
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE    					
+       			THISFORM.PAGEFRAME1.PAGE4.ACTIVATE     
+       			THISFORM.ORPGROUP.NEW_BOTT.CLICK             
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5   &&D:薪資扣款明細
+  			SELE S10_D
+    			COD=SYS(21)
+    			SET ORDER TO S10_D1
+		        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE)
+          		     =MESSAGEBOX('扣款類別不得空白!',0+64,'提示訊息視窗')
+          		     THISFORM.PAGEFRAME1.PAGE5.COMBOBOX24.SETFOCUS
+          		     SET ORDER TO &COD
+          		     RETURN        	  
+    	 	        ENDIF        			 
+    	 	        IF THISFORM.PAGEFRAME1.PAGE5.COMBOBOX24.VALUE=5	&&其他扣款
+    	 	             IF  EMPTY(THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE)
+          		           =MESSAGEBOX('扣款項目不得空白!',0+64,'提示訊息視窗')
+          		           THISFORM.PAGEFRAME1.PAGE5.TXTF25.SETFOCUS
+          		           SET ORDER TO &COD
+          		           RETURN        	  
+    	 	             ENDIF
+		    	     IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'M'+THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE,'S10_D')=.T.
+      		          	  =MESSAGEBOX('此扣款項目已存在,請重新輸入!',0+64,'提示訊息視窗')
+      		          	  THISFORM.PAGEFRAME1.PAGE5.TXTF25.SETFOCUS
+      		           	  SET ORDER TO &COD
+      		           	  RETURN
+      		    	      ENDIF   	               	 	          
+    	 	        ELSE 	 	    
+		    	      IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE,'S10_D')=.T.
+      		          	   =MESSAGEBOX('此扣款類別已存在,請重新輸入!',0+64,'提示訊息視窗')
+      		          	   THISFORM.PAGEFRAME1.PAGE5.COMBOBOX24.SETFOCUS
+      		           	   SET ORDER TO &COD
+      		           	   RETURN
+      		    	      ENDIF
+      		        ENDIF
+		        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE)
+          		     =MESSAGEBOX('扣款金額不得為零!',0+64,'提示訊息視窗')
+          		     THISFORM.PAGEFRAME1.PAGE5.TXTF26.SETFOCUS
+          		     SET ORDER TO &COD
+          		     RETURN        	  
+    	 	        ENDIF        		        
+    			SELECT S10_D
+   			APPEND BLANK
+   			LOCK()
+    			IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+    			     REPLACE F24 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE
+    			     REPLACE F25 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE
+    			     REPLACE F26 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE 
+    			     REPLACE F23 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE  
+    			     REPLACE F97 WITH 'D'    		     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF    
+    			SELECT S10
+   			APPEND BLANK
+   			LOCK()
+    			IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			     REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+    			     REPLACE F24 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE
+    			     REPLACE F25 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE
+    			     REPLACE F26 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE
+    			     REPLACE F23 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE    
+    			     REPLACE F97 WITH 'D'    	
+    			     REPLACE F98 WITH 'N'		     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF  
+    			UNLOCK ALL
+    			SELECT S10_D
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+       			THISFORM.PAGEFRAME1.PAGE5.ACTIVATE     			
+ 		        THISFORM.ORPGROUP.NEW_BOTT.CLICK      					     
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=6   &&E:懲處扣款
+  			SELE S10_E
+    			COD=SYS(21)
+    			SET ORDER TO S10_E1
+		    	IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE)+THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE,'S10_E')=.T.
+      		            =MESSAGEBOX('此懲處日期已存在,請重新輸入!',0+64,'提示訊息視窗')
+      		            THISFORM.PUNISHMENT.SETFOCUS
+      		            SET ORDER TO &COD
+      		            RETURN
+      		        ENDIF
+    			SELECT S10_E
+   			APPEND BLANK
+   			LOCK()
+    			IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			     REPLACE F27 WITH THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE
+			     REPLACE F28 WITH THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE
+    			     REPLACE F29 WITH THISFORM.PAGEFRAME1.PAGE6.TXTF29.VALUE
+    			     REPLACE F30 WITH IIF(FLG_CK='T',0,THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE)		&&若FLG_CK='T'代表扣實領薪資故為零,等確認時才會帶入扣款金額
+    			     REPLACE F31 WITH VAL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE6.LBLF311.CAPTION))
+    			     REPLACE F40 WITH THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE
+    			     REPLACE F41 WITH THISFORM.PAGEFRAME1.PAGE6.TXTF41.VALUE			     
+    			     REPLACE F97 WITH 'E' 
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF
+    			SELECT S10
+   			APPEND BLANK
+   			LOCK()
+    			IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			     REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+			     REPLACE F27 WITH THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE
+			     REPLACE F28 WITH THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE
+    			     REPLACE F29 WITH THISFORM.PAGEFRAME1.PAGE6.TXTF29.VALUE
+    			     REPLACE F30 WITH IIF(FLG_CK='T',0,THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE)	     
+    			     REPLACE F31 WITH VAL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE6.LBLF311.CAPTION))	
+    			     REPLACE F40 WITH THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE
+    			     REPLACE F41 WITH THISFORM.PAGEFRAME1.PAGE6.TXTF41.VALUE    			     	     
+    			     REPLACE F97 WITH 'E' 
+    			     REPLACE F98 WITH 'N'
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF  
+    			UNLOCK ALL
+    			SELECT S10_E
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+       			THISFORM.PAGEFRAME1.PAGE6.ACTIVATE      		
+    			THISFORM.GRID6.SETFOCUS		      		          	    	              
+    			THISFORM.SHRGROUP.ABANDON_BOTT.CLICK 					          			          
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=7  &&F:加班明細
+  			SELE S10_F
+    			COD=SYS(21)
+    			SET ORDER TO S10_F1
+		        IF  THISFORM.PAGEFRAME1.PAGE7.COMBOBOX33.VALUE=1
+          		     =MESSAGEBOX('加班時段不得空白!',0+64,'提示訊息視窗')
+          		     THISFORM.PAGEFRAME1.PAGE7.COMBOBOX33.SETFOCUS
+          		     SET ORDER TO &COD
+          		     RETURN        	  
+    	 	        ENDIF        
+		        IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE7.TXTF32.VALUE+' ','S10_F')=.T. 
+          		     =MESSAGEBOX('此加班類別時段已存在,請重新輸入!',0+64,'提示訊息視窗')
+          		     THISFORM.PAGEFRAME1.PAGE7.COMBOBOX33.SETFOCUS
+          		     SET ORDER TO &COD
+          		     RETURN     	   
+    	 	        ENDIF      	 	        			
+		        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE)
+          		     =MESSAGEBOX('加班數值不得為零!',0+64,'提示訊息視窗')
+          		     THISFORM.PAGEFRAME1.PAGE7.TXTF35.SETFOCUS
+          		     SET ORDER TO &COD
+          		     RETURN        	  
+    	 	        ENDIF 
+		       IF !EMPTY(THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE)
+		            IF EMPTY(THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE)
+          		        =MESSAGEBOX('已選擇津貼補助項目,故津貼金額不得為零!',0+64,'提示訊息視窗')
+          		        THISFORM.PAGEFRAME1.PAGE7.TXTF37.SETFOCUS
+          		        SET ORDER TO &COD
+          		        RETURN  
+          		     ENDIF           	  
+    	 	        ENDIF     
+		       IF !EMPTY(THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE)
+		            IF EMPTY(THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE)
+          		        =MESSAGEBOX('已輸入津貼金額故津貼補助項目不得空白!',0+64,'提示訊息視窗')
+          		        THISFORM.PAGEFRAME1.PAGE7.COMBOBOX36.SETFOCUS
+          		        RETURN  
+          		     ENDIF           	  
+    	 	        ENDIF        	 	           	 	               		        
+    			SELECT S10_F
+   			APPEND BLANK
+   			LOCK()
+    			IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+    			     REPLACE F32 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF32.VALUE
+    			     REPLACE F33 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF331.VALUE
+    			     REPLACE F34 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF341.VALUE  
+    			     REPLACE F35 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE 
+    			     REPLACE F36 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE 
+    			     REPLACE F37 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE
+    			     REPLACE F38 WITH VAL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION))
+    			     REPLACE F44 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF44.VALUE
+    			     REPLACE F39 WITH  S10_F.F38-(S10_F.F37*S10_F.F44)	&&加班小計=加班總所得(包括津貼金額)-津貼金額
+    			     REPLACE F97 WITH 'F'
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF    
+    			SELECT S10
+   			APPEND BLANK
+   			LOCK()
+    			IF RLOCK()
+			     REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE 
+			     REPLACE F02 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION)
+			     REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+			     REPLACE F04 WITH ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION)
+    			     REPLACE F32 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF32.VALUE
+    			     REPLACE F33 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF331.VALUE
+    			     REPLACE F34 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF341.VALUE  
+    			     REPLACE F35 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE 
+    			     REPLACE F36 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE 
+    			     REPLACE F37 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE
+    			     REPLACE F38 WITH VAL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION))
+    			     REPLACE F44 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF44.VALUE
+    			     REPLACE F39 WITH  S10.F38-(S10.F37*S10.F44)
+    			     REPLACE F97 WITH 'F'    
+    			     REPLACE F98 WITH 'N'			     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF  
+    			UNLOCK ALL
+    			SELECT S10_F
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE   					
+       			THISFORM.PAGEFRAME1.PAGE7.ACTIVATE    
+       			THISFORM.ORPGROUP.NEW_BOTT.CLICK              
+    ENDCASE    			     
+*!*	    THISFORM.REFRESH
+  ENDPROC  
+***********  修改  
+  PROCEDURE ORPGROUP.EDIT_BOTT.CLICK 
+     THISFORM.KEY_LIST.ENABLED=.F. 
+     THISFORM.MTH_LIST.ENABLED=.F.  
+     THISFORM.GRID1.ENABLED=.F.   
+     THISFORM.GRID2.ENABLED=.F.   
+     THISFORM.GRID3.ENABLED=.F.  
+     THISFORM.GRID4.ENABLED=.F.  
+     THISFORM.GRID5.ENABLED=.F.  
+     THISFORM.GRID6.ENABLED=.F.  
+     THISFORM.GRID7.ENABLED=.F.             
+     DO CASE
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2    &&A:基本考勤      
+		        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.     	  
+		        THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.      			
+     			THISFORM.SETALL('READONLY',.T.,'TEXTBOX')       	  	
+     			THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.ENABLED=.T.    		  		
+   	 		THISFORM.PAGEFRAME1.PAGE2.SPINNER05.READONLY=.F.         			
+   	 		THISFORM.PAGEFRAME1.PAGE2.SPINNER06.READONLY=.F.    
+   	 		THISFORM.PAGEFRAME1.PAGE2.SPINNER07.READONLY=.F.       	 
+   	 		THISFORM.PAGEFRAME1.PAGE2.TXTF081.READONLY=.F. 	
+   	 		THISFORM.PAGEFRAME1.PAGE2.TXTF11.READONLY=.F.  
+   	 		THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE=S10_A.F05
+   	 		THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE=S10_A.F06
+   	 		THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE=S10_A.F07
+    			THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=IIF(S10_A.F08='Y',2,1)   	 		
+    			THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=S10_A.F11     
+     			THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION='' 
+     			THISFORM.PAGEFRAME1.PAGE2.SPINNER05.SETFOCUS
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3    && B:其他考勤
+		        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.     	  
+		        THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.         			
+     			THISFORM.SETALL('READONLY',.T.,'TEXTBOX')  
+   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF14.READONLY=.F. 
+   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF42.VISIBLE=.F.  
+   	 		THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=S10_B.F14
+     			THISFORM.PAGEFRAME1.PAGE3.LBLF991.CAPTION=''    
+     			THISFORM.PAGEFRAME1.PAGE3.TXTF14.SETFOCUS
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4  &&C:薪資所得明細    	  				
+     			THISFORM.SETALL('READONLY',.F.,'TEXTBOX')  
+		        THISFORM.PAGEFRAME1.PAGE4.TXTF18.READONLY=.T.        
+		        THISFORM.PAGEFRAME1.PAGE4.TXTF21.READONLY=.T. 	     
+			 IF  S10_C.F18='H'  AND EMPTY(S10_C.F21) &&自設項目
+		      	      THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.F.
+			      THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.T.    		      
+			      THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.DISPLAYVALUE=THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE	
+		     	      THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.SETFOCUS 
+		         ELSE
+		               THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.T.  
+		               THISFORM.PAGEFRAME1.PAGE4.TXTF20.SETFOCUS  		      	    
+		         ENDIF     		
+     			THISFORM.PAGEFRAME1.PAGE4.LBLF991.CAPTION=''   
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5  &&D:薪資扣款明細
+		        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.     	  
+		        THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.         			
+     			THISFORM.SETALL('READONLY',.F.,'TEXTBOX')  
+		        THISFORM.PAGEFRAME1.PAGE5.TXTF24.READONLY=.T.   
+		        THISFORM.PAGEFRAME1.PAGE5.TXTF23.READONLY=.T.        
+		        IF  S10_D.F24<>'M'  && 其他扣款
+		           THISFORM.PAGEFRAME1.PAGE5.TXTF25.READONLY=.T.  
+		           THISFORM.PAGEFRAME1.PAGE5.TXTF26.SETFOCUS  
+		        ELSE
+		      	    THISFORM.PAGEFRAME1.PAGE5.TXTF25.VISIBLE=.F.
+		      	    THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.VISIBLE=.T.       		      
+		      	    THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.DISPLAYVALUE=THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE	
+		      	    THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.SETFOCUS  
+		        ENDIF     			
+     			THISFORM.PAGEFRAME1.PAGE5.LBLF991.CAPTION=''                
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=7  &&F:加班明細  		
+		        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.  
+		        THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.     	  
+		        THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.        			
+     			THISFORM.SETALL('READONLY',.T.,'TEXTBOX')       
+		        THISFORM.PAGEFRAME1.PAGE7.TXTF35.READONLY=.F.  
+		        THISFORM.PAGEFRAME1.PAGE7.TXTF36.READONLY=.F.
+		        THISFORM.PAGEFRAME1.PAGE7.TXTF37.READONLY=.F.  	
+		        THISFORM.PAGEFRAME1.PAGE7.TXTF44.READONLY=.F.
+		        THISFORM.PAGEFRAME1.PAGE7.TXTF36.VISIBLE=.F.
+		        THISFORM.PAGEFRAME1.PAGE7.COMBOBOX36.VISIBLE=.T.      	 		
+   	 		THISFORM.PAGEFRAME1.PAGE7.COMBOBOX36.DISPLAYVALUE=THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE
+   	 		THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE=S10_F.F35		        		        	
+     			THISFORM.PAGEFRAME1.PAGE7.LBLF991.CAPTION=''      
+     			THISFORM.PAGEFRAME1.PAGE7.TXTF35.SETFOCUS           
+    ENDCASE 
+    LOCK()
+    IF !RLOCK()
+          DO FILE_IMPACT
+          RETURN
+    ENDIF   
+ ENDPROC    
+**************
+PROCEDURE SHRGROUP.SHURE2_BOTT.CLICK   &&修改確認     
+     DO CASE
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2    &&A:基本考勤
+    			SELECT S10_A
+    			IF RLOCK()
+    			     REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE
+    			     REPLACE F06 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE
+    			     REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE  
+    			     REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE
+    			     REPLACE F10 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE    
+    			     REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE    
+    			     IF  IIF(INDEXSEEK('C',.T.,'S00','S001'),S10_A.F06>=S00.F11,.F.)  AND IIF(INDEXSEEK('C',.T.,'S00','S001'),S00.F11<>0,.F.)  AND  IIF(INDEXSEEK('C',.T.,'S00','S001'),S00.F12='Y',.F.)    && 判斷是否達到遲到標準 AND 是否影響全勤(有無全勤)
+    			          REPLACE F08 WITH 'Y'
+    			          THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'
+    			     ELSE      			                
+    			           IF IIF(INDEXSEEK('D',.T.,'S00','S001'),S10_A.F07>=S00.F11,.F.)  AND IIF(INDEXSEEK('D',.T.,'S00','S001'),S00.F11<>0,.F.) AND IIF(INDEXSEEK('D',.T.,'S00','S001'),S00.F12='Y',.F.)  && 判斷是否達到早退標準 AND 是否影響全勤(有無全勤)
+    			     	       REPLACE F08 WITH 'Y'
+    			     	       THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'
+    			     	   ELSE
+    			     	       REPLACE F08 WITH IIF(THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1,'N','Y')
+    			     	       THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE=IIF(THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1,'N','Y')
+    			     	   ENDIF  
+    			     ENDIF	    			     	            			         			         			         			         			     		     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF       
+    			SELECT S10
+    			SET ORDER TO S101    							
+			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'A'
+			IF FOUND()
+    			     REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE
+    			     REPLACE F06 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE
+    			     REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE  
+    			     REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE
+    			     REPLACE F10 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE    
+    			     REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE
+    			     IF  IIF(INDEXSEEK('C',.T.,'S00','S001'),S10_A.F06>=S00.F11,.F.)  AND IIF(INDEXSEEK('C',.T.,'S00','S001'),S00.F11<>0,.F.) AND   IIF(INDEXSEEK('C',.T.,'S00','S001'),S00.F12='Y',.F.)     && 判斷是否達到遲到標準 AND 是否影響全勤(有無全勤)
+    			          REPLACE F08 WITH 'Y'
+    			          THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'
+    			     ELSE      			                
+    			           IF IIF(INDEXSEEK('D',.T.,'S00','S001'),S10_A.F07>=S00.F11,.F.)  AND IIF(INDEXSEEK('D',.T.,'S00','S001'),S00.F11<>0,.F.) AND IIF(INDEXSEEK('D',.T.,'S00','S001'),S00.F12='Y',.F.)  && 判斷是否達到早退標準 AND 是否影響全勤(有無全勤)
+    			     	       REPLACE F08 WITH 'Y'
+    			     	       THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'
+    			     	   ELSE
+    			     	        REPLACE F08 WITH IIF(THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1,'N','Y')
+    			     	        THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE=IIF(THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1,'N','Y')
+    			     	   ENDIF  
+    			     ENDIF 			     		          			     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')			
+			ENDIF	
+			***判斷是否要扣除全勤		
+			SELECT SUM(F17) FROM S10_B WHERE ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) INTO CURSOR S10_B_TEMP	    		
+    			SELECT S10_C
+    			SET ORDER TO  S10_C1
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'F'
+    			IF FOUND()
+    			     IF  THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y' 
+    			           REPLACE S10_C.F20 WITH 0
+    			     ELSE
+    			           REPLACE S10_C.F20 WITH  IIF(S10_C.F21<=S10_B_TEMP.SUM_F17,0,S10_C.F21-S10_B_TEMP.SUM_F17)	&&IIF(基本薪資全勤金額<=扣除全勤金額,0,基本薪資全勤金額-扣除全勤金額)
+    			     ENDIF      
+    			ENDIF 			    					
+	    		SELECT S10
+	    		SET ORDER TO S102
+			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'C'+'F'    	
+	    		IF FOUND()
+    			     IF  THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y' 
+    			           REPLACE S10.F20 WITH 0
+    			     ELSE
+    			           REPLACE S10.F20 WITH  IIF(S10.F21<=S10_B_TEMP.SUM_F17,0,S10.F21-S10_B_TEMP.SUM_F17)   			          
+    			     ENDIF   
+	    	        ENDIF 	    			   	        
+	    		SELECT S10_B_TEMP
+	    		USE
+	    		***勞保費依天數扣款
+    			SELECT S10
+    			SET ORDER TO S103
+			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'D'+'J'
+			IF FOUND()
+    			     REPLACE F26 WITH  ROUND(IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S05','S051'),S05.F18,0)*((IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F02,0)+IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F06,0))/100)*(IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F03,0)/100)/30*IIF(THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE>30,30,THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE),0)
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')		
+			ENDIF      	 	                    
+    			SELECT S10_D
+    			SET ORDER TO S10_D1 
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'J'
+    			IF FOUND()
+    			     REPLACE F26 WITH  ROUND(IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S05','S051'),S05.F18,0)*((IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F02,0)+IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F06,0))/100)*(IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F03,0)/100)/30*IIF(THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE>30,30,THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE),0)  			     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF    	    		
+    			SELECT S10_A 			 			 
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3       &&B:其他考勤
+		        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE)
+			     =MESSAGEBOX('缺勤數值不得為零!',0+64,'提示訊息視窗')
+			     THISFORM.PAGEFRAME1.PAGE3.TXTF14.SETFOCUS
+			     RETURN        	  
+			ENDIF            
+			IF !EMPTY(THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE) AND ALLTRIM(THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE)='年假'
+		             IF  IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S05','S051'),IIF(S05.F11-(S05.F12+THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE)<0,.T.,.F.),.T.)
+			           =MESSAGEBOX('缺勤數值已超過此人員可休年假之天數,請查明後再輸入!',0+64,'提示訊息視窗')
+			           THISFORM.PAGEFRAME1.PAGE3.TXTF14.SETFOCUS 
+			           RETURN        	  
+			     ENDIF 
+			ENDIF 			  			         
+			**********判斷是否要扣全勤
+    			SELECT S10  
+    			SET ORDER TO S102
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'C'+'F'
+    			IF FOUND()
+    			    SELECT  S10_A
+    			    SET ORDER TO S10_A1
+    			    SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+    			    IF FOUND()
+    			        IF S10_A.F08<>'Y'  &&判斷遲到早退有無全勤  IIF(本月全勤薪資所得+原來全勤扣款-新的全勤扣款<=0,0,本月全勤薪資所得+原來全勤扣款-新的全勤扣款)
+    			            REPLACE S10.F20 WITH IIF((S10.F20+S10_B.F17-THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE)<=0,0,S10.F20+S10_B.F17-THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE)
+    			        ELSE
+    			            REPLACE S10.F20 WITH 0
+    			        ENDIF
+    			    ENDIF    
+    			ENDIF    			
+    			SELECT S10_C
+    			SET ORDER TO S10_C1 
+    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'F'
+    			IF FOUND()
+    			    SELECT  S10_A
+    			    SET ORDER TO S10_A1
+    			    SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+    			    IF FOUND()
+    			        IF S10_A.F08<>'Y'
+    			            REPLACE S10_C.F20 WITH IIF((S10_C.F20+S10_B.F17-THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE)<=0,0,S10_C.F20+S10_B.F17-THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE)
+    			        ELSE
+    			            REPLACE S10_C.F20 WITH 0
+    			        ENDIF
+    			    ENDIF    
+    			ENDIF       
+    			******
+    			SELECT S10
+    			SET ORDER TO S101
+			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'B'+THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE
+			IF FOUND()
+    			     REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE
+    			     REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE
+    			     REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE	   
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')	
+			ENDIF        			
+    			SELECT S10_B
+    			IF RLOCK()
+    			     REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE
+    			     REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE
+    			     REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE 	   
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF                     										               
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4   &&C:薪資所得明細
+    	 	        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE)
+          		      =MESSAGEBOX('薪資項目名稱不得空白!',0+64,'提示訊息視窗')
+          		      THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.SETFOCUS
+          		      RETURN        	  
+    	 	        ENDIF     
+    	 	        IF  ALLTRIM(S10_C.F19)<>ALLTRIM(THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE)  &&此狀況只有H:自設項目會發生
+		    	     IF  INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'H'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,.F.,'S10_C','S10_C1')=.T.
+      		                  =MESSAGEBOX('此薪資項目已存在,請重新輸入!',0+64,'提示訊息視窗')
+      		                  THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.SETFOCUS 		                  
+      		                  RETURN
+      		    	     ENDIF     
+      		    	ENDIF	 	        
+    	 	        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE)
+          		      =MESSAGEBOX('薪資所得金額不得為零!',0+64,'提示訊息視窗')
+          		      THISFORM.PAGEFRAME1.PAGE4.TXTF20.SETFOCUS
+          		      RETURN        	  
+    	 	        ENDIF      	 	                        
+    			SELECT S10
+    			SET ORDER TO S102
+			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'C'+S10_C.F18+S10_C.F19
+			IF FOUND()
+    			     REPLACE F19 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE  
+    			     REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE		       
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')		
+			ENDIF       
+    			SELECT S10_C     		
+    			IF RLOCK()
+    			     REPLACE F19 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE  
+    			     REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE   
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF  			          
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5  &&D:薪資扣款明細
+    	 	        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE)
+          		      =MESSAGEBOX('扣款項目名稱不得空白!',0+64,'提示訊息視窗')
+          		      THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.SETFOCUS
+          		      RETURN        	  
+    	 	        ENDIF        
+    	 	        IF  ALLTRIM(S10_D.F25)<>ALLTRIM(THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE)		&&此狀況只有M:其他扣款會發生
+		    	     IF  INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'M'+THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE,.F.,'S10_D','S10_D1')=.T.
+      		                  =MESSAGEBOX('此扣款項目已存在,請重新輸入!',0+64,'提示訊息視窗')
+      		                  THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.SETFOCUS		                  
+      		                  RETURN
+      		    	     ENDIF     
+      		    	ENDIF    	 	        
+    	 	        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE)
+          		      =MESSAGEBOX('扣款金額不得為零!',0+64,'提示訊息視窗')
+          		      THISFORM.PAGEFRAME1.PAGE5.TXTF26.SETFOCUS
+          		      RETURN        	  
+    	 	        ENDIF        	 	
+    			SELECT S10
+    			SET ORDER TO S103
+			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'D'+S10_D.F24+S10_D.F25
+			IF FOUND()
+    			     REPLACE F25 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE  
+    			     REPLACE F26 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE  
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')		
+			ENDIF      	 	                    
+    			SELECT S10_D
+    			IF RLOCK()
+    			     REPLACE F25 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE  
+    			     REPLACE F26 WITH THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE   			     
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF                            	             
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=7  &&F:加班明細
+		        IF  EMPTY(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE)
+          		     =MESSAGEBOX('加班數值不得為零!',0+64,'提示訊息視窗')
+          		     THISFORM.PAGEFRAME1.PAGE7.TXTF35.SETFOCUS
+          		     RETURN        	  
+    	 	        ENDIF        		        
+		       IF !EMPTY(THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE)
+		            IF EMPTY(THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE)
+          		        =MESSAGEBOX('已選擇津貼補助項目,故津貼金額不得為零!',0+64,'提示訊息視窗')
+          		        THISFORM.PAGEFRAME1.PAGE7.TXTF37.SETFOCUS
+          		        RETURN  
+          		     ENDIF           	  
+    	 	        ENDIF    	 
+		       IF !EMPTY(THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE)
+		            IF EMPTY(THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE)
+          		        =MESSAGEBOX('已輸入津貼金額故津貼補助項目不得空白!',0+64,'提示訊息視窗')
+          		        THISFORM.PAGEFRAME1.PAGE7.COMBOBOX36.SETFOCUS
+          		        RETURN  
+          		     ENDIF           	  
+    	 	        ENDIF        	 	        	  
+    			SELECT S10
+    			SET ORDER TO S105
+			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'F'+S10_F.F32
+			IF FOUND()
+    			     REPLACE F35 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE
+    			     REPLACE F36 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE
+    			     REPLACE F37 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE
+    			     REPLACE F38 WITH VAL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION))
+    			     REPLACE F44 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF44.VALUE
+    			     REPLACE F39 WITH  S10.F38-(S10.F37*S10.F44)
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')		
+			ENDIF      	 	                              
+    			SELECT S10_F
+    			IF RLOCK()
+    			     REPLACE F35 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE
+    			     REPLACE F36 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE
+    			     REPLACE F37 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE
+    			     REPLACE F38 WITH VAL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION))
+    			     REPLACE F44 WITH THISFORM.PAGEFRAME1.PAGE7.TXTF44.VALUE    			     
+    			     REPLACE F39 WITH  S10_F.F38-(S10_F.F37*S10_F.F44)
+    			     REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+    			ENDIF                            		               
+    ENDCASE  
+    UNLOCK ALL             	      		          	    	              
+    THISFORM.SHRGROUP.ABANDON_BOTT.CLICK    
+ENDPROC   
+*************刪除資料程序
+PROC ORPGROUP.DEL_BOTT.CLICK                    
+ IF  MESSAGEBOX('是否確定要刪除此筆資料',4+32+256,'請確認')=6 
+      DO CASE
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=1    &&基本資料
+	                SELECT S10_1    			
+       			LOCK()
+		        IF RLOCK()
+ 	    		    IF S10_1.F98='Y'
+ 	       	 		=MESSAGEBOX('此資料已確認,無法刪除!',0+64,'提示訊息視窗')
+ 	    		    ELSE
+     	       			DELETE 
+     	       		        SKIP -1
+     	                        IF BOF()
+     	           	            GO TOP 
+     	       		        ENDIF  
+				***刪除基本資料時則其他所有資料將一並被刪除
+     	       		        DELETE FROM S10 WHERE ALLTRIM(S10.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) 
+     	       		        DELETE FROM S10_A WHERE ALLTRIM(S10_A.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        DELETE FROM S10_B WHERE ALLTRIM(S10_B.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        DELETE FROM S10_C WHERE ALLTRIM(S10_C.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        DELETE FROM S10_D WHERE ALLTRIM(S10_D.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        DELETE FROM S10_E WHERE ALLTRIM(S10_E.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        DELETE FROM S10_F WHERE ALLTRIM(S10_F.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        SELECT S14
+				SET ORDER TO S141	&& F01+DTOS(F08)
+				SEEK  THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(CTOD(HK+'/01'))
+				IF FOUND()
+				    REPLACE S14.F11 WITH ''
+				ENDIF
+*!*					=MESSAGEBOX('此筆資料已刪除成功!',0+64,'提示訊息視窗') 
+ 	    	            ENDIF
+       			ELSE
+           		   DO FILE_IMPACT
+       			ENDIF
+      			SELECT S10_1
+       			THISFORM.GRID1.SETFOCUS 	
+		        IF THISFORM.GRID1.ACTIVEROW=0 
+		            THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+		            THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+		            THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+		            THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.
+		            THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.
+		            THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.  
+		        ENDIF         	        
+		        THISFORM.PAGEFRAME1.PAGE1.ACTIVATE   			     	
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2    && A:基本考勤,刪除基本考勤時則其他所有資料將一並被刪除(目前暫時不開放此功能)
+	                SELECT S10_A    			
+       			LOCK()
+		        IF RLOCK()
+ 	    		    IF S10_1.F98='Y'
+ 	       	 		=MESSAGEBOX('此資料已確認,無法刪除!',0+64,'提示訊息視窗')
+ 	    		    ELSE
+     	       			DELETE 
+     	       		        SKIP -1
+     	                        IF BOF()
+     	           	            GO TOP 
+     	       		        ENDIF  
+     	       		        DELETE FROM S10 WHERE ALLTRIM(S10.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) 
+     	       		        DELETE FROM S10_B WHERE ALLTRIM(S10_B.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        DELETE FROM S10_C WHERE ALLTRIM(S10_C.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        DELETE FROM S10_D WHERE ALLTRIM(S10_D.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        DELETE FROM S10_E WHERE ALLTRIM(S10_E.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        DELETE FROM S10_F WHERE ALLTRIM(S10_F.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+     	       		        DELETE FROM S10_1 WHERE ALLTRIM(S10_1.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) 
+     	       		        SELECT S14
+				SET ORDER TO S141	&& F01+DTOS(F08)
+				SEEK  THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(CTOD(HK+'/01'))
+				IF FOUND()
+				    REPLACE S14.F11 WITH ''
+				ENDIF  
+*!*					=MESSAGEBOX('此筆資料已刪除成功!',0+64,'提示訊息視窗')    	       		        
+ 	    	            ENDIF
+       			ELSE
+           		   DO FILE_IMPACT
+       			ENDIF
+      			SELECT S10_A
+       			THISFORM.GRID2.SETFOCUS 	
+       			THISFORM.PAGEFRAME1.PAGE2.ACTIVATE 
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3  &&B:其他考勤   
+	                SELECT S10_B    			
+       			LOCK()
+		        IF RLOCK()
+ 	    		    IF S10_1.F98='Y'
+ 	       	 		=MESSAGEBOX('此資料已確認,無法刪除!',0+64,'提示訊息視窗')
+ 	    		    ELSE
+ 	    		    	S10_F17=S10_B.F17		&&全勤扣款
+ 	    		    	SELECT S10
+ 	    		    	SET ORDER TO S101
+ 	    		    	SEEK S10_B.F01+'B'+S10_B.F12
+ 	    		    	IF FOUND() AND S10.F98<>'Y'
+ 	    		    	    DELETE 
+ 	    		    	ENDIF
+ 	    		    	SELECT  S10_B
+     	       			DELETE 
+     	       		        SKIP -1
+     	                        IF BOF()
+     	           	            GO TOP
+     	       		        ENDIF  
+	       			****若刪除之缺勤項目有扣除全勤時,則須把已扣除之金額加回去全勤項目
+	    			SELECT S10_C 
+	    			SET ORDER TO  S10_C1
+	    			SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'F'
+	    			IF FOUND()
+	    			    IF IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S10_A','S10_A1'),S10_A.F08<>'Y',.F.)   &&判斷遲到早退是否扣全勤       
+	                                REPLACE S10_C.F20 WITH  S10_C.F20+S10_F17
+	    			    ELSE
+	    			        REPLACE S10_C.F20 WITH 0
+	    			    ENDIF     
+	    			ENDIF      
+		    		SELECT S10
+		    		SET ORDER TO S102
+				SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'C'+'F'    	
+		    		IF FOUND()
+	    			    IF IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S10_A','S10_A1'),S10_A.F08<>'Y',.F.) 	
+	    			        REPLACE S10.F20 WITH S10.F20+S10_F17			                 			             		
+	    			    ELSE
+	    			        REPLACE S10.F20 WITH 0
+	    			    ENDIF     		            
+	    			ENDIF
+*!*		    			=MESSAGEBOX('此筆資料已刪除成功!',0+64,'提示訊息視窗')        	       		        
+ 	    	            ENDIF
+       			ELSE
+           		    DO FILE_IMPACT
+       			ENDIF     			     	
+    			SELECT S10_B		
+       			THISFORM.GRID3.SETFOCUS 	
+       			THISFORM.PAGEFRAME1.PAGE3.ACTIVATE                   
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4  &&C:薪資所得明細 
+	                SELECT S10_C    			
+       			LOCK()
+		        IF RLOCK()
+ 	    		    IF S10_1.F98='Y'
+ 	       	 		=MESSAGEBOX('此資料已確認,無法刪除!',0+64,'提示訊息視窗')
+ 	    		    ELSE
+ 	    		        IF S10_C.F18='I'	&&判斷是否為其他所得發放,若是則刪除扣款明細中之扣稅額
+ 	    		            S10_F25=ALLTRIM(S10_C.F19)+'扣稅額'
+ 	    		            SELECT S10_D
+ 	    		            SET ORDER TO S10_D1
+ 	    		            SEEK S10_1.F01+'N'+ALLTRIM(S10_F25)+SPACE(30-LEN(ALLTRIM(S10_F25)))
+ 	    		            IF FOUND()
+ 	    		                 DELETE 
+ 	    		            ENDIF
+ 	    		            SELECT S10
+ 	    		            SET ORDER TO S103
+ 	    		            SEEK S10_1.F01+'D'+'N'+ALLTRIM(S10_F25)+SPACE(30-LEN(ALLTRIM(S10_F25)))
+ 	    		            IF FOUND()
+ 	    		                 DELETE 
+ 	    		            ENDIF 	   		            		            
+ 	    		        ENDIF
+ 	    		        SELECT S10
+ 	    		        SET ORDER TO S102
+ 	    		        SEEK S10_C.F01+'C'+S10_C.F18+S10_C.F19
+ 	    		        IF FOUND()
+ 	    		             DELETE 
+ 	    		        ENDIF   	    		        
+ 	    		        SELECT S10_C
+     	       			DELETE 
+     	       		        SKIP -1
+     	                        IF BOF()
+     	           	            GO TOP
+     	       		        ENDIF
+*!*	     	       		        =MESSAGEBOX('此筆資料已刪除成功!',0+64,'提示訊息視窗')   
+ 	    	            ENDIF
+       			ELSE
+           		   DO FILE_IMPACT
+       			ENDIF
+       			THISFORM.GRID4.SETFOCUS 	
+       			THISFORM.PAGEFRAME1.PAGE4.ACTIVATE               
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5  &&D:薪資扣款明細
+	                SELECT S10_D    			
+       			LOCK()
+		        IF RLOCK()
+ 	    		    IF S10_1.F98='Y'
+ 	       	 		=MESSAGEBOX('此資料已確認,無法刪除!',0+64,'提示訊息視窗')
+ 	    		    ELSE
+ 	    		    	SELECT S10
+ 	    		    	SET ORDER TO S103
+ 	    		    	SEEK S10_D.F01+'D'+S10_D.F24+S10_D.F25
+ 	    		    	IF FOUND()
+ 	    		    	    DELETE 
+ 	    		    	ENDIF
+ 	    		    	SELECT S10_D
+     	       			DELETE 
+     	       		        SKIP -1
+     	                        IF BOF()
+     	           	            GO TOP
+     	       		       ENDIF  
+*!*	     	       		        =MESSAGEBOX('此筆資料已刪除成功!',0+64,'提示訊息視窗') 
+ 	    	            ENDIF
+       			ELSE
+           		   DO FILE_IMPACT
+       			ENDIF
+       			THISFORM.GRID5.SETFOCUS 	
+       			THISFORM.PAGEFRAME1.PAGE5.ACTIVATE               
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=6  &&E:懲處扣款
+	                SELECT S10_E    			
+       			LOCK()
+		        IF RLOCK()
+ 	    		    IF S10_1.F98='Y'
+ 	       	 		=MESSAGEBOX('此資料已確認,無法刪除!',0+64,'提示訊息視窗')
+ 	    		    ELSE
+	       			SELECT S10
+	         	        SET ORDER TO S104
+		                SEEK S10_E.F01+'E'+DTOS(S10_E.F27)+S10_E.F28
+		                IF FOUND() 	  
+		                     DELETE 
+		                ENDIF  		    
+ 	    		    	SELECT S10_E
+     	       			DELETE 
+     	       		        SKIP -1
+     	                        IF BOF()
+     	           	            GO TOP
+     	       		        ENDIF  
+*!*	     	       		         =MESSAGEBOX('此筆資料已刪除成功!',0+64,'提示訊息視窗') 
+ 	    	            ENDIF
+       			ELSE
+           		   DO FILE_IMPACT
+       			ENDIF
+       			THISFORM.GRID6.SETFOCUS 	
+       			THISFORM.PAGEFRAME1.PAGE6.ACTIVATE      
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=7  &&F:加班明細
+	                SELECT S10_F    			
+       			LOCK()
+		        IF RLOCK()
+ 	    		    IF S10_1.F98='Y'
+ 	       	 		=MESSAGEBOX('此資料已確認,無法刪除!',0+64,'提示訊息視窗')
+ 	    		    ELSE
+	       			IF !EMPTY(S10_F.F43)	&&判斷是否從S14.年度出勤紀錄中帶入之資料
+				     SELECT S14
+				     SET ORDER TO S141	&& F01+DTOS(F08)
+				     SEEK S10_1.F01+DTOS(CTOD(HK+'/01'))
+				     IF FOUND()
+				     	  DO CASE
+				     	         CASE S10_F.F43='1' AND S14.F11='1'
+				     	                   REPLACE S14.F11 WITH ''
+				     	         CASE S10_F.F43='1' AND S14.F11='3'         
+				     	                   REPLACE S14.F11 WITH '2'
+				     	         CASE S10_F.F43='2' AND S14.F11='2'
+				     	                   REPLACE S14.F11 WITH ''
+				     	         CASE S10_F.F43='2' AND S14.F11='3'          
+				     	                   REPLACE S14.F11 WITH '1'
+				     	         CASE S10_F.F43='3' AND S14.F11='3'
+				     	                   REPLACE S14.F11 WITH ''	     	                   			     	                   
+				     	   ENDCASE                
+				     ENDIF
+				ENDIF
+				**********
+	       			SELECT S10
+	         	        SET ORDER TO S105
+		                SEEK S10_F.F01+'F'+S10_F.F32
+		                IF FOUND() 
+		                    DELETE 
+		                ENDIF	    		    
+ 	    		    	SELECT S10_F  
+     	       			DELETE 
+     	       		        SKIP -1
+     	                        IF BOF()
+     	           	            GO TOP
+     	       		        ENDIF
+*!*	     	       		        =MESSAGEBOX('此筆資料已刪除成功!',0+64,'提示訊息視窗') 
+ 	    	            ENDIF
+       			ELSE
+           		   DO FILE_IMPACT
+       			ENDIF
+       			THISFORM.GRID7.SETFOCUS 	
+       			THISFORM.PAGEFRAME1.PAGE7.ACTIVATE
+    ENDCASE        	      
+  ENDIF
+*!*	  UNLOCK ALL 
+*!*	  THISFORM.REFRESH	       
+ENDPROC  
+****************結束
+  PROCEDURE SHRGROUP.ABANDON_BOTT.CLICK
+      THISFORM.SHRGROUP.ENABLED=.F.
+      THISFORM.SHRGROUP.VISIBLE=.F.
+      THISFORM.ORPGROUP.ENABLED=.T.
+      THISFORM.ORPGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.CMDGROUP.ENABLED=.T.
+      THISFORM.CMDGROUP.SETALL('ENABLED',.T.,'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.      
+      THISFORM.SETALL('READONLY',.T.,'TEXTBOX')  
+      THISFORM.SETALL('READONLY',.T.,'SPINNER')        
+      THISFORM.SETALL('VISIBLE',.T.,'TEXTBOX')
+      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.T.
+      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.
+      THISFORM.PAGEFRAME1.PAGE3.ENABLED=.T. 
+      THISFORM.PAGEFRAME1.PAGE4.ENABLED=.T.
+      THISFORM.PAGEFRAME1.PAGE5.ENABLED=.T. 
+      THISFORM.PAGEFRAME1.PAGE6.ENABLED=.T.
+      THISFORM.PAGEFRAME1.PAGE7.ENABLED=.T.  
+      THISFORM.PAGEFRAME1.PAGE1.TXTF01.VISIBLE=.T.   
+      THISFORM.COMBOBOX01.VISIBLE=.F.        
+      THISFORM.PAGEFRAME1.PAGE2.TXTF081.VISIBLE=.F. 
+      THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.ENABLED=.F. 
+      THISFORM.PAGEFRAME1.PAGE2.SPINNER06.READONLY=.T.    
+      THISFORM.PAGEFRAME1.PAGE2.SPINNER07.READONLY=.T.     
+      THISFORM.COMBOBOX01.VISIBLE=.F.            
+      THISFORM.PAGEFRAME1.PAGE3.TXTF12.VISIBLE=.F.   
+      THISFORM.COMBOBOX13.VISIBLE=.F.  
+      THISFORM.PAGEFRAME1.PAGE3.TXTF151.VISIBLE=.F.
+      THISFORM.PAGEFRAME1.PAGE3.TXTF42.VISIBLE=.F.
+      THISFORM.PAGEFRAME1.PAGE3.TXTF14.READONLY=.T.         
+      THISFORM.COMBOBOX18.VISIBLE=.F.        
+      THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.F.         
+      THISFORM.GRANT_COBOX.VISIBLE=.F.      
+      THISFORM.PAGEFRAME1.PAGE4.TXTF22.VISIBLE=.F.     
+      THISFORM.PAGEFRAME1.PAGE5.COMBOBOX24.VISIBLE=.F.        
+      THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.VISIBLE=.F.   
+      THISFORM.PAGEFRAME1.PAGE6.TXTF40.VISIBLE=.F.
+      THISFORM.COMBOBOX29.VISIBLE=.F.            	  
+      THISFORM.PAGEFRAME1.PAGE6.TXTF40.VISIBLE=.F.
+      THISFORM.PAGEFRAME1.PAGE6.TXTF41.VISIBLE=.F.      	          
+      THISFORM.PAGEFRAME1.PAGE7.TXTF32.VISIBLE=.F. 
+      THISFORM.PAGEFRAME1.PAGE7.TXTF331.VISIBLE=.F. 
+      THISFORM.PAGEFRAME1.PAGE7.TXTF341.VISIBLE=.F.       	
+      THISFORM.PAGEFRAME1.PAGE7.COMBOBOX33.VISIBLE=.F. 
+      THISFORM.PAGEFRAME1.PAGE7.COMBOBOX36.VISIBLE=.F.      
+      THISFORM.PAGEFRAME1.PAGE7.TXTF35.READONLY=.T.   
+      THISFORM.PAGEFRAME1.PAGE7.TXTF37.READONLY=.T. 
+      THISFORM.PAGEFRAME1.PAGE7.TXTF44.READONLY=.T.  
+      THISFORM.GRID1.ENABLED=.T.
+      THISFORM.GRID2.ENABLED=.T.
+      THISFORM.GRID3.ENABLED=.T.
+      THISFORM.GRID4.ENABLED=.T.
+      THISFORM.GRID5.ENABLED=.T.
+      THISFORM.GRID6.ENABLED=.T.
+      THISFORM.GRID7.ENABLED=.T.   
+      IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1 
+          THISFORM.MTH_LIST.ENABLED=.T. 
+          THISFORM.KEY_LIST.ENABLED=.T.         
+      ELSE
+          THISFORM.MTH_LIST.ENABLED=.F. 
+          THISFORM.KEY_LIST.ENABLED=.F.         
+      ENDIF
+      DO CASE
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=1  &&基本資料    
+                        THISFORM.PAGEFRAME1.PAGE1.ACTIVATE  
+		        THISFORM.GRID1.SETFOCUS  
+             		THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F. 
+		        IF THISFORM.GRID1.ACTIVEROW=0 
+		            THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+			    THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+		            THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.			
+		            THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F. 	  
+		            THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+		            THISFORM.PAGEFRAME1.PAGE3.ENABLED=.F.
+		            THISFORM.PAGEFRAME1.PAGE4.ENABLED=.F.
+		            THISFORM.PAGEFRAME1.PAGE5.ENABLED=.F.
+		            THISFORM.PAGEFRAME1.PAGE6.ENABLED=.F.
+		            THISFORM.PAGEFRAME1.PAGE7.ENABLED=.F.    	     
+			    THISFORM.PAGEFRAME1.PAGE1.LBLF10.VISIBLE=.F.       
+			    THISFORM.PAGEFRAME1.PAGE1.TXTF10.VISIBLE=.F.
+			    THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+			    THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=''
+			    THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=''
+			    THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=''
+			    THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=''
+			    THISFORM.PAGEFRAME1.PAGE1.TXTF15.VALUE=''       	
+			    THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE=''
+			    THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=''     
+			    THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION=''
+			    THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION=''
+			    THISFORM.PAGEFRAME1.PAGE1.LBLF981.CAPTION=''     
+			    THISFORM.PAGEFRAME1.PAGE1.LBLF991.CAPTION=''     
+			ELSE
+		            THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+			    THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+			    THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+			    THISFORM.CMDGROUP.END_BOTT.ENABLED=.T. 
+			    THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.) AND   IIF(S10_1.F98<>'Y',.T.,.F.)  &&判斷有無刪除的權限
+			    THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&判斷有無列印的權限  			        
+		        ENDIF        	        
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=2  &&A:基本考勤   
+             		THISFORM.PAGEFRAME1.PAGE2.ACTIVATE		
+		        THISFORM.GRID2.SETFOCUS      
+             	        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+			THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+			THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+			THISFORM.CMDGROUP.END_BOTT.ENABLED=.F. 
+			IF THISFORM.GRID2.ACTIVEROW=0
+			      SELECT S10_1
+			      SET ORDER TO S10_11
+			      SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+			      IF FOUND()
+			          DELETE 
+			      ENDIF
+			     THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+			     THISFORM.PAGEFRAME1.PAGE1.ACTIVATE 
+			     THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+		        ELSE  
+   	 		     THISFORM.PAGEFRAME1.PAGE2.SPINNER05.VALUE=S10_A.F05
+   	 		     THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE=S10_A.F06  
+   	 		     THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE=S10_A.F07  	 	
+   	 	   	     THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=IIF(S10_A.F08='Y','無全勤','有全勤') 
+   	 		     THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE=S10_A.F08   	  
+   	 		     THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=IIF(S10_A.F08='Y',2,1)     	 			 						
+   	 		     THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=S10_A.F09  
+   	 		     THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=S10_A.F10   
+   	 		     THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=S10_A.F11   	 		    	 		  	 		
+			     THISFORM.PAGEFRAME1.PAGE2.LBLF061.CAPTION=IIF(IIF(INDEXSEEK('C',.T.,'S00','S001'),S10_A.F06>=S00.F14 AND S00.F13='Y',.F.),'已符合遲到額外扣款標準','')   	
+			     THISFORM.PAGEFRAME1.PAGE2.LBLF061.BACKCOLOR=IIF(IIF(INDEXSEEK('C',.T.,'S00','S001'),S10_A.F06>=S00.F14 AND S00.F13='Y',.F.),RGB(255,0,0),RGB(192,192,192)) 			 		
+			     THISFORM.PAGEFRAME1.PAGE2.LBLF071.CAPTION=IIF(IIF(INDEXSEEK('D',.T.,'S00','S001'),S10_A.F07>=S00.F14 AND S00.F13='Y',.F.),'已符合早退額外扣款標準','')
+			     THISFORM.PAGEFRAME1.PAGE2.LBLF071.BACKCOLOR=IIF(IIF(INDEXSEEK('D',.T.,'S00','S001'),S10_A.F07>=S00.F14 AND S00.F13='Y',.F.),RGB(255,0,0),RGB(192,192,192))    	 		
+   	 		     THISFORM.PAGEFRAME1.PAGE2.LBLF991.CAPTION=S10_A.F99      
+   	 		ENDIF
+		        IF THISFORM.GRID2.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F. AND THISFORM.PAGEFRAME1.ACTIVEPAGE<>1	        
+			    THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+			    THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.END_BOTT.ENABLED=.F. 
+		        ENDIF     	 		
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=3   &&B:其他考勤
+		        THISFORM.PAGEFRAME1.PAGE3.ACTIVATE
+		        THISFORM.GRID3.SETFOCUS 
+		        IF THISFORM.GRID3.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F. AND THISFORM.PAGEFRAME1.ACTIVEPAGE<>1	        
+			    THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+			    THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.END_BOTT.ENABLED=.F. 
+		        ENDIF     	 		                
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4  &&C:薪資所得明細 
+		        THISFORM.PAGEFRAME1.PAGE4.ACTIVATE
+		        THISFORM.GRID4.SETFOCUS 
+		        IF THISFORM.GRID4.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F. AND THISFORM.PAGEFRAME1.ACTIVEPAGE<>1	        
+			    THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+			    THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.END_BOTT.ENABLED=.F. 
+		        ENDIF  	                
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5   &&D:薪資扣款明細        
+		        THISFORM.PAGEFRAME1.PAGE5.ACTIVATE
+		        THISFORM.GRID5.SETFOCUS    
+		        IF THISFORM.GRID5.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F. AND THISFORM.PAGEFRAME1.ACTIVEPAGE<>1	        
+			    THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+			    THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.END_BOTT.ENABLED=.F. 
+		        ENDIF     	 		                
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=6  &&E:懲處扣款
+		        THISFORM.PAGEFRAME1.PAGE6.ACTIVATE
+		        THISFORM.GRID6.SETFOCUS 
+		        IF THISFORM.GRID6.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F. AND THISFORM.PAGEFRAME1.ACTIVEPAGE<>1	        
+			    THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+			    THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.END_BOTT.ENABLED=.F. 
+		        ENDIF     	 		       
+             CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=7   &&F:加班明細     
+		        THISFORM.PAGEFRAME1.PAGE7.ACTIVATE
+		        THISFORM.GRID7.SETFOCUS 
+		        IF THISFORM.GRID7.ACTIVEROW=0 AND THISFORM.SHRGROUP.ENABLED=.F. AND THISFORM.PAGEFRAME1.ACTIVEPAGE<>1	        
+			    THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+			    THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+			    THISFORM.CMDGROUP.END_BOTT.ENABLED=.F. 
+		        ENDIF       	 		
+	ENDCASE		
+*!*	      THISFORM.REFRESH   
+       UNLOCK ALL                  
+  ENDPROC
+**********  完成
+  PROCEDURE SHRGROUP.FINISH_BOTT.CLICK
+    SELECT S10_1
+    DO CASE 
+       CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工編號排列'
+            SET ORDER TO S10_11
+       CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工姓名排列'
+            SET ORDER TO S10_12
+    ENDCASE   
+    THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+ ENDPROC     
+ ****************人員編號
+PROCEDURE COMBOBOX01.CLICK
+   THISFORM.COMBOBOX01.CLEAR
+    SELECT S05.F01,S05.F02,S05.F10,S05.F28 FROM S05 WHERE IIF(ALL_CHK=.F.,S05.F27=.T.,.T.) ORDER BY S05.F01 INTO CURSOR S05_TEMP READWRITE
+    INDE ON F01 TAG S05_TEMP1
+    SET ORDER TO 1
+    SELECT S10.F01 FROM S10 ORDER BY S10.F01 GROUP BY S10.F01 INTO CURSOR S10_TEMP
+    SELECT S10_TEMP
+    GO TOP
+    DO WHILE !EOF()
+       SELECT S05_TEMP
+       SEEK S10_TEMP.F01
+       IF FOUND()
+          DELETE 
+       ENDIF
+       SELECT S10_TEMP
+       SKIP
+    ENDDO
+    SELECT S05_TEMP
+    GO TOP
+    THIS.ADDITEM('')      
+    DO WHILE !EOF() 
+       DO CASE 
+          CASE F28='A' OR F28='B' OR F28='C' OR F28='2' OR F28='4'  OR F28='5'  OR F28='6' OR F28='9'
+               THIS.ADDITEM(ALLTRIM(S05_TEMP.F01)+SPACE(5)+ALLTRIM(S05_TEMP.F02))
+          CASE (F28='1' OR F28='3' OR F28='7' OR F28='8' )AND LEFT(DTOS(F10),6)=LEFT(DTOS(CTOD(HK+'/01')),6)
+               THIS.ADDITEM(ALLTRIM(S05_TEMP.F01)+SPACE(5)+ALLTRIM(S05_TEMP.F02))       
+       ENDCASE  
+       SELECT S05_TEMP
+       SKIP
+    ENDDO
+    SELECT S10_TEMP
+    USE
+    SELECT S05_TEMP
+    USE        
+  ENDPROC  
+ ****************B.缺勤項目
+PROCEDURE COMBOBOX13.CLICK
+   THISFORM.COMBOBOX13.CLEAR
+       SELECT F05,F06,F10 FROM S0A WHERE ALLTRIM(LEFT(DTOC(F08),5))=ALLTRIM(HK) AND ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE);
+              AND !EMPTY(F10) ORDER BY F05 INTO CURSOR  S0A_TEMP READWRITE 
+       INDE ON F10 TAG S0A_TEMP1
+       SELECT S0A_TEMP
+       SET ORDER TO S0A_TEMP1
+       SELECT F01,F42 FROM S10_B WHERE  ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND !EMPTY(F42)  INTO CURSOR S10_BB
+       SELECT S10_BB
+       GO TOP
+       DO WHILE !EOF()
+          SELECT S0A_TEMP
+          SEEK S10_BB.F42
+          IF FOUND()
+             DELETE 
+          ENDIF
+          SELECT S10_BB
+          SKIP
+       ENDDO
+       SELECT S10_BB
+       USE
+       SELECT S0A_TEMP
+       GO TOP
+       THIS.ADDITEM('')
+       DO WHILE !EOF()
+          THIS.ADDITEM(ALLTRIM(S0A_TEMP.F05)+SPACE(5)+ALLTRIM(S0A_TEMP.F06)+SPACE(5)+IIF(LEN(ALLTRIM(S0A_TEMP.F10)) = 10,ALLTRIM(S0A_TEMP.F10),'SB' + SPACE(8)))
+      	  SELECT S0A_TEMP
+      	  SKIP
+       ENDDO       
+       SELECT S0A_TEMP
+       USE              
+       ***
+       SELECT F26,F27 FROM S00 WHERE F01='G'  ORDER BY F26 INTO CURSOR S00_TEMP
+       SELECT S00_TEMP
+       GO TOP
+       DO WHILE !EOF()
+          THIS.ADDITEM(ALLTRIM(S00_TEMP.F26)+SPACE(5)+ALLTRIM(S00_TEMP.F27))
+      	  SELECT S00_TEMP
+      	  SKIP
+       ENDDO
+       SELECT S00_TEMP
+       USE      
+  ENDPROC    
+****************C.薪資類別
+PROC COMBOBOX18.CLICK
+    THISFORM.COMBOBOX18.CLEAR
+    THIS.ADDITEM('')       
+    DO CASE
+       CASE S10_1.F15='M'
+            THIS.ADDITEM('底薪')
+       CASE S10_1.F15='D'
+            THIS.ADDITEM('日薪')
+       CASE S10_1.F15='T' 
+            THIS.ADDITEM('時薪')
+    ENDCASE
+    THIS.ADDITEM('伙食費')         
+    THIS.ADDITEM('交通費')
+    THIS.ADDITEM('全勤獎金')
+    THIS.ADDITEM('職務津貼')
+    THIS.ADDITEM('自訂項目')
+    THIS.ADDITEM('其他所得發放')
+*!*	    THIS.ADDITEM('特殊其他所得發放')
+ ENDPROC      
+ ****************C.其他所得發放
+PROCEDURE GRANT_COBOX.CLICK
+    THISFORM.GRANT_COBOX.CLEAR
+    SELECT F05,F06,F16 FROM S09 WHERE ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)   AND F07='2'  AND F15='Y'  AND LEFT(DTOC(F08),5)=ALLTRIM(THISFORM.MTH_LIST.DISPLAYVALUE) AND F16<>'2' ORDER BY F05 INTO CURSOR S09_TEMP READWRITE
+    SELECT F22,F19 FROM S10 WHERE ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)   AND F97='C' AND  F98<>'Y' INTO CURSOR S10_TEMP 
+    SELECT S10_TEMP
+    GO TOP
+    DO WHILE !EOF()
+       SELECT S09_TEMP
+       GO TOP
+       DO WHILE !EOF()
+          IF S10_TEMP.F22=S09_TEMP.F05 AND  S10_TEMP.F19=S09_TEMP.F06
+             SELECT S09_TEMP
+             DELETE 
+          ENDIF
+          SELECT S09_TEMP
+          SKIP
+       ENDDO
+       SELECT S10_TEMP
+       SKIP
+    ENDDO
+    SELECT S09_TEMP
+    GO TOP
+    THIS.ADDITEM('')
+    DO WHILE !EOF()
+       THIS.ADDITEM(S09_TEMP.F06+SPACE(5)+ALLTRIM(DTOC(S09_TEMP.F05))+SPACE(10)+ALLTRIM(S09_TEMP.F16))&&發放項目+發放日期
+       SELECT  S09_TEMP
+       SKIP
+    ENDDO 
+    SELECT S09_TEMP
+    USE 
+    ***特殊其他所得
+    SELECT F05,F06,F20 FROM S12 WHERE ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)   AND F08='2'  AND F19='Y'  AND LEFT(DTOC(F09),5)=ALLTRIM(THISFORM.MTH_LIST.DISPLAYVALUE) AND F20<>'2' ORDER BY F05 INTO CURSOR S12_TEMP READWRITE
+    SELECT S10_TEMP
+    GO TOP
+    DO WHILE !EOF()
+       SELECT S12_TEMP
+       GO TOP
+       DO WHILE !EOF()
+          IF S10_TEMP.F22=S12_TEMP.F05 AND  ALLTRIM(S10_TEMP.F19)=ALLTRIM(IIF(S12_TEMP.F06='1','年終獎金發放','未休年假獎金發放'))
+             SELECT S12_TEMP
+             DELETE 
+          ENDIF
+          SELECT S12_TEMP
+          SKIP
+       ENDDO
+       SELECT S10_TEMP
+       SKIP
+    ENDDO
+    SELECT S12_TEMP
+    GO TOP
+    DO WHILE !EOF()
+       THIS.ADDITEM(IIF(S12_TEMP.F06='1','年終獎金發放'+SPACE(18),'未休年假獎金發放'+SPACE(14)+SPACE(5))+SPACE(5)+ALLTRIM(DTOC(S12_TEMP.F05))+SPACE(10)+ALLTRIM(S12_TEMP.F20))&&發放項目+發放日期
+       SELECT S12_TEMP
+       SKIP
+    ENDDO     
+    SELECT S10_TEMP
+    USE            
+    SELECT  S12_TEMP
+    USE
+  ENDPROC 
+ ****************E.懲處扣款
+PROCEDURE COMBOBOX29.CLICK
+    THISFORM.COMBOBOX29.CLEAR
+    SELECT S08.F05,S08.F06,S08.F07 FROM S08 ORDER BY S08.F05,S08.F06 WHERE ALLTRIM(S08.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND S08.F15='Y'  AND S08.F12<>0 INTO CURSOR S08_TEMP READWRITE 
+    SELECT F27,F28,F29 FROM S10 WHERE ALLTRIM(F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)  AND F97='E' AND  F98<>'Y' INTO CURSOR S10_TEMP     
+    SELECT S10_TEMP
+    GO TOP
+    DO WHILE !EOF()
+       SELECT S08_TEMP
+       GO TOP
+       DO WHILE !EOF()
+          IF S10_TEMP.F27=S08_TEMP.F05 AND ALLTRIM(S10_TEMP.F28)=ALLTRIM(S08_TEMP.F06) AND ALLTRIM(S10_TEMP.F29)=ALLTRIM(S08_TEMP.F07)
+             SELECT S08_TEMP
+             DELETE 
+          ENDIF
+          SELECT S08_TEMP
+          SKIP
+       ENDDO
+       SELECT S10_TEMP
+       SKIP
+    ENDDO
+    SELECT S08_TEMP
+    GO TOP
+    THIS.ADDITEM('')
+    DO WHILE !EOF()
+       THIS.ADDITEM(S08_TEMP.F06+SPACE(5)+ALLTRIM(S08_TEMP.F07)+SPACE(5)+ALLTRIM(DTOC(S08_TEMP.F05)))  &&懲處編號+懲處項目+懲處日期
+       SELECT S08_TEMP
+       SKIP
+    ENDDO
+    SELECT S10_TEMP
+    USE        
+    SELECT S08_TEMP
+    USE 
+  ENDPROC   
+*****************
+***************確認作業
+PROCEDURE ANS_BOTT.CLICK      
+     IF MESSAGEBOX('您是否要確認此筆資料!',4+32+256,'請確認') = 6  
+     	SELECT S10_1
+     	LOCK()
+     	IF RLOCK() 
+ 		   IF S10_1.F98 = 'Y'
+ 		      =MESSAGEBOX('此人員資料已確認過,請查明後在確認!',0+64,'提示訊息視窗')
+ 		      THISFORM.GRID1.SETFOCUS
+ 		   ELSE
+ 		      IF S10_ANS_CLASS('A',S10_1.F01) = .T.
+ 		         =MESSAGEBOX('此筆資料確認成功',0+64,'提示訊息視窗')
+ 		         THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+		         THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.  
+		         THISFORM.REFRESH 
+ 		      ENDIF
+ 		   ENDIF
+        ELSE
+	       DO FILE_IMPACT
+	       UNLOCK ALL
+	       RETURN	      	 	                       
+	    ENDIF   
+     ENDIF	
+     SELECT S10_1  	  
+     UNLOCK ALL 
+     DO CASE 
+        CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工編號排列'
+             SET ORDER TO S10_11
+        CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工姓名排列'
+             SET ORDER TO S10_12
+     ENDCASE   
+     THISFORM.GRID1.SETFOCUS	
+     THISFORM.ANS_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.) AND  S10_1.F98<>'Y'		&&確認
+     THISFORM.ALL_BOTT.ENABLED=IIF(A02.F10='*',.T.,.F.) AND  IIF(INDEXSEEK('N',.F.,'S10_1','S10_13'),.T.,.F.)	&&全部確認
+     THISFORM.INVERSE_BOTT.ENABLED=IIF(A02.F09='*',.T.,.F.) AND S10_1.F98='Y'   &&反確認 	     
+     THISFORM.PAGEFRAME1.PAGE1.ACTIVATE         
+ ENDPROC
+***************全部確認作業
+ PROC ALL_BOTT.CLICK     
+     IF MESSAGEBOX('您是否要確認全部資料!',4+32+256,'請確認') = 6  
+        IF S10_ANS_CLASS('B',SPACE(1)) = .T.
+           SELECT S10_1
+           GO TOP
+           =MESSAGEBOX('全部確認作業已成功',0+64,'提示訊息視窗')
+        ENDIF   
+     ENDIF 
+     DO CASE 
+        CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工編號排列'
+             SET ORDER TO S10_11
+        CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工姓名排列'
+             SET ORDER TO S10_12
+     ENDCASE           
+     THISFORM.GRID1.SETFOCUS	
+     THISFORM.ANS_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.) AND  S10_1.F98<>'Y'		&&確認
+     THISFORM.ALL_BOTT.ENABLED=IIF(A02.F10='*',.T.,.F.) AND  IIF(INDEXSEEK('N',.F.,'S10_1','S10_13'),.T.,.F.)	&&全部確認
+     THISFORM.INVERSE_BOTT.ENABLED=IIF(A02.F09='*',.T.,.F.) AND S10_1.F98='Y'       &&反確認 	     
+     THISFORM.PAGEFRAME1.PAGE1.ACTIVATE       
+ ENDPROC 
+ ***************&&反確認作業
+ PROC INVERSE_BOTT.CLICK    
+     IF MESSAGEBOX('您是否要反確認此筆資料!',4+32+256,'請確認')=6
+        SELECT  S10_1
+        LOCK()
+        IF RLOCK()
+           IF S10_1.F98<>'Y'
+ 	          =MESSAGEBOX('此人員資料尚未確認過,請查明後再作反確認!',0+64,'提示訊息視窗')
+ 	           THISFORM.GRID1.SETFOCUS               	
+ 	       ELSE
+ 	           SELECT  S11
+ 	       	   SET ORDER TO S111		&& F02+DTOS(F01)
+ 	       	   SEEK S10_1.F01+DTOS(CTOD(HK+'/01'))
+ 	       	   IF FOUND()
+ 	       	      DELETE 
+ 	       	   ENDIF
+ 	       	   *****B.缺勤扣款
+	    	   SELECT RECNO() FROM S10 WHERE ALLTRIM(S10.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND S10.F97='B' AND S10.F98='Y' INTO ARRAY BK8           
+		       JJ8=''                
+		       IF _TALLY>0   
+	             FOR I= 1 TO ALEN(BK8)
+	                 JJ8=JJ8+ALLTRIM(STR(BK8(I)))+','
+	             ENDFOR    
+	             KK8=STUFF(JJ8,RAT(',',JJ8,1),1,'')              
+	             RLOCK(KK8,'S10')
+	             LL8=RLOCK(KK8,'S10')
+	           ELSE
+	             LL8=.T.   
+	           ENDIF  		  
+               IF LL8=.T. AND LEN(ALLTRIM(JJ8))>0   	    
+                  FOR I= 1 TO ALEN(BK8)  
+                      SELECT S10                     
+                      GO BK8(I) 
+                      IF EMPTY(S10.F42)
+                         SELECT S0A
+                         SET ORDER TO S0A1	&& F01+F05+DTOS(F08)+F09+F10
+                         SEEK S10.F01+S10.F12+DTOS(CTOD(HK+'/01'))+S10.F15+SPACE(10)
+                         IF FOUND()
+                            REPLACE S0A.F07 WITH S0A.F07-S10.F14
+                            REPLACE S0A.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+                            IF S0A.F07<=0
+                               DELETE 
+                            ENDIF
+                         ENDIF    
+*!*	                         IF S10.F12='A1' AND EMPTY(S10.F42)	&&若是缺勤為年假時,則S05人事薪資基本檔已休年假減掉缺勤數值
+*!*	                            SELECT S05
+*!*	                            SET ORDER TO S051
+*!*	                            SEEK S10.F01
+*!*	                            IF FOUND()
+*!*	                               REPLACE S05.F12 WITH S05.F12-S10.F14
+*!*	                            ENDIF
+*!*	                         ENDIF
+                      ENDIF
+                  ENDFOR
+               ENDIF                                   
+               ***E.懲處扣款    
+	    	   SELECT RECNO() FROM S10 WHERE ALLTRIM(S10.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) AND S10.F97='E' AND S10.F98='Y' INTO ARRAY BK9              
+		       JJ9=''                
+		       IF _TALLY>0   
+	              FOR I= 1 TO ALEN(BK9)
+	                  JJ9=JJ9+ALLTRIM(STR(BK9(I)))+','
+	              ENDFOR    
+	              KK9=STUFF(JJ9,RAT(',',JJ9,1),1,'')              
+	              RLOCK(KK9,'S10')
+	              LL9=RLOCK(KK9,'S10')
+	           ELSE
+	              LL9=.T.   
+	           ENDIF  		  
+               IF LL9=.T. AND LEN(ALLTRIM(JJ9))>0  	 	    
+                  FOR I= 1 TO ALEN(BK9)  
+                      SELECT S10                     
+                      GO BK9(I)         
+                      IF S10.F40='T'			&&若為實領薪資則扣款小計須歸零
+                         REPLACE S10.F30 WITH 0
+                      ENDIF     
+                      SELECT S10_E
+                      SET ORDER TO S10_E1	&& F01+DTOS(F05)+F06
+                      SEEK S10.F01+DTOS(S10.F27)+S10.F28
+                      IF FOUND()
+                         REPLACE S10_E.F30 WITH  S10.F30
+                      ENDIF                       
+                      ***至S08 懲處作業中加上懲處剩餘次數 
+                      SELECT S08
+                      SET ORDER TO S081	&& F01+DTOS(F05)+F06
+                      SEEK S10.F01+DTOS(S10.F27)+S10.F28
+                      IF FOUND()
+                    	 REPLACE S08.F12 WITH S08.F12+1		&&加上懲處剩餘次數
+                      ENDIF
+                   ENDFOR
+               ENDIF 		  
+      		   SELECT S10
+               REPLACE S10.F98 WITH 'N' FOR ALLTRIM(S10.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) ALL
+               REPLACE S10.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') FOR ALLTRIM(S10.F01)=ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE) ALL                                                         
+               SELECT S10_1 
+               REPLACE S10_1.F98 WITH 'N' 
+               REPLACE S10_1.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+               =MESSAGEBOX('此筆資料反確認成功',0+64,'提示訊息視窗')
+               THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+               THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  AND IIF(S10_1.F98<>'Y',.T.,.F.)
+               THISFORM.ANS_BOTT.ENABLED=IIF(A02.F08='*',.T.,.F.) AND  S10_1.F98<>'Y'			&&確認
+               THISFORM.INVERSE_BOTT.ENABLED=.F.
+               THISFORM.REFRESH 
+               RELEASE ALL LIKE BK*  
+ 	      ENDIF    
+       ELSE
+	      DO FILE_IMPACT
+	      UNLOCK ALL
+	      RETURN	          
+          ENDIF
+       ENDIF    	 
+       UNLOCK ALL 	
+       THISFORM.GRID1.SETFOCUS
+       THISFORM.PAGEFRAME1.PAGE1.ACTIVATE 	   
+ ENDPROC
+ENDDEFINE 
+************列印程序
+PROCEDURE PNT_PRC  
+   SELECT S10_1
+   LK = ALLTRIM(S10_1.F01)  &&人員編號
+   CK_VIEW = 'N'
+   ANS_CHK=CREATEOBJECT("ANS_CHK")  
+   ANS_CHK.SHOW    
+ENDPROC      
+*************列印項目選擇畫面
+DEFINE CLASS ANS_CHK AS FORM
+*!*	  AUTOCENTER=.T. 
+  CAPTION='請選擇資料列印方式'
+  TOP=INT_015*200
+  LEFT=INT_015*300
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*113
+  WIDTH=INT_015*210
+  FONTSIZE=INT_015*9
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='ANS_CHK'
+ADD OBJECT DATA_OPTION AS OPTIONGROUP WITH;
+      LEFT=INT_015*17,;
+      TOP=INT_015*20,;
+      HEIGHT=INT_015*70,;
+      WIDTH=INT_015*105,;
+      FONTSIZE=INT_015*12,;
+      BUTTONCOUNT=2,;
+      OPTION1.CAPTION='單  筆  資  料',;
+      OPTION1.TOP=INT_015*10,;
+      OPTION1.LEFT=INT_015*10,;
+      OPTION1.FONTSIZE=INT_015*10,;
+      OPTION1.AUTOSIZE=.T.,;
+      OPTION2.CAPTION='全  部  資  料',;
+      OPTION2.TOP=INT_015*45,;
+      OPTION2.LEFT=INT_015*10,;
+      OPTION2.FONTSIZE=INT_015*10,;
+      OPTION2.AUTOSIZE=.T.,;
+      NAME='DATA_OPTION'       
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*143,;     
+      TOP=INT_015*8,;  
+      HEIGHT=INT_015*25,;    
+      WIDTH=INT_015*50,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<P.列印',;
+      TOOLTIPTEXT='確認所選擇的鍵值!快速鍵->ALT+Y',;
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*143,;
+      TOP=INT_015*41,;
+      HEIGHT=INT_015*25,;    
+      WIDTH=INT_015*50,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<M.MAIL',;
+      TOOLTIPTEXT='寄發MAIL!快速鍵->ALT+M',;
+      NAME='CMND2'             
+  ADD OBJECT CMND4 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*143,;
+      TOP=INT_015*73,;
+      HEIGHT=INT_015*25,;    
+      WIDTH=INT_015*50,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消作業!快速鍵->ALT+C',;
+      NAME='CMND4'      
+**********
+  PROCEDURE CMND1.CLICK      
+     IF S10_1.F98 <> 'Y' AND THISFORM.DATA_OPTION.VALUE = 1	
+        =MESSAGEBOX('此人員薪資尚未確認,請先確認後在列印!',0+64,'提示訊息視窗')
+        RETURN 
+        THISFORM.CMND3.SETFOCUS 
+        THISFORM.CMND3.CLICK  
+     ENDIF
+     ***先帶入剩餘年假  報表:IIF(INDEXSEEK(F01+ALLTRIM(STR(YEAR(CTOD(ALLTRIM(HK)+'/01')))),.T.,'S0B','S0B1'),ALLTRIM(TRANSFORM(S0B.F04-S0B.F05,'@R 999.9'))+'   天',IIF(INDEXSEEK(F01,.T.,'S05','S051'),ALLTRIM(TRANSFORM(S05.F11-S05.F12,'@R 999.9'))+'   天',''))
+     WAIT WINDOW "資料匯入中,請稍後!" AT 0,150 NOWAIT NOCLEAR
+     SELECT S0A.F01,SUM(F07) FROM S0A WHERE F05='A1' AND LEFT(DTOS(F08),4)=LEFT(DTOS(CTOD(HK+'/01')),4)  GROUP BY S0A.F01 INTO CURSOR S0A_TEMP READWRITE 
+     INDE ON F01 TAG S0A_TEMP1
+     SET ORDER TO S0A_TEMP1 
+     SELECT S05
+     GO TOP
+     DO WHILE !EOF() 
+        SELECT S0A_TEMP
+        SEEK S05.F01
+        IF FOUND()
+           REPLACE S0A_TEMP.SUM_F07 WITH S05.F11 - S0A_TEMP.SUM_F07
+        ELSE
+           SELECT S0A_TEMP
+           APPEND BLANK
+           REPLACE S0A_TEMP.F01 WITH S05.F01
+           REPLACE S0A_TEMP.SUM_F07 WITH 0
+        ENDIF
+        SELECT S05
+        SKIP
+     ENDDO
+     ******
+	 IF THISFORM.DATA_OPTION.VALUE = 1	&&單筆列印
+	    SELECT S05.F01,S05.F15,S05.F33 FROM S05 WHERE S05.F01 = LK INTO CURSOR S05_TEMP
+	 ELSE   	
+     	IF ALL_CHK = .T.
+           IF MESSAGEBOX('是否只列印作業限制為"單獨"人員之薪資明細',4+32+256,'請確認')=6 
+              CK=.F.
+              SELECT S05.F01,S05.F15,S05.F33 FROM S05 WHERE S05.F27 = .F. AND (S05.F28 <> '1' OR  S05.F28 <> '3' OR  S05.F28 <> '7' OR S05.F28 <> '8') INTO CURSOR S05_TEMP 
+           ELSE
+              SELECT S05.F01,S05.F15,S05.F33 FROM S05 WHERE S05.F28 <> '1' OR S05.F28 <> '3' OR  S05.F28 <> '7' OR S05.F28 <> '8' INTO CURSOR S05_TEMP 
+           ENDIF                    
+        ELSE     
+           SELECT S05.F01,S05.F15,S05.F33 FROM S05 WHERE S05.F27 = .T. AND (S05.F28 <> '1' OR  F28 <> '3' OR  S05.F28 <> '7' OR S05.F28 <> '8') INTO CURSOR S05_TEMP
+        ENDIF
+     ENDIF        
+     SELECT S05_TEMP
+     CREATE CURSOR S10_2; 
+		    (F01 C(4),F02 C(8),F03 C(4),F04 C(8),F18 C(1),F19 C(30),F20 N(7),F21 N(7),F12 C(2),F13 C(30),F14 N(4,1),F15 C(4),F16 N(7),;
+		     F33 C(40),F39 N(7),F40 C(1),REMARK1 C(150),REMARK2 C(150),REMARK3 C(150))		       
+*!*	 INDE ON F01 TAG S10_21 &&DESCENDING
+     SELECT S10.F01,S10.F02,S10.F03,S10.F04,S05_TEMP.F15,S05_TEMP.F33 FROM S10,S05_TEMP GROUP BY S10.F01 ORDER BY S10.F01 WHERE  S10.F98 = 'Y' AND S10.F01 = S05_TEMP.F01 AND IIF(CK_VIEW <> 'M',.T.,EMPTY(S05_TEMP.F33) <> .T. AND AT('@',S05_TEMP.F33) <> 0) INTO CURSOR S10_NO
+ 	 SELECT S05_TEMP
+ 	 USE
+ 	 SELECT S10_NO
+ 	 GO TOP
+ 	 DO WHILE !EOF()
+        CH_K = ''				&&判斷其他所得次數
+        REMARKA = ''			&&調薪備註
+	    REMARKB = ''			&&懲處備註
+		LK = S10_NO.F01   		&&人員編號
+		LK_NAME = S10_NO.F02    &&人員編號
+		DEP = S10_NO.F03    	&&部門編號
+		DEP_NAME = S10_NO.F04   &&部門編號
+		CAL = S10_NO.F15       	&&發薪總類
+	    CREATE CURSOR S10_TEMP; 
+				(F01 C(4),F02 C(8),F03 C(4),F04 C(8),F18 C(1),F19 C(30),F20 N(7),F21 N(7),F12 C(2),F13 C(30),F14 N(4,1),F15 C(4),F16 N(7),;
+				 F33 C(40),F39 N(7),F40 C(1),REMARK1 C(150),REMARK2 C(150),REMARK3 C(150))		       
+********C.薪資所得
+	    SELECT F01,F02,F03,F04,F18,F19,F20,F21 FROM S10 ORDER BY F18 WHERE ALLTRIM(F01) = ALLTRIM(LK) AND !EMPTY(F21) AND F97 = 'C' AND F98 = 'Y' INTO CURSOR S10C
+	    SELECT S10C
+	    GO TOP
+	    DO WHILE !EOF()    
+	       IF !EOF('S10_TEMP')
+	     	  REPLACE S10_TEMP.F18 WITH S10C.F18	&&薪資類別
+	          REPLACE S10_TEMP.F19 WITH S10C.F19	&&薪資項目名稱
+			  REPLACE S10_TEMP.F20 WITH S10C.F20	&&本月薪資所得
+			  REPLACE S10_TEMP.F21 WITH S10C.F21	&&基本薪資所得	
+		   ELSE     
+		  	  SELECT S10_TEMP
+	          APPEND BLANK
+	          REPLACE S10_TEMP.F01 WITH S10C.F01	&&人員編號
+	          REPLACE S10_TEMP.F02 WITH S10C.F02	&&人員姓名
+	          REPLACE S10_TEMP.F03 WITH S10C.F03	&&部門編號
+	          REPLACE S10_TEMP.F04 WITH S10C.F04    &&部門名稱
+	          REPLACE S10_TEMP.F18 WITH S10C.F18	&&薪資類別
+			  REPLACE S10_TEMP.F19 WITH S10C.F19	&&薪資項目名稱
+			  REPLACE S10_TEMP.F20 WITH S10C.F20	&&本月薪資所得
+			  REPLACE S10_TEMP.F21 WITH S10C.F21	&&基本薪資所得
+		   ENDIF
+		   SELECT S10_TEMP
+		   SKIP
+		   SELECT S10C
+		   SKIP
+		ENDDO
+	    IF !EOF('S10_TEMP')
+		   DO CASE
+			  CASE CAL = 'M'		&&發薪總類:月薪
+			  	   REPLACE S10_TEMP.F19 WITH IIF(INDEXSEEK(LK,.T.,'S10_A','S10_A1'),'出勤' + ALLTRIM(STR(S10_A.F05)) + '天薪資','')
+			  CASE CAL = 'D'		&&發薪總類:日薪
+			       REPLACE S10_TEMP.F19 WITH IIF(INDEXSEEK(LK,.T.,'S10_A','S10_A1'),'上班共' + ALLTRIM(STR(S10_A.F05)) + '天薪資','')
+			  CASE CAL = 'T'		&&發薪總類:時薪
+			  	   REPLACE S10_TEMP.F19 WITH IIF(INDEXSEEK(LK,.T.,'S10_A','S10_A1'),'上班共' + ALLTRIM(STR(S10_A.F05)) + '小時薪資','')
+	 	   ENDCASE	
+		   REPLACE S10_TEMP.F20 WITH IIF(INDEXSEEK(LK + DTOS(CTOD(HK + '/01')),.T.,'S11','S111'),S11.F12,0)	       
+		ELSE
+			SELECT S10_TEMP
+			APPEND BLANK 
+			REPLACE S10_TEMP.F01 WITH LK			&&人員編號
+			REPLACE S10_TEMP.F02 WITH LK_NAME		&&人員姓名
+			REPLACE S10_TEMP.F03 WITH DEP			&&部門編號
+			REPLACE S10_TEMP.F04 WITH DEP_NAME	   	&&部門名稱				    
+			DO CASE
+			   CASE CAL='M'		&&發薪總類:月薪
+			   	  	REPLACE S10_TEMP.F19 WITH IIF(INDEXSEEK(LK,.T.,'S10_A','S10_A1'),'出勤' + ALLTRIM(STR(S10_A.F05)) + '天薪資','')
+			   CASE CAL='D'		&&發薪總類:日薪
+			  	    REPLACE S10_TEMP.F19 WITH IIF(INDEXSEEK(LK,.T.,'S10_A','S10_A1'),'上班共' + ALLTRIM(STR(S10_A.F05)) + '天薪資','')
+			   CASE CAL='T'		&&發薪總類:時薪
+			   	  	REPLACE S10_TEMP.F19 WITH IIF(INDEXSEEK(LK,.T.,'S10_A','S10_A1'),'上班共' + ALLTRIM(STR(S10_A.F05)) + '小時薪資','')
+			ENDCASE	
+			REPLACE S10_TEMP.F20 WITH IIF(INDEXSEEK(LK+DTOS(CTOD(HK + '/01')),.T.,'S11','S111'),S11.F12,0)
+	     ENDIF		       
+		 SELECT S10_TEMP
+		 SKIP
+		 SELECT S10C
+		 USE
+		 ***
+		 SELECT F01,F02,F03,F04,F18,F19,F20,F21 FROM S10 ORDER BY F18 WHERE ALLTRIM(F01) = ALLTRIM(LK) AND EMPTY(F21) AND F97 = 'C' AND F98 = 'Y' INTO CURSOR S10C
+		 SELECT S10C
+		 GO TOP
+		 DO WHILE !EOF()
+		    IF !EOF('S10_TEMP')
+		       REPLACE S10_TEMP.F18 WITH S10C.F18	&&薪資類別
+		       REPLACE S10_TEMP.F19 WITH S10C.F19	&&薪資項目名稱
+		       REPLACE S10_TEMP.F20 WITH S10C.F20	&&本月薪資所得
+		       REPLACE S10_TEMP.F21 WITH S10C.F21	&&基本薪資所得			             
+		    ELSE
+		       SELECT S10_TEMP
+		       APPEND BLANK
+		       REPLACE S10_TEMP.F01 WITH S10C.F01	&&人員編號
+		       REPLACE S10_TEMP.F02 WITH S10C.F02	&&人員姓名
+		       REPLACE S10_TEMP.F03 WITH S10C.F03	&&部門編號
+		       REPLACE S10_TEMP.F04 WITH S10C.F04  	&&部門名稱
+		 	   REPLACE S10_TEMP.F18 WITH S10C.F18	&&薪資類別		                 
+		       REPLACE S10_TEMP.F18 WITH S10C.F18	&&薪資類別
+		       REPLACE S10_TEMP.F19 WITH S10C.F19	&&薪資項目名稱
+		       REPLACE S10_TEMP.F20 WITH S10C.F20	&&本月薪資所得
+			   REPLACE S10_TEMP.F21 WITH S10C.F21	&&基本薪資所得	
+			ENDIF
+			SELECT S10_TEMP
+			SKIP   	              
+			SELECT S10C
+			SKIP
+	     ENDDO 		            
+	     SELECT S10C
+		 USE	  
+		 SELECT S10_TEMP
+		 GO TOP
+*********B缺勤扣款
+	     SELECT F01,F02,F03,F04,F12,F13,F14,F15,F16,F17,F42 FROM S10 ORDER BY F12 WHERE ALLTRIM(F01) = ALLTRIM(LK) AND F98 = 'Y' AND F97 = 'B' INTO CURSOR S10B
+		 SELECT S10B
+		 GO TOP
+		 DO WHILE !EOF()
+		  	IF !EOF('S10_TEMP')
+		   	   REPLACE S10_TEMP.F12 WITH S10B.F12	&&缺勤編號
+	           REPLACE S10_TEMP.F13 WITH ALLTRIM(S10B.F13) + IIF(EMPTY(S10B.F42) OR LEFT(ALLTRIM(S10B.F42),4) = 'SB16','',SPACE(2) + S10B.F42)	&&缺勤項目
+       	       REPLACE S10_TEMP.F14 WITH S10B.F14	&&缺勤數值
+       	       REPLACE S10_TEMP.F15 WITH IIF(S10B.F15 = 'H','小時',IIF(S10B.F15 = 'S','次','日'))	&&缺勤單位
+       	       REPLACE S10_TEMP.F16 WITH S10B.F16	&&扣款金額
+       	    ELSE
+       	       SELECT S10_TEMP
+       	       APPEND BLANK 
+       	       REPLACE S10_TEMP.F01 WITH S10B.F01	&&人員編號
+       	       REPLACE S10_TEMP.F02 WITH S10B.F02	&&人員姓名
+       	       REPLACE S10_TEMP.F03 WITH S10B.F03	&&部門編號
+       	       REPLACE S10_TEMP.F04 WITH S10B.F04	&&部門名稱
+       	       REPLACE S10_TEMP.F12 WITH S10B.F12	&&缺勤編號
+       	       REPLACE S10_TEMP.F13 WITH ALLTRIM(S10B.F13) + IIF(EMPTY(S10B.F42) OR LEFT(ALLTRIM(S10B.F42),4) = 'SB16','',SPACE(2) + S10B.F42)	&&缺勤項目
+       	       REPLACE S10_TEMP.F14 WITH S10B.F14	&&缺勤數值
+       	       REPLACE S10_TEMP.F15 WITH IIF(S10B.F15 = 'H','小時',IIF(S10B.F15 = 'S','次','日'))	&&缺勤單位
+       	       REPLACE S10_TEMP.F16 WITH S10B.F16	&&扣款金額	  	              
+       	    ENDIF
+	       	SELECT S10_TEMP
+	       	SKIP
+	       	SELECT S10B
+	       	SKIP
+	     ENDDO
+	     SELECT S10B
+	     USE 
+*********D薪資扣款
+	     SELECT F01,F02,F03,F04,F24,F25,F26,F97 FROM S10 ORDER BY F24  WHERE ALLTRIM(F01) = ALLTRIM(LK) AND F98 = 'Y' AND F97 = 'D' INTO CURSOR S10D
+	     SELECT S10D
+		 GO TOP          
+		 DO WHILE !EOF()    
+		    IF !EOF('S10_TEMP')
+		       REPLACE S10_TEMP.F12 WITH S10D.F24	&&扣款類別
+		       REPLACE S10_TEMP.F13 WITH S10D.F25	&&扣款項目
+		       REPLACE S10_TEMP.F16 WITH S10D.F26	&&本月扣款金額
+		  	ELSE    
+		       SELECT S10_TEMP
+		       APPEND BLANK
+		       REPLACE S10_TEMP.F01 WITH S10D.F01	&&人員編號
+		       REPLACE S10_TEMP.F02 WITH S10D.F02	&&人員姓名
+		       REPLACE S10_TEMP.F03 WITH S10D.F03	&&部門編號
+		       REPLACE S10_TEMP.F04 WITH S10D.F04 	&&部門名稱
+		       REPLACE S10_TEMP.F12 WITH S10D.F24	&&扣款類別
+		       REPLACE S10_TEMP.F13 WITH S10D.F25	&&扣款項目
+		       REPLACE S10_TEMP.F16 WITH S10D.F26	&&本月扣款金額
+		    ENDIF     
+			SELECT S10_TEMP
+			SKIP
+			SELECT S10D
+			SKIP
+		 ENDDO	     	   
+		 SELECT S10D
+		 USE	       
+		 SELECT S10_TEMP
+		 GO TOP
+*********F.加班所得     
+		 SELECT F01,F02,F03,F04,F32,F33,F34,F35,F36,F37,F39,F44 FROM S10 ORDER BY F32,F33 WHERE ALLTRIM(F01) = ALLTRIM(LK) AND F97 = 'F' AND F98 = 'Y' INTO CURSOR S10F
+		 SELECT S10F
+		 GO TOP     
+		 IF !EOF('S10F')		
+		    IF !EOF('S10_TEMP')              
+		       REPLACE S10_TEMP.F33 WITH '加     班     明     細'
+		       REPLACE S10_TEMP.F40 WITH 'J' 			&&判斷碼J=加班,H=懲處,空白表示該兩項之內容及金額
+		    ELSE
+		       SELECT S10_TEMP
+		       APPEND BLANK 
+		  	   REPLACE S10_TEMP.F01 WITH S10F.F01		&&人員編號
+		   	   REPLACE S10_TEMP.F02 WITH S10F.F02		&&人員姓名
+		   	   REPLACE S10_TEMP.F03 WITH S10F.F03		&&部門編號
+		   	   REPLACE S10_TEMP.F04 WITH S10F.F04		&&部門名稱		                 
+		       REPLACE S10_TEMP.F33 WITH '加     班     明     細'
+		       REPLACE S10_TEMP.F40 WITH 'J' 			&&判斷碼J=加班,H=懲處,空白表示該兩項之內容及金額
+		    ENDIF     
+		    SELECT S10_TEMP
+		    SKIP
+		 ENDIF		       
+		 DO WHILE !EOF()   
+			IF !EOF('S10_TEMP')
+			   REPLACE S10_TEMP.F33 WITH S10F.F32 + SPACE(1) + IIF(S10F.F33 = '1','平日加班','假日加班') + SPACE(2) + ALLTRIM(TRANSFORM(S10F.F35,'@R 999,999.9')) + SPACE(1) + IIF(S10F.F34 = 'H','小時','日')  &&加班類別+加班項目  / 津貼補助項目
+			   REPLACE S10_TEMP.F39 WITH S10F.F39					&&加班小計(不包括津貼金額) / 津貼金額
+			   SELECT S10_TEMP
+			   SKIP
+			   IF !EMPTY(S10F.F36)									&&判斷是否有津貼補助
+			      IF !EOF('S10_TEMP')				
+			         REPLACE S10_TEMP.F33 WITH '津貼：' + S10F.F36	&&加班類別+加班項目  / 津貼補助項目
+			         REPLACE S10_TEMP.F39 WITH S10F.F37 * S10F.F44	&&加班小計(不包括津貼金額) / 津貼金額      
+			      ELSE     
+		     	     SELECT S10_TEMP
+		     	     APPEND BLANK
+			         REPLACE S10_TEMP.F01 WITH S10F.F01				&&人員編號
+			         REPLACE S10_TEMP.F02 WITH S10F.F02				&&人員姓名
+			         REPLACE S10_TEMP.F03 WITH S10F.F03				&&部門編號
+			         REPLACE S10_TEMP.F04 WITH S10F.F04				&&部門名稱
+			         REPLACE S10_TEMP.F33 WITH '津貼：' + S10F.F36	&&加班類別+加班項目  / 津貼補助項目
+			         REPLACE S10_TEMP.F39 WITH S10F.F37 * S10F.F44	&&加班小計(不包括津貼金額) / 津貼金額
+			      ENDIF  
+			      SELECT S10_TEMP
+			      SKIP    
+			   ENDIF     	        
+			ELSE	
+               SELECT S10_TEMP
+               APPEND BLANK 	     	    
+       	       REPLACE S10_TEMP.F01 WITH S10F.F01	&&人員編號
+       	       REPLACE S10_TEMP.F02 WITH S10F.F02	&&人員姓名
+       	       REPLACE S10_TEMP.F03 WITH S10F.F03	&&部門編號
+       	       REPLACE S10_TEMP.F04 WITH S10F.F04	&&部門名稱			              	          	        
+		       REPLACE S10_TEMP.F33 WITH S10F.F32 + SPACE(1) + IIF(S10F.F33 = '1','平日加班','假日加班') + SPACE(2) + ALLTRIM(TRANSFORM(S10F.F35,'@R 999,999.9')) + SPACE(1) + IIF(S10F.F34 = 'H','小時','日')  &&加班類別+加班項目  / 津貼補助項目
+		       REPLACE S10_TEMP.F39 WITH S10F.F39				&&加班小計(不包括津貼金額) / 津貼金額
+		       IF !EMPTY(S10F.F36)
+	     	      SELECT S10_TEMP
+	     	      APPEND BLANK
+		          REPLACE S10_TEMP.F01 WITH S10F.F01			&&人員編號
+		       	  REPLACE S10_TEMP.F02 WITH S10F.F02			&&人員姓名
+		       	  REPLACE S10_TEMP.F03 WITH S10F.F03			&&部門編號
+		       	  REPLACE S10_TEMP.F04 WITH S10F.F04			&&部門名稱			     	               
+			      REPLACE S10_TEMP.F33 WITH '津貼：' + S10F.F36	&&加班類別+加班項目  / 津貼補助項目
+			      REPLACE S10_TEMP.F39 WITH S10F.F37 * S10F.F44	&&加班小計(不包括津貼金額) / 津貼金額
+		       ENDIF   
+		       SELECT S10_TEMP
+		       SKIP  	
+			ENDIF     
+			SELECT S10F
+			SKIP
+		 ENDDO	    
+		 SELECT S10F
+		 USE	     
+*********E.懲處扣款     
+		 SELECT F01,F02,F03,F04,F27,F28,F29,F30,F31 FROM S10 ORDER BY F27,F28 WHERE ALLTRIM(F01) = ALLTRIM(LK) AND F97 = 'E' AND F98 = 'Y' INTO CURSOR S10E
+         SELECT S10E
+         GO TOP     
+	     IF !EOF('S10E')		
+	        IF !EOF('S10_TEMP')              
+               REPLACE S10_TEMP.F33 WITH '懲   處   扣   款   明   細'
+               REPLACE S10_TEMP.F40 WITH 'H' 			&&判斷碼J=加班,H=懲處,空白表示該兩項之內容及金額
+	        ELSE
+	           SELECT S10_TEMP
+               APPEND BLANK 
+       	       REPLACE S10_TEMP.F01 WITH S10E.F01		&&人員編號
+       	       REPLACE S10_TEMP.F02 WITH S10E.F02		&&人員姓名
+       	       REPLACE S10_TEMP.F03 WITH S10E.F03		&&部門編號
+       	       REPLACE S10_TEMP.F04 WITH S10E.F04		&&部門名稱		                 
+               REPLACE S10_TEMP.F33 WITH '懲   處   扣   款   明   細'
+               REPLACE S10_TEMP.F40 WITH 'H' 			&&判斷碼J=加班,H=懲處,空白表示該兩項之內容及金額
+            ENDIF     
+            SELECT S10_TEMP
+            SKIP
+	     ENDIF	               
+         DO WHILE !EOF()   
+            IF !EOF('S10_TEMP')          
+		       REPLACE S10_TEMP.F33 WITH S10E.F28 + SPACE(2) + ALLTRIM(S10E.F29)	&&懲處編號+懲處項目
+		       REPLACE S10_TEMP.F39 WITH S10E.F30									&&懲處金額 / 懲處剩餘月數		
+	     	   SELECT S10_TEMP
+	     	   SKIP
+     	       IF !EOF('S10_TEMP')
+		          REPLACE S10_TEMP.F33 WITH '懲處剩餘月數'	&&懲處編號+懲處項目
+		     	  REPLACE S10_TEMP.F39 WITH IIF(INDEXSEEK(LK + DTOS(S10E.F27) + S10E.F28,.T.,'S08','S081'),S08.F12,0)	&&懲處金額 / 懲處剩餘月數	   	        
+     	       ELSE
+		          SELECT S10_TEMP
+			      APPEND BLANK
+		       	  REPLACE S10_TEMP.F01 WITH S10E.F01			&&人員編號
+		       	  REPLACE S10_TEMP.F02 WITH S10E.F02			&&人員姓名
+		       	  REPLACE S10_TEMP.F03 WITH S10E.F03			&&部門編號
+		       	  REPLACE S10_TEMP.F04 WITH S10E.F04			&&部門名稱					        
+			      REPLACE S10_TEMP.F33 WITH '懲處剩餘月數'		&&懲處剩餘月數
+			      REPLACE S10_TEMP.F39 WITH IIF(INDEXSEEK(LK + DTOS(S10E.F27) + S10E.F28,.T.,'S08','S081'),S08.F12,0)	&&懲處金額 / 懲處剩餘月數				     
+     	       ENDIF
+     	       SELECT S10_TEMP
+     	       SKIP
+     	    ELSE
+     	       SELECT S10_TEMP
+	     	   APPEND BLANK
+	       	   REPLACE S10_TEMP.F01 WITH S10E.F01									&&人員編號
+	       	   REPLACE S10_TEMP.F02 WITH S10E.F02									&&人員姓名
+	       	   REPLACE S10_TEMP.F03 WITH S10E.F03									&&部門編號
+	       	   REPLACE S10_TEMP.F04 WITH S10E.F04									&&部門名稱			     	          
+		       REPLACE S10_TEMP.F33 WITH S10E.F28 + SPACE(2) + ALLTRIM(S10E.F29)	&&懲處編號+懲處項目
+		       REPLACE S10_TEMP.F39 WITH S10E.F30									&&懲處金額 / 懲處剩餘月數
+			   SELECT S10_TEMP
+			   APPEND BLANK
+	       	   REPLACE S10_TEMP.F01 WITH S10E.F01		&&人員編號
+	       	   REPLACE S10_TEMP.F02 WITH S10E.F02		&&人員姓名
+	       	   REPLACE S10_TEMP.F03 WITH S10E.F03		&&部門編號
+	       	   REPLACE S10_TEMP.F04 WITH S10E.F04		&&部門名稱					  
+			   REPLACE S10_TEMP.F33 WITH '懲處剩餘月數'	&&懲處剩餘月數
+			   REPLACE S10_TEMP.F39 WITH IIF(INDEXSEEK(LK + DTOS(S10E.F27) + S10E.F28,.T.,'S08','S081'),S08.F12,0)	&&懲處金額 / 懲處剩餘月數
+			   SELECT S10_TEMP
+			   SKIP
+     	    ENDIF    
+     	    SELECT S10E
+ 	        SKIP
+         ENDDO	  
+	     *****
+	     IF CK_VIEW <> 'M'
+	        PAG_NO = IIF(SEEK('Z','S00'),S00.F73,9)		&&報表中一刀大小欄位數	                       
+			IF MOD(RECCOUNT('S10_TEMP'),PAG_NO) = 0
+			   START_NO = RECCOUNT('S10_TEMP')    
+			ELSE
+			   IF RECCOUNT('S10_TEMP') <= PAG_NO
+			      START_NO = PAG_NO
+			   ELSE
+			      START_NO = RECCOUNT('S10_TEMP') + (PAG_NO - MOD(RECCOUNT('S10_TEMP'),PAG_NO))
+			   ENDIF     
+			ENDIF 	                       
+			FOR I = 1 TO START_NO - RECCOUNT('S10_TEMP')
+		        SELECT S10_TEMP
+		        APPEND BLANK
+			    REPLACE S10_TEMP.F01 WITH LK			&&人員編號
+			    REPLACE S10_TEMP.F02 WITH LK_NAME		&&人員姓名
+			    REPLACE S10_TEMP.F03 WITH DEP			&&部門編號
+			    REPLACE S10_TEMP.F04 WITH DEP_NAME		&&部門名稱
+		    ENDFOR 
+		 ELSE   &&MAIL
+		    SELECT S10_TEMP
+		    APPEND BLANK
+			REPLACE S10_TEMP.F01 WITH LK			&&人員編號
+			REPLACE S10_TEMP.F02 WITH LK_NAME		&&人員姓名
+			REPLACE S10_TEMP.F03 WITH DEP			&&部門編號
+			REPLACE S10_TEMP.F04 WITH DEP_NAME		&&部門名稱 
+	     ENDIF  	
+*********S07.調薪備註   
+         SELECT F09,SUM(F13-F12) FROM S07 WHERE F01 = LK AND F14 = 'Y' AND F06 = '1' AND LEFT(DTOC(F05),5) = ALLTRIM(HK) AND (F15 = '1' OR F15 = '3') INTO CURSOR S07_TEMP
+    	 SELECT S07_TEMP	 
+     	 GO TOP                
+     	 DO WHILE !EOF()
+            REMARKA = ALLTRIM(S07_TEMP.F09) + ',' + ALLTRIM(REMARKA)
+            SELECT S07_TEMP	
+            SKIP
+     	 ENDDO
+     	 REMARKA = IIF(EMPTY(REMARKA),'','調整薪資項目：' + LEFT(ALLTRIM(REMARKA),LEN(ALLTRIM(REMARKA)) - 1))
+     	 SELECT S07_TEMP
+     	 USE
+*********S08.懲處備註  
+	     SELECT S10E
+	     GO TOP
+	     DO WHILE !EOF()
+	        SELECT S08
+	        SET ORDER TO S081
+	        SEEK LK + DTOS(S10E.F27) + S10E.F28
+	        IF FOUND() AND S08.F15 = 'Y'
+	           REMARKB = ALLTRIM(S08.F14) + ',' + ALLTRIM(REMARKB)
+	        ENDIF
+	        SELECT S10E
+	        SKIP
+	     ENDDO       
+         REMARKB=IIF(EMPTY(REMARKB),'',LEFT(ALLTRIM(REMARKB),LEN(ALLTRIM(REMARKB))-1))
+	     SELECT S10E
+	     USE 	 	     
+	     SELECT S10_TEMP
+	     REPLACE S10_TEMP.REMARK1 WITH ALLTRIM(ALLTRIM(IIF(INDEXSEEK('J',.T.,'S01','S011'),S01.F07,'')) + SPACE(4) + ALLTRIM(REMARKA))  &&薪水條備註+調薪備註
+	     REPLACE S10_TEMP.REMARK2 WITH ALLTRIM(IIF(SEEK(LK + 'A','S10'),S10.F11,''))      &&個人備註    
+	     REPLACE S10_TEMP.REMARK3 WITH ALLTRIM(REMARKB)				           			 &&懲處備註			       
+*********將此人員之所有薪資明細帶入此暫存檔以便增加下一位人員薪資明細	     
+	     SELECT S10_TEMP
+	     GO TOP
+	     DO WHILE !EOF()
+	        SELECT S10_2
+	        APPEND BLANK
+	        REPLACE S10_2.F01 WITH S10_TEMP.F01 				&&人員編號
+	        REPLACE S10_2.F02 WITH S10_TEMP.F02					&&人員姓名
+	        REPLACE S10_2.F03 WITH S10_TEMP.F03					&&部門編號
+	        REPLACE S10_2.F04 WITH S10_TEMP.F04					&&部門名稱
+	        REPLACE S10_2.F18 WITH S10_TEMP.F18					&&C.薪資類別
+	        REPLACE S10_2.F19 WITH S10_TEMP.F19					&&C.薪資項目名稱
+	        REPLACE S10_2.F20 WITH S10_TEMP.F20					&&C.本月薪資所得
+	        REPLACE S10_2.F21 WITH S10_TEMP.F21					&&C.基本薪資所得
+	        REPLACE S10_2.F12 WITH S10_TEMP.F12					&&B.缺勤編號 / D.扣款類別
+	        REPLACE S10_2.F13 WITH S10_TEMP.F13					&&B.缺勤項目 / D.扣款項目
+	        REPLACE S10_2.F14 WITH S10_TEMP.F14					&&B.缺勤數值
+	        REPLACE S10_2.F15 WITH S10_TEMP.F15					&&B.缺勤單位
+	        REPLACE S10_2.F16 WITH S10_TEMP.F16					&&B.扣款金額 / D.本月扣款金額
+	        REPLACE S10_2.F33 WITH S10_TEMP.F33					&&F.加班類別+加班項目或津貼補助項目 / E.懲處編號+懲處項目
+	        REPLACE S10_2.F39 WITH S10_TEMP.F39					&&F.加班小計(不包括津貼金額)或津貼金額 / E.懲處金額 / 懲處剩餘月數
+	        REPLACE S10_2.F40 WITH S10_TEMP.F40					&&判斷碼J=加班,H=懲處,空白表示該兩項之內容及金額
+	        REPLACE S10_2.REMARK1 WITH S10_TEMP.REMARK1			&&薪水條備註+調薪備註
+	        REPLACE S10_2.REMARK2 WITH S10_TEMP.REMARK2			&&個人備註
+	        REPLACE S10_2.REMARK3 WITH S10_TEMP.REMARK3			&&懲處備註
+	        SELECT S10_TEMP
+	        SKIP 
+	     ENDDO
+	     SELECT S10_TEMP
+	     USE
+	     SELECT S10_NO
+	     SKIP
+     ENDDO    
+     SELECT S10_NO
+     USE
+     WAIT CLEAR   
+     SELECT S10_2
+     GO TOP   
+     IF _TALLY > 0
+        IF CK_VIEW <> 'M'
+	       REPORT FORM ALLTRIM(INT_116) + 'S10A' TO PRINT PROMPT PREVIEW	&&中一刀
+	    ELSE
+	        WAIT WINDOW "傳送郵件,請稍後!" AT 0,150 NOWAIT NOCLEAR
+	    	SELECT S10_2
+     		GO TOP
+	    	UP_NO = S10_2.F01
+	    	UP_NAME = S10_2.F02
+	    	Title_INT_000 = ALLTRIM(INT_000)
+	    	TEXT_BODY = ''
+	    	TEXT_BODY_LIST = ''
+	    	MAIL_TO = ''
+	    	*****轉換成HTML
+	    	SELECT S05
+	    	SET ORDER TO S051
+	    	SEEK S10_2.F01
+	    	IF FOUND() AND EMPTY(S05.F33) <> .T. AND AT('@',S05.F33) <> 0
+		    	MAIL_TO = S05.F33
+		    	TEXT_BODY = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=big5"><title></title></head><body><table border="1" width="91%" id="table1"> ;
+		    				<tr><td colspan="8"><p align="center"><b><font size="6" color="#0000FF">' + Title_INT_000 + '</font></b></td></tr> ;
+							<tr><td colspan="8"><p align="center"><b><font size="5" color="#0000FF">' + HK + '&nbsp&nbsp薪資明細表</font></b></td></tr>'
+				TEXT_BODY = TEXT_BODY + '<tr><td width="96%" colspan="8"><b><font color="#0000FF">員工編號：' + S10_2.F01 + ;
+										'&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp員工姓名：' +  S10_2.F02 + ;
+										'&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp班別：' + IIF(INDEXSEEK('I' + S05.F29,.T.,'S00','S005'),S00.F50 + '～' + S00.F51,'') + ;
+										'&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp' + IIF(IIF(INDEXSEEK(S10_2.F01,.T.,'S05','S051'),S05.F15 = 'M' OR S05.F15 = 'D',.F.),'上班天數：','上班時數：') + ;
+										IIF(SEEK(S10_2.F01 + 'A','S10'),ALLTRIM(STR(S10.F05)),'') + IIF(S05.F15 = 'T','  小時','  天') + '</font></b></td></tr>'
+				TEXT_BODY = TEXT_BODY +	'<tr><td width="96%" colspan="8"><b><font color="#0000FF">遲到分鐘數：' + IIF(SEEK(S10_2.F01 + 'A','S10'),ALLTRIM(STR(S10.F06)),'') + '&nbsp&nbsp分鐘' + ;
+										'&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp早退分鐘數：' + IIF(SEEK(S10_2.F01 + 'A','S10'),ALLTRIM(STR(S10.F07)),'') + '&nbsp&nbsp分鐘' + ;
+										'&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp遲到額外扣款：' + IIF(SEEK(S10_2.F01 + 'A','S10'),ALLTRIM(TRANSFORM(S10.F09,'@R 999,999,999')),'0') + '&nbsp&nbsp元' + ;
+										'&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp早退額外扣款：' + IIF(SEEK(S10_2.F01 + 'A','S10'),ALLTRIM(TRANSFORM(S10.F10,'@R 999,999,999')),'') + '&nbsp&nbsp元' + '</font></b></td></tr>'					
+				TEXT_BODY = TEXT_BODY + '<tr><td width="35%" colspan="3" align="center"><b><font color="#0000FF">薪資所得明細</font></b></td>;
+										 <td width="37%" colspan="3" align="center"><b><font color="#0000FF">薪資扣款明細</font></b></td>'
+				TEXT_BODY = TEXT_BODY + '<td width="27%" colspan="2" align="center"><b><font color="#0000FF">其他項目明細</font></b></td></tr>;
+										 <tr><td width="17%"><p align="center"><b><font color="#0000FF">所得項目</font></b></td>'
+				TEXT_BODY = TEXT_BODY +	'<td width="8%"><b><font color="#0000FF">本月所得</font></b></td>;
+										 <td width="8%"><b><font color="#0000FF">基本薪資</font></b></td>;
+										 <td width="18%"><p align="center"><b><font color="#0000FF">扣款項目</font></b></td>'
+				TEXT_BODY = TEXT_BODY +	'<td width="9%"><b><font color="#0000FF">缺勤數值</font></b></td>;
+										 <td width="8%"><b><font color="#0000FF">扣款金額</font></b></td>'
+				TEXT_BODY = TEXT_BODY +	'<td width="18%"><p align="center"><b><font color="#0000FF">項目內容</font></b></td>;
+										 <td width="8%"><b><font color="#0000FF">' + '金&nbsp&nbsp&nbsp&nbsp額' + '</font></b></td></tr>'
+				
+			ELSE
+				TEXT_BODY = ''
+				MAIL_TO = ''
+			ENDIF
+			*****
+			SELECT S10_2
+	    	DO WHILE !EOF()
+	    	   IF EMPTY(MAIL_TO) <> .T. AND AT('@',S05.F33) <> 0	
+	    	      IF UP_NO = S10_2.F01
+				     IF EMPTY(S10_2.F19) AND EMPTY(S10_2.F20) AND EMPTY(S10_2.F21) AND EMPTY(S10_2.F13) AND EMPTY(S10_2.F14) ;
+				        AND EMPTY(S10_2.F16) AND EMPTY(S10_2.F33) AND  EMPTY(S10_2.F39) AND  EMPTY(S10_2.F40)  
+				     
+				        F12_TEMP = IIF(INDEXSEEK(S10_2.F01 + DTOS(CTOD(HK + '/01')),.T.,'S11','S111'),ALLTRIM(TRANSFORM(S11.F12 + S11.F13,'@R 999,999,999,999')),'&nbsp')
+				        F24_TEMP = IIF(INDEXSEEK(S10_2.F01 + DTOS(CTOD(HK + '/01')),.T.,'S11','S111'),ALLTRIM(TRANSFORM(S11.F24 + S11.F25 + S11.F26 + S11.F27 + S11.F28 + S11.F29 + S11.F32,'@R 999,999,999,999')),'&nbsp')
+				    	F22_TEMP = IIF(INDEXSEEK(S10_2.F01 + DTOS(CTOD(HK + '/01')),.T.,'S11','S111'),ALLTRIM(TRANSFORM(S11.F22 + S11.F23,'@R 999,999,999,999')),'&nbsp')
+				        F30_TEMP = IIF(INDEXSEEK(S10_2.F01 + DTOS(CTOD(HK + '/01')),.T.,'S11','S111'),ALLTRIM(TRANSFORM(S11.F30,'@R 999,999,999,999')),'&nbsp')
+  					    F31_TEMP = IIF(INDEXSEEK(S10_2.F01 + DTOS(CTOD(HK + '/01')),.T.,'S11','S111'),ALLTRIM(TRANSFORM(S11.F31,'@R 999,999,999,999'))+'&nbsp&nbsp元','&nbsp')
+  					    F07_TEMP = IIF(INDEXSEEK(S10_2.F01 + ALLTRIM(STR(YEAR(CTOD(ALLTRIM(HK) + '/01')))),.T.,'S0B','S0B1'),ALLTRIM(TRANSFORM(S0B.F04 - S0B.F05,'@R 999.9'))+'&nbsp&nbsp天',IIF(SEEK(S10_2.F01,'S0A_TEMP'),ALLTRIM(TRANSFORM(S0A_TEMP.SUM_F07,'@R 999.9'))+'&nbsp&nbsp天','&nbsp'))
+  					    REMARK1_TEMP = IIF(EMPTY(REMARK1),'&nbsp',ALLTRIM(REMARK1))
+  					    REMARK2_TEMP = IIF(EMPTY(REMARK2),'&nbsp',ALLTRIM(REMARK2))
+  					    REMARK3_TEMP = IIF(EMPTY(REMARK3),'&nbsp',ALLTRIM(REMARK3))
+  					 
+		    	   	    TEXT_BODY_LIST = TEXT_BODY_LIST + '<tr><td width="96%" colspan="8"><b>' + ;
+		    	   	  					'&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp薪資小計：' + F12_TEMP + '&nbsp&nbsp&nbsp&nbsp&nbsp' + ;
+		    	   	  					'&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp扣款小計：' + F24_TEMP + ;
+		    	   	  					'&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp加班小計：' + F22_TEMP + ;
+		    	   	  					'&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp懲處小計：' + F30_TEMP + '</b></td></tr>'		
+		    	   	    TEXT_BODY_LIST = TEXT_BODY_LIST + '<tr><td width="98%" colspan="8"><b><font color="#FF0000"> ' + ;
+		    	   	 					'實發薪資金額：' + F31_TEMP + '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp年假剩餘天數：' + F07_TEMP  +'</font></b></td></tr>'	     
+					    TEXT_BODY_LIST = TEXT_BODY_LIST + '<tr><td width="98%" colspan="8">' + ;
+					  					'薪資備註：' + REMARK1_TEMP + '</td></tr><tr><td width="98%" colspan="8">' + ;
+					  					'個人備註：' + REMARK2_TEMP + '</td></tr><tr><td width="98%" colspan="8">' + ;
+					  					'懲處備註：' + REMARK3_TEMP + '</td></tr>'		    	   	 					 	 					
+				     ELSE   
+		    	   	     F19_TEMP = IIF(EMPTY(S10_2.F19),'&nbsp',ALLTRIM(S10_2.F19))	
+		    	   	     F20_TEMP = IIF(EMPTY(S10_2.F20),'&nbsp',ALLTRIM(TRANSFORM(S10_2.F20,'@R 999,999,999')))
+		    	   	     F21_TEMP = IIF(EMPTY(S10_2.F21),'&nbsp',ALLTRIM(TRANSFORM(S10_2.F20,'@R 999,999,999')))
+		    	   	     F13_TEMP = IIF(EMPTY(S10_2.F13),'&nbsp',ALLTRIM(S10_2.F13))
+		    	   	     F14_TEMP = IIF(EMPTY(S10_2.F14) AND EMPTY(S10_2.F15),'&nbsp',ALLTRIM(TRANSFORM(S10_2.F14,'@R 999,999.9')) + '&nbsp' + ALLTRIM(S10_2.F15))
+		    	   	     F16_TEMP = IIF(EMPTY(S10_2.F16),'&nbsp',ALLTRIM(TRANSFORM(S10_2.F16,'@R 999,999,999')))
+		    	   	     F33_TEMP = IIF(EMPTY(S10_2.F33),'&nbsp',ALLTRIM(S10_2.F33))
+		    	   	     F39_TEMP = IIF(EMPTY(S10_2.F39),'',ALLTRIM(TRANSFORM(S10_2.F39,'@R 999,999,999')))
+		    	   	     F40_TEMP = IIF(S10_2.F40 = 'J','加班所得',IIF(S10_2.F40 = 'H','懲處扣款',''))
+		    	   	     F41_TEMP = ICASE(EMPTY(F39_TEMP) AND EMPTY(F40_TEMP),'&nbsp',EMPTY(F39_TEMP) AND !EMPTY(F40_TEMP),F40_TEMP,!EMPTY(F39_TEMP) AND EMPTY(F40_TEMP),F39_TEMP)
+		    	   	  
+		    	   	     TEXT_BODY_LIST = TEXT_BODY_LIST + ;
+		    	   	  					  '<tr><td width="17%">' + F19_TEMP + '</td> ;
+		    	   	  					   <td width="8%">' + F20_TEMP + '</td> ;
+		    	   	  					   <td width="8%">' + F21_TEMP + '</td> ;
+		    	   	  					   <td width="18%">' + F13_TEMP + '</td>'
+					     TEXT_BODY_LIST = TEXT_BODY_LIST + ;
+					  					  '<td  width="9%">' + F14_TEMP + '</td> ;
+										   <td width="8%">' + F16_TEMP + '</td>  ;
+										   <td width="18%">' + F33_TEMP + '</td> ;
+										   <td width="8%">' + F41_TEMP + '</td></tr>'
+	    	         ENDIF
+	    	         UP_NO = S10_2.F01
+	    	         UP_NAME = S10_2.F02
+	    	         SELECT S10_2
+	    	         SKIP	    	      
+	    	      ELSE
+	    	   	     TEXT_BODY = TEXT_BODY  + TEXT_BODY_LIST + '</table></body></html>' 
+	    	   	     IF EMPTY(MAIL_TO) <> .T.
+	    	            IF SEND_MAIL(ALLTRIM(INT_MAI),ALLTRIM(MAIL_TO),ALLTRIM(INT_DNO),'系統通知：' + UP_NO + SPACE(1) + UP_NAME + SPACE(3) + HK + ' 薪資明細表','HTML',TEXT_BODY) = .F.
+	    	               THISFORM.CMND4.CLICK 
+	    	               RETURN
+	    	            ENDIF
+	    	         ENDIF   
+	    	         TEXT_BODY = ''
+	    	         TEXT_BODY_LIST = ''
+	    	         SELECT S10_2
+	    	         UP_NO = S10_2.F01
+	    	         UP_NAME = S10_2.F02
+			         SELECT S05
+			         SET ORDER TO S051
+			         SEEK S10_2.F01
+			         IF FOUND() AND EMPTY(S05.F33) <> .T. AND AT('@',S05.F33) <> 0	  	      
+			      	    MAIL_TO = S05.F33
+			      	    TEXT_BODY = '<html><head<meta http-equiv="Content-Type" content="text/html; charset=big5"><title></title></head><body><table border="1" width="91%" id="table1"> ;
+			    				     <tr><td colspan="8"><p align="center"><b><font size="6" color="#0000FF">' + Title_INT_000 + '</font></b></td></tr> ;
+								     <tr><td colspan="8"><p align="center"><b><font size="5" color="#0000FF">' + HK + '&nbsp&nbsp薪資明細表</font></b></td></tr>'
+					    TEXT_BODY = TEXT_BODY + '<tr><td width="96%" colspan="8"><b><font color="#0000FF">員工編號：' + S10_2.F01 + ;
+											    '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp員工姓名：' +  S10_2.F02 + ;
+											    '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp班別：' + IIF(INDEXSEEK('I' + S05.F29,.T.,'S00','S005'),S00.F50 + '～' + S00.F51,'') + ;
+											    '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp' + IIF(IIF(INDEXSEEK(S10_2.F01,.T.,'S05','S051'),S05.F15 = 'M' OR S05.F15 = 'D',.F.),'上班天數：','上班時數：') + ;
+											    IIF(SEEK(S10_2.F01 + 'A','S10'),ALLTRIM(STR(S10.F05)),'') + IIF(S05.F15 = 'T','  小時','  天') + '</font></b></td></tr>'
+					    TEXT_BODY = TEXT_BODY + '<tr><td width="96%" colspan="8"><b><font color="#0000FF">遲到分鐘數：' + IIF(SEEK(S10_2.F01 + 'A','S10'),ALLTRIM(STR(S10.F06)),'') + '&nbsp&nbsp分鐘' + ;
+											    '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp早退分鐘數：' + IIF(SEEK(S10_2.F01 + 'A','S10'),ALLTRIM(STR(S10.F07)),'') + '&nbsp&nbsp分鐘' + ;
+											    '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp遲到額外扣款：' + IIF(SEEK(S10_2.F01 + 'A','S10'),ALLTRIM(TRANSFORM(S10.F09,'@R 999,999,999')),'0') + '&nbsp&nbsp元' + ;
+											    '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp早退額外扣款：' + IIF(SEEK(S10_2.F01 + 'A','S10'),ALLTRIM(TRANSFORM(S10.F10,'@R 999,999,999')),'') + '&nbsp&nbsp元' + '</font></b></td></tr>'					
+					    TEXT_BODY = TEXT_BODY + '<tr><td width="35%" colspan="3" align="center"><b><font color="#0000FF">薪資所得明細</font></b></td>;
+											     <td width="37%" colspan="3" align="center"><b><font color="#0000FF">薪資扣款明細</font></b></td>'
+					    TEXT_BODY = TEXT_BODY + '<td width="27%" colspan="2" align="center"><b><font color="#0000FF">其他項目明細</font></b></td></tr>;
+											     <tr><td width="17%"><p align="center"><b><font color="#0000FF">所得項目</font></b></td>'
+					    TEXT_BODY = TEXT_BODY + '<td width="8%"><b><font color="#0000FF">本月所得</font></b></td>;
+											     <td width="8%"><b><font color="#0000FF">基本薪資</font></b></td>;
+											     <td width="18%"><p align="center"><b><font color="#0000FF">扣款項目</font></b></td>'
+					    TEXT_BODY = TEXT_BODY + '<td width="9%"><b><font color="#0000FF">缺勤數值</font></b></td>;
+											     <td width="8%"><b><font color="#0000FF">扣款金額</font></b></td>'
+					    TEXT_BODY = TEXT_BODY + '<td width="18%"><p align="center"><b><font color="#0000FF">項目內容</font></b></td>;
+				  							     <td width="8%"><b><font color="#0000FF">' + '金&nbsp&nbsp&nbsp&nbsp額' + '</font></b></td></tr>'	    				  							     
+				     ELSE
+				        TEXT_BODY = ''
+				        MAIL_TO = ''
+				     ENDIF	 
+	    	         SELECT S10_2
+	    	      ENDIF
+	    	   ELSE
+	    	  	 SELECT S10_2
+	    	  	 SKIP
+	    	  	 MAIL_TO = IIF(SEEK(S10_2.F01,'S05'),S05.F33,'')
+	    	   ENDIF
+	    	ENDDO
+	    	TEXT_BODY = TEXT_BODY + TEXT_BODY_LIST + '</table></body></html>'
+	    	IF EMPTY(MAIL_TO) <> .T.
+	    	   IF SEND_MAIL(ALLTRIM(INT_MAI),ALLTRIM(MAIL_TO),ALLTRIM(INT_DNO),'系統通知：' + UP_NO + SPACE(1) + UP_NAME + SPACE(3) + HK + ' 薪資明細表','HTML',TEXT_BODY) =.F.
+	    	      THISFORM.CMND4.CLICK 
+	    	      RETURN
+	    	   ENDIF
+	    	ENDIF   
+	    	WAIT CLEAR 
+	    ENDIF    
+     ELSE
+        =MESSAGEBOX('此人員尚未確認或是無薪資資料,請查明後在列印!',0+64,'提示訊息視窗')
+     ENDIF  
+     SELECT S10_2
+     USE 	         
+     CLEAR
+     THISFORM.CMND4.CLICK                     
+ENDPROC
+*******  
+  PROCEDURE CMND2.CLICK     &&MAIL
+      CK_VIEW='M'
+      THISFORM.CMND1.CLICK 
+  ENDPROC          
+ ***** 
+  PROCEDURE CMND4.CLICK		&&取消
+      CK_VIEW='N'
+      THISFORM.RELEASE
+  ENDPROC      
+ENDDEFINE
+*********
+*********人員編號
+DEFINE CLASS COMBOBOX01 AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*110
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=2    
+       VALUE=1
+       NAME='COMBOBOX01' 
+   PROCEDURE INTERACTIVECHANGE
+     THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=LEFT(ALLTRIM(THIS.DISPLAYVALUE),4)  
+     IF THIS.VALUE=1
+	    THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE='' 
+	    THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE='' 
+	    THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE='' 
+	    THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE='' 
+	    THISFORM.PAGEFRAME1.PAGE1.TXTF15.VALUE='' 
+	    THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE='' 
+	    THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=''
+	    THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION=''
+	    THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION=''
+     ELSE
+         SELECT S05
+         SET ORDER TO S051
+         SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+         IF FOUND()
+            THISFORM.PAGEFRAME1.PAGE1.LBLF10.VISIBLE=IIF(EMPTY(S05.F10),.F.,.T.)
+            THISFORM.PAGEFRAME1.PAGE1.TXTF10.VISIBLE=IIF(EMPTY(S05.F10),.F.,.T.)          
+	        THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=S05.F05
+	        THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=S05.F07
+	        THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=S05.F09
+	        THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=S05.F10
+	        THISFORM.PAGEFRAME1.PAGE1.TXTF15.VALUE=IIF(S05.F15='M','月薪',IIF(S05.F15='D','日薪','時薪'))      
+	        THISFORM.PAGEFRAME1.PAGE1.TXTF28.VALUE=BILL_MODE(S05.F28)
+	        THISFORM.PAGEFRAME1.PAGE1.TXTF29.VALUE=IIF(INDEXSEEK('I'+S05.F29,.T.,'S00','S005'),S00.F48+SPACE(4)+S00.F50+'～'+S00.F51,'')
+	        THISFORM.PAGEFRAME1.PAGE1.LBLF02.CAPTION=S05.F02
+	        THISFORM.PAGEFRAME1.PAGE1.LBLF06.CAPTION=S05.F06
+	     ENDIF 
+     ENDIF    
+     THISFORM.PAGEFRAME1.PAGE1.TXTF01.REFRESH      
+  ENDPROC       
+ENDDEFINE
+************** A.遲到分鐘數
+DEFINE CLASS SPINNER06 AS SPINNER
+      VISIBLE=.T.
+      HEIGHT=INT_015*25     
+      WIDTH=INT_015*55  
+      KEYBOARDLOWVALUE=0
+      KEYBOARDHIGHVALUE=100
+      SPINNERLOWVALUE=0
+      SPINNERHIGHVALUE=100
+      INPUTMASK='999'    
+      NAME='SPINNER06'         
+  PROCEDURE INTERACTIVECHANGE
+      SELECT S00
+      SEEK 'C'			     &&遲到設定參數
+      IF FOUND() 
+	     LATE_F11=S00.F11 &&遲到分鐘數
+	     LATE_F12=S00.F12 &&是否影響全勤    
+	     LATE_F13=S00.F13 &&是否有超過規定分鐘數需另扣金額     
+	     LATE_F14=S00.F14 &&超過分鐘數      
+	     LATE_F15=S00.F15 &&扣款底數   
+	     LATE_F16=S00.F16 &&扣款比例    
+	     LATE_F17=S00.F17 &&扣款金額
+      ELSE
+	     LATE_F11=0 
+	     LATE_F12=''   
+	     LATE_F13=''      
+	     LATE_F14=0     
+	     LATE_F15=''  
+	     LATE_F16=0 
+	     LATE_F17=0 
+      ENDIF    
+      SEEK 'D'  			      &&早退設定參數
+      IF FOUND() 
+	     LEAVE_F11=S00.F11 &&早退分鐘數
+	     LEAVE_F12=S00.F12 &&是否影響全勤     
+	     LEAVE_F13=S00.F13 &&是否有超過規定分鐘數需另扣金額      
+	     LEAVE_F14=S00.F14 &&超過分鐘數        
+	     LEAVE_F15=S00.F15 &&扣款底數   
+	     LEAVE_F16=S00.F16 &&扣款比例 
+	     LEAVE_F17=S00.F17 &&扣款金額
+      ELSE
+	     LEAVE_F11=0 
+	     LEAVE_F12=''    
+	     LEAVE_F13=''    
+	     LEAVE_F14=0    
+	     LEAVE_F15=''
+	     LEAVE_F16=0 
+	     LEAVE_F17=0       
+      ENDIF      
+      **判斷全勤扣款
+      IF THIS.VALUE>=LATE_F11  && AND  LATE_F11<>0 && 判斷是否達到遲到標準
+         IF LATE_F12='Y'  		&&是否影響全勤(有無全勤)
+            THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='無全勤'
+            THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'
+            THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=2
+         ELSE					&&若遲到不影響全勤則在判斷早退是否影響
+            IF THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE>=LEAVE_F11  					&& 判斷是否達到早退標準
+               THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=IIF(LEAVE_F12='Y','無全勤','有全勤')      &&是否影響全勤(有無全勤)
+               THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE=IIF(LEAVE_F12='Y','Y','N')  
+               THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=IIF(LEAVE_F12='Y',2,1)
+            ELSE
+               THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='有全勤'   
+               THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'
+               THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1
+            ENDIF          
+         ENDIF
+      ELSE						&&若沒達到遲到標準則在判斷是否達到早退標準
+         IF THISFORM.PAGEFRAME1.PAGE2.SPINNER07.VALUE>=LEAVE_F11 && AND LEAVE_F11<>0	&& 判斷是否達到早退標準
+            THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=IIF(LEAVE_F12='Y','無全勤','有全勤')         		&&是否影響全勤(有無全勤)
+            THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE=IIF(LEAVE_F12='Y','Y','N')   
+            THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=IIF(LEAVE_F12='Y',2,1)   
+         ELSE
+            THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='有全勤'    
+            THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'
+            THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1
+         ENDIF  
+      ENDIF   
+      **判斷額外扣款
+      IF THIS.VALUE>=LATE_F14 AND LATE_F13='Y' 	 &&超過等於額外扣款分鐘數 AND 是否需要額外扣款
+         MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+         DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+         TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)   	   	      
+         THISFORM.PAGEFRAME1.PAGE2.LBLF061.CAPTION='已符合遲到額外扣款標準'
+         THISFORM.PAGEFRAME1.PAGE2.LBLF061.BACKCOLOR=RGB(255,0,0)
+         DO CASE
+            CASE LATE_F15='T'  		&&額外扣款底數為時薪
+                 THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=ROUND(TIME_MONEY*(LATE_F16/100),0)
+            CASE LATE_F15='D'  		&&額外扣款底數為日薪
+                 THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=ROUND(DAY_MONEY*(LATE_F16/100),0)
+            CASE LATE_F15='B'  		&&額外扣款底數為底薪
+                 THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=ROUND(MONTH_MONEY*(LATE_F16/100),0)                            
+            CASE EMPTY(LATE_F15)    &&額外扣款為金額
+                 THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=LATE_F17
+         ENDCASE
+      ELSE
+         THISFORM.PAGEFRAME1.PAGE2.LBLF061.CAPTION=''
+         THISFORM.PAGEFRAME1.PAGE2.LBLF061.BACKCOLOR=RGB(192,192,192)
+         THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=0
+      ENDIF      
+  ENDPROC
+ENDDEFINE
+**************A.早退分鐘數
+DEFINE CLASS SPINNER07 AS SPINNER
+      VISIBLE=.T.
+      HEIGHT=INT_015*25     
+      WIDTH=INT_015*55  
+      KEYBOARDLOWVALUE=0
+      KEYBOARDHIGHVALUE=100
+      SPINNERLOWVALUE=0
+      SPINNERHIGHVALUE=100
+      INPUTMASK='999'    
+      NAME='SPINNER07'       
+  PROCEDURE INTERACTIVECHANGE 
+      SELECT S00
+      SEEK 'C'			     &&遲到設定參數
+      IF FOUND() 
+	     LATE_F11=S00.F11 &&遲到分鐘數
+	     LATE_F12=S00.F12 &&是否影響全勤    
+	     LATE_F13=S00.F13 &&是否有超過規定分鐘數需另扣金額     
+	     LATE_F14=S00.F14 &&超過分鐘數      
+	     LATE_F15=S00.F15 &&扣款底數   
+	     LATE_F16=S00.F16 &&扣款比例    
+	     LATE_F17=S00.F17 &&扣款金額
+      ELSE
+	     LATE_F11=0 
+	     LATE_F12=''   
+	     LATE_F13=''      
+	     LATE_F14=0     
+	     LATE_F15=''  
+	     LATE_F16=0 
+	     LATE_F17=0 
+      ENDIF    
+      SEEK 'D'  			      &&早退設定參數
+      IF FOUND() 
+	     LEAVE_F11=S00.F11 &&早退分鐘數
+	     LEAVE_F12=S00.F12 &&是否影響全勤     
+	     LEAVE_F13=S00.F13 &&是否有超過規定分鐘數需另扣金額      
+	     LEAVE_F14=S00.F14 &&超過分鐘數        
+	     LEAVE_F15=S00.F15 &&扣款底數   
+	     LEAVE_F16=S00.F16 &&扣款比例 
+	     LEAVE_F17=S00.F17 &&扣款金額
+      ELSE
+	     LEAVE_F11=0 
+	     LEAVE_F12=''    
+	     LEAVE_F13=''    
+	     LEAVE_F14=0    
+	     LEAVE_F15=''
+	     LEAVE_F16=0 
+	     LEAVE_F17=0       
+      ENDIF        
+  ***判斷全勤扣款   
+      IF THIS.VALUE>=LEAVE_F11  &&AND LEAVE_F11<>0 && 判斷是否達到早退標準
+         IF LEAVE_F12='Y'  		  &&是否影響全勤(有無全勤)
+            THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='無全勤'
+            THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'
+            THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=2
+         ELSE					&&若早退不影響全勤則在判斷遲到是否影響
+            IF THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE>=LATE_F11  					     && 判斷是否達到遲到標準
+               THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=IIF(LATE_F12='Y','無全勤','有全勤')      &&是否影響全勤(有無全勤)
+               THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE=IIF(LATE_F12='Y','Y','N')  
+               THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=IIF(LATE_F12='Y',2,1) 
+            ELSE
+               THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='有全勤'   
+               THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'
+               THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1
+            ENDIF          
+         ENDIF
+      ELSE						&&若沒達到早退標準則在判斷是否達到遲到標準
+         IF THISFORM.PAGEFRAME1.PAGE2.SPINNER06.VALUE>=LATE_F11  &&AND LATE_F11<>0  && 判斷是否達到遲到標準
+            THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=IIF(LATE_F12='Y','無全勤','有全勤')           &&是否影響全勤(有無全勤)
+            THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE=IIF(LATE_F12='Y','Y','N')     
+            THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=IIF(LATE_F12='Y',2,1) 
+         ELSE
+            THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='有全勤'    
+            THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='N'
+            THISFORM.PAGEFRAME1.PAGE2.OPTIONGROUP08A.VALUE=1
+         ENDIF  
+      ENDIF   
+      **判斷額外扣款
+      IF THIS.VALUE>=LEAVE_F14 AND LEAVE_F13='Y' 	 &&超過等於額外扣款分鐘數 AND 是否需要額外扣款    
+         MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+         DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+         TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)   	     
+         THISFORM.PAGEFRAME1.PAGE2.LBLF071.CAPTION='已符合早退額外扣款標準'
+         THISFORM.PAGEFRAME1.PAGE2.LBLF071.BACKCOLOR=RGB(255,0,0)     
+         DO CASE
+            CASE LEAVE_F15='T'  		&&額外扣款底數為時薪
+                 THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=ROUND(TIME_MONEY*(LATE_F16/100),0)  
+            CASE LEAVE_F15='D'  		&&額外扣款底數為日薪
+                 THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=ROUND(DAY_MONEY*(LATE_F16/100),0)
+            CASE LEAVE_F15='B'  		&&額外扣款底數為底薪
+                 THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=ROUND(MONTH_MONEY*(LATE_F16/100),0)   
+            CASE EMPTY(LEAVE_F15)       &&額外扣款為金額
+                 THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=LEAVE_F17
+         ENDCASE
+      ELSE
+         THISFORM.PAGEFRAME1.PAGE2.LBLF071.CAPTION=''
+         THISFORM.PAGEFRAME1.PAGE2.LBLF071.BACKCOLOR=RGB(192,192,192)
+         THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=0                  
+      ENDIF             
+  ENDPROC
+ENDDEFINE
+***A.是否有全勤
+DEFINE CLASS OPTIONGROUP08A AS OPTIONGROUP
+   	VISIBLE=.T.
+	HEIGHT=INT_015*25
+	WIDTH=INT_015*90
+	BUTTONCOUNT=2
+	VALUE=1
+	ENABLED=.F.	   
+	NAME='OPTIONGROUP08A'
+	OPTION1.CAPTION='有'
+	OPTION1.FONTSIZE=INT_015*9   
+	OPTION1.TOP=INT_015*6
+	OPTION1.AUTOSIZE=.T.
+	OPTION1.LEFT=INT_015*5
+	OPTION1.NAME='OPTION1'
+	OPTION2.CAPTION='無'
+	OPTION2.FONTSIZE=INT_015*9 	   
+	OPTION2.TOP=INT_015*6
+	OPTION2.AUTOSIZE=.T.
+	OPTION2.LEFT=INT_015*50
+	OPTION2.NAME='OPTION2'    
+  PROCEDURE INTERACTIVECHANGE
+     IF THIS.VALUE=1
+        THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='有全勤'    
+     ELSE
+        THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE='無全勤'    
+     ENDIF
+  ENDPROC
+ENDDEFINE
+**************B.缺勤項目
+DEFINE CLASS COMBOBOX13 AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*160
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=2    
+       VALUE=1
+       NAME='COMBOBOX13'        
+   PROCEDURE INTERACTIVECHANGE
+      IF THIS.VALUE=1
+         THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE=''
+         THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE=''
+         THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=0
+	     THISFORM.PAGEFRAME1.PAGE3.TXTF15.VALUE=''
+	     THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=0    
+	     THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=0   	     
+      ELSE   
+         THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE=LEFT(THIS.DISPLAYVALUE,2)
+	     THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE=RIGHT(ALLTRIM(THIS.DISPLAYVALUE),LEN(ALLTRIM(THIS.DISPLAYVALUE))-7)       
+         MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+         DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+         TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)   	            	                     	      
+      	 SELECT S00 
+      	 SET ORDER TO S003
+      	 SEEK 'G'+THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE
+      	 IF FOUND()
+	        THISFORM.PAGEFRAME1.PAGE3.TXTF15.VALUE=IIF(S00.F28='S','次',IIF(S00.F28='D','日','小時'))
+	        THISFORM.PAGEFRAME1.PAGE3.TXTF151.VALUE=S00.F28
+	        IF LEFT(RIGHT(THIS.DISPLAYVALUE,10),2)='SB'
+	           THISFORM.PAGEFRAME1.PAGE3.TXTF14.READONLY=.T. 
+	    	   THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE=SUBSTR(THIS.DISPLAYVALUE,8,LEN(THIS.DISPLAYVALUE)-17)
+	           THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE+LEFT(DTOS(CTOD(HK+'/01')),6)+;
+	           THISFORM.PAGEFRAME1.PAGE3.TXTF151.VALUE+RIGHT(THIS.DISPLAYVALUE,10),.T.,'S0A','S0A3'),S0A.F07,0)	    	        
+		       THISFORM.PAGEFRAME1.PAGE3.TXTF42.VALUE=RIGHT(THIS.DISPLAYVALUE,10)                															   
+	        ELSE
+	      	   THISFORM.PAGEFRAME1.PAGE3.TXTF14.READONLY=.F.
+	      	   THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE=RIGHT(ALLTRIM(THIS.DISPLAYVALUE),LEN(ALLTRIM(THIS.DISPLAYVALUE))-7)
+	           THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=0
+	           THISFORM.PAGEFRAME1.PAGE3.TXTF42.VALUE=''
+	        ENDIF           
+      	    IF ALLTRIM(LEFT(THIS.DISPLAYVALUE,2))='A1'  &&判斷是否為年假
+      	       SELECT S05
+      	       SET ORDER TO S051
+      	       SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+      	       IF FOUND() AND S05.F11<THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE+S05.F12
+      	          =MESSAGEBOX('缺勤數值已超過年假可休之天數,請重新輸入!',0+64,'提示視窗')
+      	          THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=0
+			      THISFORM.PAGEFRAME1.PAGE3.TXTF14.SETFOCUS
+			      RETURN
+      	       ENDIF
+      	    ELSE
+      	       IF S00.F29<>0 AND S00.F29<IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+S00.F26+DTOS(CTOD(HK+'/01'))+S00.F28,.T.,'S0A','S0A1'),S0A.F07+THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE,THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE)		&&年度缺勤限制天數
+  	   	          IF MESSAGEBOX('缺勤數值已超過年度缺勤  '+ALLTRIM(THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE)+'  可請假之總數,是否繼續',4+48+256,'警告')=6 
+			         THISFORM.PAGEFRAME1.PAGE3.TXTF14.SETFOCUS
+			         RETURN   
+			      ELSE
+			         THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=0
+			         THISFORM.PAGEFRAME1.PAGE3.TXTF14.SETFOCUS
+			         RETURN  		 
+			      ENDIF	
+		       ENDIF	
+		    ENDIF   
+		    ***扣款金額	 		   
+		    DO CASE 		&&判斷扣款比例或金額
+		   	   CASE S00.F30='H'		&&底數為時薪
+		   	        THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=ROUND(TIME_MONEY*(S00.F31/100)*THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE,0)
+		   	   CASE S00.F30='D'		&&底數為日薪
+		   		    THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=ROUND(DAY_MONEY*(S00.F31/100)*THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE,0)
+		   	   CASE S00.F30='B'		&&底數為底薪
+		   	 	    THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=ROUND(MONTH_MONEY*(S00.F31/100)*THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE,0)
+		   	   CASE EMPTY(S00.F30)	
+		   	 	    THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=ROUND(S00.F32*THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE,0)	
+		    ENDCASE 
+		    ****是否扣全勤
+         	IF S00.F33='Y'  
+               NON_LEAVE_DAY=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'F',.T.,'S06','S061'),S06.F08,0) &&全勤獎金
+         	   IF THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE>S00.F34  &&不扣全勤緩衝數 	       
+			      DO CASE
+			         CASE THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=S00.F35    &&全勤扣款方式一,扣當月所得之全勤金額比例
+         	              THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=IIF(NON_LEAVE_DAY<>0,ROUND(NON_LEAVE_DAY*(S00.F36/100),0),0)
+         	         CASE THISFORM.PAGEFRAME1.PAGE3.TXTF14.VALUE=S00.F37    &&全勤扣款方式二,扣當月所得之全勤金額比例
+         	              THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=IIF(NON_LEAVE_DAY<>0,ROUND(NON_LEAVE_DAY*(S00.F38/100),0),0)
+         	         OTHERWISE
+         	              THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=NON_LEAVE_DAY
+         	      ENDCASE	       
+         	   ELSE
+         	      THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=0         	                    
+         	   ENDIF  
+         	ELSE
+         	   THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=0         	        
+         	ENDIF 
+      	 ENDIF      
+      ENDIF	     
+      THISFORM.PAGEFRAME1.PAGE3.TXTF12.REFRESH   
+      THISFORM.PAGEFRAME1.PAGE3.TXTF13.REFRESH  
+      THISFORM.PAGEFRAME1.PAGE3.TXTF14.REFRESH    
+      THISFORM.PAGEFRAME1.PAGE3.TXTF15.REFRESH      
+      THISFORM.PAGEFRAME1.PAGE3.TXTF16.REFRESH 
+      THISFORM.PAGEFRAME1.PAGE3.TXTF17.REFRESH          
+  ENDPROC       
+ENDDEFINE
+******************B.缺勤數值
+DEFINE CLASS TXTF14 AS TEXTBOX
+       READONLY=.T.
+       WIDTH=INT_015*50
+       HEIGHT=INT_015*25
+       FONTSIZE=INT_015*9         
+       MAXLENGTH=4        
+       INPUTMASK='999.9'       
+       NAME='TXTF14' 
+  PROCEDURE INTERACTIVECHANGE
+       MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+       DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+       TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)         	  
+       SELECT S00
+       SET ORDER TO S003       
+       SEEK 'G'+ALLTRIM(THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE)
+       IF FOUND()  
+	   DO CASE 		&&判斷扣款比例或金額
+		  CASE S00.F30='H'		&&底數為時薪
+		       THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=ROUND(TIME_MONEY*(S00.F31/100)*THIS.VALUE,0)
+		  CASE S00.F30='D'		&&底數為日薪
+		   	   THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=ROUND(DAY_MONEY*(S00.F31/100)*THIS.VALUE,0)
+		  CASE S00.F30='B'		&&底數為底薪
+		       THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=ROUND(MONTH_MONEY*(S00.F31/100)*THIS.VALUE,0)
+		  CASE EMPTY(S00.F30)	
+		   	   THISFORM.PAGEFRAME1.PAGE3.TXTF16.VALUE=ROUND(S00.F32*THIS.VALUE,0)	
+       ENDCASE  	           
+	   ****是否扣全勤
+       IF S00.F33='Y'   &&判斷是否扣全勤
+          NON_LEAVE_DAY=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'F',.T.,'S06','S061'),S06.F08,0) &&全勤獎金
+          IF THIS.VALUE>S00.F34             &&不扣全勤緩衝數        
+	         DO CASE
+		        CASE THIS.VALUE=S00.F35	&&全勤扣款方式一,扣當月所得之全勤金額比例
+            	     THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=IIF(NON_LEAVE_DAY<>0,ROUND(NON_LEAVE_DAY*(S00.F36/100),0),0)
+         	    CASE THIS.VALUE=S00.F37	&&全勤扣款方式二,扣當月所得之全勤金額比例
+         	         THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=IIF(NON_LEAVE_DAY<>0,ROUND(NON_LEAVE_DAY*(S00.F38/100),0),0)
+         	    OTHERWISE
+         	         THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=NON_LEAVE_DAY
+         	 ENDCASE        
+          ELSE
+             THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=0 
+          ENDIF 
+       ELSE
+          THISFORM.PAGEFRAME1.PAGE3.TXTF17.VALUE=0       
+       ENDIF 
+       ***
+       IF ALLTRIM(THISFORM.PAGEFRAME1.PAGE3.TXTF12.VALUE)='A1'  &&判斷是否為年假
+      	  SELECT S05
+      	  SET ORDER TO S051
+      	  SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+      	  IF FOUND() AND S05.F11<THIS.VALUE+S05.F12
+      	     =MESSAGEBOX('缺勤數值已超過年假可休之天數!',0+64,'提示視窗')
+      	     THIS.VALUE=0
+		     THIS.SETFOCUS
+		     RETURN
+      	  ENDIF
+       ELSE       
+  	      IF S00.F29<>0 AND S00.F29<IIF(SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,'S0A'),S0A.F07+THIS.VALUE,THIS.VALUE)		&&年度缺勤限制天數
+  	     	 IF MESSAGEBOX('缺勤數值已超過年度缺勤  '+ALLTRIM(THISFORM.PAGEFRAME1.PAGE3.TXTF13.VALUE)+'  可請假之總天數,是否繼續',4+48+256,'警告')=6 
+		        THIS.SETFOCUS
+		        RETURN   
+		     ELSE
+		        THIS.VALUE=0
+		        THIS.SETFOCUS
+		        RETURN  		 
+		     ENDIF	     
+		  ENDIF    
+  	   ENDIF               
+    ENDIF    
+    THISFORM.PAGEFRAME1.PAGE3.TXTF15.REFRESH
+    THISFORM.PAGEFRAME1.PAGE3.TXTF16.REFRESH 
+    THISFORM.PAGEFRAME1.PAGE3.TXTF17.REFRESH
+  ENDPROC
+ENDDEFINE
+******************C. 薪資類別
+DEFINE CLASS COMBOBOX18 AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*140
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=2    
+       VALUE=1
+       NAME='COMBOBOX18'  
+   PROCEDURE INTERACTIVECHANGE
+       DO CASE 
+   	      CASE THIS.VALUE=1
+	     	   THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.T.        	     
+	     	   THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.T.  	     	        
+	     	   THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.F.  
+	     	   THISFORM.GRANT_COBOX.VISIBLE=.F.     	     
+   	     	   THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE=''   
+	     	   THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE=''      	     	        
+	           THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.DISPLAYVALUE=''      
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=0 
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=0			    	                	     	        	            
+   	      CASE THIS.VALUE=2
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.T.        	     
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.T.  	     	        
+    	       THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.F.  
+    	       THISFORM.GRANT_COBOX.VISIBLE=.F. 	 
+    	       DO CASE 
+    	          CASE S10_1.F15='M'	     
+		               THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE='A'
+		    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE='底薪'    
+		    	       THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'A'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,.T.,'S06','S061'),S06.F08,0)
+    	     	  CASE S10_1.F15='D'	     
+		   	           THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE='B'
+		    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE='日薪'    
+		    	       THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'B'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,.T.,'S06','S061'),S06.F08,0)
+    	     	  CASE S10_1.F15='T'	     
+		   	           THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE='C'
+		    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE='時薪'    		 
+		    	       THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'C'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,.T.,'S06','S061'),S06.F08,0)
+		       ENDCASE    	          	
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE
+   	      CASE THIS.VALUE=3
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.T.        	     
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.T.  	     	        
+    	       THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.F.   
+    	       THISFORM.GRANT_COBOX.VISIBLE=.F. 	      	     
+   	     	   THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE='D'   
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE='伙食費'     	
+		   	   THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'D'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,.T.,'S06','S061'),S06.F08,0)
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE
+   	      CASE THIS.VALUE=4
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.T.  
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.T.  	     	        
+    	       THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.F.  
+    	       THISFORM.GRANT_COBOX.VISIBLE=.F.  	      	     
+   	     	   THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE='E'   
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE='交通費'    
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'E'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,.T.,'S06','S061'),S06.F08,0)
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE
+   	      CASE THIS.VALUE=5
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.T.        	     
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.T.  	     	        
+    	       THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.F.   
+    	       THISFORM.GRANT_COBOX.VISIBLE=.F. 	      	     
+   	     	   THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE='F'     	
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE='全勤獎金'      	
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'F'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,.T.,'S06','S061'),S06.F08,0)
+			   IF THISFORM.PAGEFRAME1.PAGE2.TXTF081.VALUE='Y'  &&判斷基本考勤有無扣全勤
+			      THISFORM.PAGEFRAME1.PAGE4.TXTF20.READONLY=.T.
+			      THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=0
+			   ELSE     
+			      THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE
+			   ENDIF     
+   	      CASE THIS.VALUE=6
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.T.  
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.T.  	     	        
+    	       THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.F.  
+    	       THISFORM.GRANT_COBOX.VISIBLE=.F.  	      	     
+   	     	   THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE='G'   
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE='職務津貼'    
+		       THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'G'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,.T.,'S06','S061'),S06.F08,0)
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE			
+   	      CASE THIS.VALUE=7
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.F. 
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.F.
+    	       THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.T.   	
+    	       THISFORM.GRANT_COBOX.VISIBLE=.F.   	     
+   	           THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE='H' 
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE='自設項目' 
+    	       THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.DISPLAYVALUE='' 
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=0    	
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=0
+   	      CASE THIS.VALUE=8
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.T.  
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.T.  	   	   
+    	       THISFORM.PAGEFRAME1.PAGE4.COMBOBOX19.VISIBLE=.F.   
+   	           THISFORM.PAGEFRAME1.PAGE4.TXTF18.VALUE='I'   
+    	       THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE=''    
+		   	   THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=0
+			   THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=0    	     	        
+    	       THISFORM.GRANT_COBOX.CLEAR
+    	       THISFORM.GRANT_COBOX.CLICK
+    	       THISFORM.GRANT_COBOX.VALUE=2
+    	       IF !EMPTY(THISFORM.GRANT_COBOX.DISPLAYVALUE) &&判斷其他所得發放是否還有資料
+    	          THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE='其他所得發放' 
+     	          THISFORM.PAGEFRAME1.PAGE4.TXTF19.VISIBLE=.F. 
+     	          THISFORM.PAGEFRAME1.PAGE4.TXTF19.READONLY=.F. 
+     	          THISFORM.GRANT_COBOX.VISIBLE=.T. 	     	            
+     	          THISFORM.GRANT_COBOX.VALUE=1
+     	       ELSE
+     	          =MESSAGEBOX('尚無此人員之其他所得發放資料!',0+48,'提示訊息視窗')
+     	          THISFORM.COMBOBOX18.VALUE=1
+     	          THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE=''
+     	          THISFORM.COMBOBOX18.SETFOCUS	
+                  RETURN
+     	      ENDIF
+       ENDCASE 	
+       THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE=CTOD('')
+       THISFORM.PAGEFRAME1.PAGE4.TXTF18.REFRESH 
+       THISFORM.PAGEFRAME1.PAGE4.TXTF19.REFRESH  
+       THISFORM.PAGEFRAME1.PAGE4.TXTF20.REFRESH
+       THISFORM.PAGEFRAME1.PAGE4.TXTF21.REFRESH
+  ENDPROC       
+ENDDEFINE
+******************************** C.其他所得發放
+DEFINE CLASS GRANT_COBOX AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*140
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=2    
+       VALUE=1
+       NAME='GRANT_COBOX' 
+   PROCEDURE INTERACTIVECHANGE
+     S09_F12=0	&&扣稅額
+     IF THIS.VALUE=1  
+        THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE=CTOD('')
+     ELSE
+        THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE=LEFT(ALLTRIM(THIS.DISPLAYVALUE),LEN(ALLTRIM(THIS.DISPLAYVALUE))-24)
+        THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE=CTOD(SUBSTR(ALLTRIM(THIS.DISPLAYVALUE),36,8))
+        DO CASE 
+           CASE ALLTRIM(THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE) = '年終獎金發放'
+                THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE)+'1'+RIGHT(ALLTRIM(THIS.DISPLAYVALUE),1),.T.,'S12','S121'),S12.F16,0) 
+                S09_F12=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE)+'1'+RIGHT(ALLTRIM(THIS.DISPLAYVALUE),1),.T.,'S12','S121'),S12.F16-S12.F17,0)
+           CASE ALLTRIM(THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE) = '未休年假獎金發放'
+                THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE)+'2'+RIGHT(ALLTRIM(THIS.DISPLAYVALUE),1),.T.,'S12','S121'),S12.F16,0) 
+                S09_F12=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE)+'2'+RIGHT(ALLTRIM(THIS.DISPLAYVALUE),1),.T.,'S12','S121'),S12.F16-S12.F17,0)               
+           OTHERWISE
+             	THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE=CTOD(SUBSTR(ALLTRIM(THIS.DISPLAYVALUE),36,8))
+         		THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE)+LEFT(THIS.DISPLAYVALUE,LEN(ALLTRIM(THIS.DISPLAYVALUE))-24)+RIGHT(ALLTRIM(THIS.DISPLAYVALUE),1),.T.,'S09','S091'),S09.F13,0) 
+        	 S09_F12=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE4.TXTF22.VALUE)+LEFT(THIS.DISPLAYVALUE,LEN(ALLTRIM(THIS.DISPLAYVALUE))-24)+RIGHT(ALLTRIM(THIS.DISPLAYVALUE),1),.T.,'S09','S091'),S09.F13-S09.F17,0) 
+        ENDCASE
+     ENDIF    
+     THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=0
+     THISFORM.PAGEFRAME1.PAGE4.TXTF19.REFRESH 
+     THISFORM.PAGEFRAME1.PAGE4.TXTF20.REFRESH 
+     THISFORM.PAGEFRAME1.PAGE4.TXTF21.REFRESH 
+     THISFORM.PAGEFRAME1.PAGE4.TXTF22.REFRESH    
+  ENDPROC       
+ENDDEFINE
+**************D.扣款類別
+DEFINE CLASS COMBOBOX24 AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*140
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=2    
+       VALUE=1
+       NAME='COMBOBOX24'
+ PROCEDURE INIT    
+          THIS.ADDITEM('')          
+          THIS.ADDITEM('勞保費')
+          THIS.ADDITEM('健保費') 
+          THIS.ADDITEM('所得稅') 
+          THIS.ADDITEM('其他扣款')
+          THIS.ADDITEM('勞退自行提撥金額')
+  ENDPROC  
+   PROCEDURE INTERACTIVECHANGE
+      DO CASE 
+   	     CASE THIS.VALUE=1
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.READONLY=.T.        	     
+     	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.VISIBLE=.T.  	     	        
+     	      THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.VISIBLE=.F.   	    	     	        
+   	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE=''   	      	     	         	
+     	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE=''       	
+              THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.DISPLAYVALUE=''     
+              THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE=0	
+              THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE=0     	                     
+   	     CASE THIS.VALUE=2 
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.READONLY=.T.      	     	        
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.VISIBLE=.T.
+    	      THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.VISIBLE=.F.    	     	           	
+   	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE='J'    	     	        
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE='勞保費'      
+      	      THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'J',.T.,'S06','S061'),S06.F08,0)	        
+      	      THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE=ROUND(IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,.T.,'S05','S051'),S05.F18,0)*((IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F02,0)+IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F06,0))/100)*(IIF(INDEXSEEK('C',.T.,'S01','S011'),S01.F03,0)/100)/30*IIF(SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'A','S10'),IIF(S10.F05>30,30,S10.F05),0),0)
+   	     CASE THIS.VALUE=3
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.READONLY=.T.        	     
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.VISIBLE=.T.   	      
+    	      THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.VISIBLE=.F.
+   	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE='K'
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE='健保費'  
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'K',.T.,'S06','S061'),S06.F08,0)
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE=THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE
+   	     CASE THIS.VALUE=4
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.READONLY=.T.        	     
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.VISIBLE=.T.   	      
+    	      THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.VISIBLE=.F.
+   	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE='L'
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE='所得稅'  
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'L',.T.,'S06','S061'),S06.F08,0)    	     	        
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE=THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE
+   	     CASE THIS.VALUE=5
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.READONLY=.F.       	     
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.VISIBLE=.F.      	     
+    	      THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.VISIBLE=.T.   	
+   	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE='M'   
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE=''  
+    	      THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.DISPLAYVALUE=''        	
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE=0    
+    	      THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE=0    
+   	     CASE THIS.VALUE=6 
+	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF25.READONLY=.T.      	     	        
+	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF25.VISIBLE=.T.
+	     	  THISFORM.PAGEFRAME1.PAGE5.COMBOBOX25.VISIBLE=.F.    	     	           	
+   	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF24.VALUE='O'    	     	        
+	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE='勞退自行提撥金額'      
+  	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'O',.T.,'S06','S061'),S06.F08,0)	        
+  	     	  THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE=THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE               
+       ENDCASE 	  
+       THISFORM.PAGEFRAME1.PAGE5.TXTF24.REFRESH  
+       THISFORM.PAGEFRAME1.PAGE5.TXTF25.REFRESH
+       THISFORM.PAGEFRAME1.PAGE5.TXTF26.REFRESH
+       THISFORM.PAGEFRAME1.PAGE5.TXTF23.REFRESH          
+  ENDPROC       
+ENDDEFINE
+******************************** E.懲處扣款項目
+DEFINE CLASS COMBOBOX29 AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*140
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=2    
+       VALUE=1
+       NAME='COMBOBOX29' 
+   PROCEDURE INTERACTIVECHANGE
+     IF THIS.VALUE=1  
+        THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE=CTOD('')
+        THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE6.TXTF29.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE6.TXTF41.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE6.LBLF311.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE6.LBLF961.CAPTION=''
+     ELSE
+        THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE=CTOD(RIGHT(ALLTRIM(THIS.DISPLAYVALUE),8))
+        THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE=LEFT(ALLTRIM(THIS.DISPLAYVALUE),2)
+        THISFORM.PAGEFRAME1.PAGE6.TXTF29.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE)+THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE,.T.,'S08','S081'),S08.F07,'')
+        THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE)+THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE,.T.,'S08','S081'),S08.F08,'')
+        THISFORM.PAGEFRAME1.PAGE6.TXTF41.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE)+THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE,.T.,'S08','S081'),S08.F09,0)
+        THISFORM.PAGEFRAME1.PAGE6.LBLF311.CAPTION=SPACE(4)+IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE)+THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE,.T.,'S08','S081'),ALLTRIM(STR(S08.F13)),'')
+        THISFORM.PAGEFRAME1.PAGE6.LBLF961.CAPTION=SPACE(4)+IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE)+THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE,.T.,'S08','S081'),ALLTRIM(STR(S08.F12)),'')
+        MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+        DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+        TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)   	             
+        DO CASE
+           CASE THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE='H'  		&&扣款底數時薪
+        	    THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE=ROUND(TIME_MONEY*(THISFORM.PAGEFRAME1.PAGE6.TXTF41.VALUE/100),0)
+           CASE THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE='D'  		&&日薪
+                THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE=ROUND(DAY_MONEY*(THISFORM.PAGEFRAME1.PAGE6.TXTF41.VALUE/100),0)                  
+           CASE THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE='B'  			&&扣款底數底薪
+                THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE=ROUND(MONTH_MONEY*(THISFORM.PAGEFRAME1.PAGE6.TXTF41.VALUE/100),0)             
+           CASE THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE='T'  			&&扣款底數實發薪資
+                FLG_CK='T'												&&扣實領薪資判斷值
+                THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE='扣薪資總額'                          
+           CASE EMPTY(THISFORM.PAGEFRAME1.PAGE6.TXTF40.VALUE)   	&&扣款金額
+                THISFORM.PAGEFRAME1.PAGE6.TXTF30.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+DTOS(THISFORM.PAGEFRAME1.PAGE6.TXTF27.VALUE)+THISFORM.PAGEFRAME1.PAGE6.TXTF28.VALUE,.T.,'S08','S081'),S08.F10,0)      
+         ENDCASE       
+     ENDIF    
+     THISFORM.PAGEFRAME1.PAGE6.TXTF27.REFRESH 
+     THISFORM.PAGEFRAME1.PAGE6.TXTF28.REFRESH 
+     THISFORM.PAGEFRAME1.PAGE6.TXTF29.REFRESH 
+     THISFORM.PAGEFRAME1.PAGE6.TXTF30.REFRESH 
+     THISFORM.PAGEFRAME1.PAGE6.TXTF40.REFRESH 
+     THISFORM.PAGEFRAME1.PAGE6.TXTF41.REFRESH     
+  ENDPROC       
+ENDDEFINE
+*************F.加班時段
+DEFINE CLASS COMBOBOX33 AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*110
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=2    
+       VALUE=1
+       NAME='COMBOBOX33'
+ PROCEDURE INIT    
+       SELECT F05,F06,F07,F08,F09,F10,F46,F47 FROM S00 WHERE F01='B'  ORDER BY F05 INTO CURSOR S00_TEMP
+       SELECT S00_TEMP
+       GO TOP
+       THIS.ADDITEM('')
+       DO WHILE  !EOF()
+              THIS.ADDITEM(ALLTRIM(S00_TEMP.F05)+SPACE(5)+ALLTRIM(IIF(S00_TEMP.F06='1','平日加班','假日加班')))
+      	      SELECT  S00_TEMP
+      	      SKIP
+       ENDDO
+       SELECT S00_TEMP
+       USE   
+  ENDPROC   
+   PROCEDURE INTERACTIVECHANGE
+       NO=ALLTRIM(LEFT(THIS.DISPLAYVALUE,2))
+       THISFORM.PAGEFRAME1.PAGE7.TXTF32.VALUE=NO
+       MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+       DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+       TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)                
+       SELECT S00
+       SET ORDER TO S001
+       SEEK 'B'+NO
+       IF FOUND()                      
+          THISFORM.PAGEFRAME1.PAGE7.TXTF33.VALUE=NO+ALLTRIM(IIF(RIGHT(ALLTRIM(THIS.DISPLAYVALUE),8)='平日加班','1','2'))
+          THISFORM.PAGEFRAME1.PAGE7.TXTF331.VALUE=S00.F06
+          THISFORM.PAGEFRAME1.PAGE7.TXTF34.VALUE=IIF(S00.F07='H','小時','日')
+          THISFORM.PAGEFRAME1.PAGE7.TXTF341.VALUE=S00.F07
+          THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE=S00.F46
+          THISFORM.PAGEFRAME1.PAGE7.COMBOBOX36.DISPLAYVALUE=S00.F46
+          THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE=S00.F47            
+          DO CASE  
+             CASE S00.F08='H'  &&時薪 
+       	          THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F09*TIME_MONEY),0)))	&&補助金額+(加班數值*時薪)
+             CASE S00.F08='D'  &&日薪 
+       	          THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F09*DAY_MONEY),0)))	&&補助金額+(加班數值*日薪)
+             CASE S00.F08='B'  &&底薪 
+       	          THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F09*MONTH_MONEY),0)))	&&補助金額+(加班數值*月薪)
+             OTHERWISE         &&給予金額 
+                  THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F10),0)))					&&補助金額+(加班數值*給予金額)
+          ENDCASE     
+       ENDIF
+       THISFORM.PAGEFRAME1.PAGE7.TXTF39.VALUE=STR(VAL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION))-THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE)
+       THISFORM.PAGEFRAME1.PAGE7.TXTF32.REFRESH  
+       THISFORM.PAGEFRAME1.PAGE7.TXTF33.REFRESH  
+       THISFORM.PAGEFRAME1.PAGE7.TXTF331.REFRESH
+       THISFORM.PAGEFRAME1.PAGE7.TXTF34.REFRESH
+       THISFORM.PAGEFRAME1.PAGE7.TXTF341.REFRESH
+       THISFORM.PAGEFRAME1.PAGE7.TXTF35.REFRESH
+       THISFORM.PAGEFRAME1.PAGE7.TXTF36.REFRESH      
+       THISFORM.PAGEFRAME1.PAGE7.TXTF37.REFRESH 
+       THISFORM.PAGEFRAME1.PAGE7.TXTF371.REFRESH
+       THISFORM.PAGEFRAME1.PAGE7.TXTF39.REFRESH 
+  ENDPROC       
+ENDDEFINE
+*************F.加班數值
+DEFINE CLASS TXTF35 AS TEXTBOX
+       READONLY=.T.
+       WIDTH=INT_015*50
+       HEIGHT=INT_015*25
+       FONTSIZE=INT_015*9         
+       MAXLENGTH=4        
+       INPUTMASK='999.9'       
+       NAME='TXTF35' 
+  PROCEDURE INTERACTIVECHANGE
+       MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+       DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+       TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)               
+       SELECT S00
+       SET ORDER TO S001
+       SEEK 'B'+THISFORM.PAGEFRAME1.PAGE7.TXTF32.VALUE
+       IF FOUND()       	   
+          THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE=THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE *THISFORM.PAGEFRAME1.PAGE7.TXTF44.VALUE  
+          DO CASE 
+             CASE S00.F08='H'  &&時薪 
+       	          THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THIS.VALUE*S00.F09*TIME_MONEY),0)))		&&補助金額+(加班數值*時薪)
+             CASE S00.F08='D'  &&日薪 
+       	          THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THIS.VALUE*S00.F09*DAY_MONEY),0)))		&&補助金額+(加班數值*日薪)
+             CASE S00.F08='B'  &&底薪 
+       	          THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THIS.VALUE*S00.F09*MONTH_MONEY),0)))		&&補助金額+(加班數值*月薪)
+             OTHERWISE         &&給予金額 
+                  THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THIS.VALUE*S00.F10),0)))						&&補助金額+(加班數值*給予金額)
+          ENDCASE            
+       ENDIF   
+       THISFORM.PAGEFRAME1.PAGE7.TXTF39.VALUE=STR(VAL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION))-THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE)
+  ENDPROC
+ENDDEFINE
+*************F.補助金額
+DEFINE CLASS TXTF37 AS TEXTBOX
+       READONLY=.T.
+       WIDTH=INT_015*60
+       HEIGHT=INT_015*25
+       FONTSIZE=INT_015*9         
+       MAXLENGTH=7        
+       INPUTMASK='9999999'       
+       NAME='TXTF37' 
+  PROCEDURE INTERACTIVECHANGE 
+       MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+       DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+       TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)             
+       SELECT S00
+       SET ORDER TO S001
+       SEEK 'B'+THISFORM.PAGEFRAME1.PAGE7.TXTF32.VALUE
+       IF FOUND()       	   
+           THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE=THIS.VALUE*THISFORM.PAGEFRAME1.PAGE7.TXTF44.VALUE   
+           DO CASE 
+              CASE S00.F08='H'  &&時薪 
+       	           THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F09*TIME_MONEY),0)))		&&補助金額+(加班數值*時薪)
+              CASE S00.F08='D'  &&日薪 
+       	           THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F09*DAY_MONEY),0)))		&&補助金額+(加班數值*日薪)
+              CASE S00.F08='B'  &&底薪 
+       	           THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F09*MONTH_MONEY),0)))		&&補助金額+(加班數值*月薪)
+              OTHERWISE         &&給予金額 
+                   THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F10),0)))						&&補助金額+(加班數值*給予金額)
+           ENDCASE      
+       ENDIF   
+  ENDPROC
+ENDDEFINE
+*************F.加班天數
+DEFINE CLASS TXTF44 AS TEXTBOX
+       READONLY=.T.
+       WIDTH=INT_015*60
+       HEIGHT=INT_015*25
+       FONTSIZE=INT_015*9         
+       MAXLENGTH=3        
+       INPUTMASK='999'       
+       NAME='TXTF44' 
+  PROCEDURE INTERACTIVECHANGE
+      MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+      DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)
+      TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE)           
+      SELECT S00
+      SET ORDER TO S001
+      SEEK 'B'+THISFORM.PAGEFRAME1.PAGE7.TXTF32.VALUE
+      IF FOUND()       	   
+         THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE=THIS.VALUE*THISFORM.PAGEFRAME1.PAGE7.TXTF37.VALUE   
+         DO CASE 
+            CASE S00.F08='H'  &&時薪 
+                 THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F09*TIME_MONEY),0)))		&&補助金額+(加班數值*時薪)
+            CASE S00.F08='D'  &&日薪 
+                 THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F09*DAY_MONEY),0)))		&&補助金額+(加班數值*日薪)
+            CASE S00.F08='B'  &&底薪 
+                 THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F09*MONTH_MONEY),0)))		&&補助金額+(加班數值*月薪)
+            OTHERWISE         &&給予金額 
+                 THISFORM.PAGEFRAME1.PAGE7.LBLF381.CAPTION=ALLTRIM(STR(ROUND(THISFORM.PAGEFRAME1.PAGE7.TXTF371.VALUE+(THISFORM.PAGEFRAME1.PAGE7.TXTF35.VALUE*S00.F10),0)))						&&補助金額+(加班數值*給予金額)
+         ENDCASE      
+      ENDIF            
+  ENDPROC
+ENDDEFINE       
+**************C.D.F薪資/扣款/加班補助項目名稱
+DEFINE CLASS COMBOBOX_CDF AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*140
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=0   
+       VALUE=1
+       NAME='COMBOBOX_CDF'
+ PROCEDURE INIT    
+       SELECT F07 FROM S01 WHERE F01='F'  ORDER BY F07 INTO CURSOR S01_TEMP
+       SELECT S01_TEMP
+       GO TOP
+       THIS.ADDITEM('')
+       DO WHILE !EOF()
+          THIS.ADDITEM(ALLTRIM(S01_TEMP.F07))
+      	  SELECT S01_TEMP
+      	  SKIP
+       ENDDO
+       SELECT S01_TEMP
+       USE   
+  ENDPROC  
+   PROCEDURE INTERACTIVECHANGE
+       DO CASE 
+      	  CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=4		 &&C:薪資所得明細 
+	           THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE=THIS.DISPLAYVALUE
+	           THISFORM.PAGEFRAME1.PAGE4.TXTF20.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'H'+THISFORM.PAGEFRAME1.PAGE4.TXTF19.VALUE,.T.,'S06','S061'),S06.F08,0)			       
+	           THISFORM.PAGEFRAME1.PAGE4.TXTF21.VALUE=0
+	           THISFORM.PAGEFRAME1.PAGE4.TXTF19.REFRESH  
+	           THISFORM.PAGEFRAME1.PAGE4.TXTF20.REFRESH 
+	           THISFORM.PAGEFRAME1.PAGE4.TXTF21.REFRESH      
+   	      CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=5		 &&D:薪資扣款明細
+   			   THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE=ALLTRIM(THIS.DISPLAYVALUE) 
+   			   THISFORM.PAGEFRAME1.PAGE5.TXTF26.VALUE=IIF(INDEXSEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+'M'+THISFORM.PAGEFRAME1.PAGE5.TXTF25.VALUE,.T.,'S06','S061'),S06.F08,0)  
+   			   THISFORM.PAGEFRAME1.PAGE5.TXTF23.VALUE=0
+   			   THISFORM.PAGEFRAME1.PAGE5.TXTF25.REFRESH
+   			   THISFORM.PAGEFRAME1.PAGE5.TXTF26.REFRESH  
+   			   THISFORM.PAGEFRAME1.PAGE5.TXTF23.REFRESH
+  	      CASE THISFORM.PAGEFRAME1.ACTIVEPAGE=7		 &&F:加班明細
+  			   THISFORM.PAGEFRAME1.PAGE7.TXTF36.VALUE=ALLTRIM(THIS.DISPLAYVALUE)
+  			   THISFORM.PAGEFRAME1.PAGE7.TXTF36.REFRESH 
+       ENDCASE                      
+  ENDPROC       
+ENDDEFINE
+*********S14.出勤報表查詢(帶入加班明細)
+DEFINE CLASS TKS14A AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION=S10_1.F02+' '+HK+' 加班時數表' 
+  TOP=INT_015*170
+  LEFT=INT_015*175     
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*210
+  WIDTH=INT_015*400
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.    
+  CONTROLBOX=.F.
+  BORDERSTYLE=1
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='TKS14A'
+  ADD OBJECT LBLF AS LABEL WITH;      
+      LEFT=INT_015*140,;
+      TOP=INT_015*10,;
+      BACKCOLOR=RGB(255,255,0),;
+      AUTOSIZE=.T.,;
+      CAPTION='請選擇加班之計算類別'  
+  ADD OBJECT LBLF1 AS LABEL WITH;      
+      LEFT=INT_015*15,;
+      TOP=INT_015*40,;
+      AUTOSIZE=.T.,;
+      CAPTION=''       
+ ADD OBJECT COMBO1 AS COMBO WITH;            
+       LEFT=INT_015*260,;
+       TOP=INT_015*34         
+  ADD OBJECT LBLF11 AS LABEL WITH;      
+      VISIBLE=.F.,;
+      LEFT=INT_015*15,;
+      TOP=INT_015*70,;
+      AUTOSIZE=.T.,;
+      CAPTION='計算方式：'            
+  ADD OBJECT LBLF2 AS LABEL WITH;      
+      LEFT=INT_015*15,;
+      TOP=INT_015*100,;
+      AUTOSIZE=.T.,;
+      CAPTION=''           
+ ADD OBJECT COMBO2 AS COMBO WITH;            
+       LEFT=INT_015*260,;
+       TOP=INT_015*94          
+  ADD OBJECT LBLF21 AS LABEL WITH;      
+      VISIBLE=.F.,;
+      LEFT=INT_015*15,;
+      TOP=INT_015*130,;
+      AUTOSIZE=.T.,;
+      CAPTION='計算方式：'               
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*120,;
+      TOP=INT_015*165,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*50,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<Y.確認',;
+      TOOLTIPTEXT='確認所輸入之內容->ALT+Y',;
+      NAME='CMND1'
+ ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*230,;
+      TOP=INT_015*165,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*50,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消此畫面!快速鍵->ALT+C'
+      NAME='CMND2'
+********************
+ PROCEDURE INIT 
+      THISFORM.SETALL('FONTSIZE',INT_015*10,'LABEL')   
+      THISFORM.SETALL('FONTSIZE',INT_015*10,'COMMANDBUTTON')  
+      SELECT S00
+      SET ORDER TO S001        && F01+F05
+      SELECT S14
+      SET ORDER TO S141	&& F01+DTOS(F08)   
+      SEEK S10_1.F01+DTOS(CTOD(HK+'/01'))
+      IF FOUND()
+         IF S14.F09<>0  AND S14.F11<>'1'  AND S14.F11<>'3'
+            THISFORM.COMBO1.VISIBLE=.T. 
+            THISFORM.LBLF11.VISIBLE=.T.
+            THISFORM.LBLF1.CAPTION='平日加班：共 '+ALLTRIM(TRANSFORM(S14.F12,'@R 999'))+' 天，共 '+ALLTRIM(TRANSFORM(S14.F09,'@R 999,999.9'))+' 小時，計算類別'
+         ENDIF
+         IF S14.F10<>0 AND S14.F11<>'2'  AND S14.F11<>'3'
+            THISFORM.COMBO2.VISIBLE=.T.
+            THISFORM.LBLF21.VISIBLE=.T.
+            THISFORM.LBLF2.CAPTION='假日加班：共 '+ALLTRIM(TRANSFORM(S14.F13,'@R 999'))+' 天，共 '+ALLTRIM(TRANSFORM(S14.F10,'@R 999,999.9'))+' 小時，計算類別'
+         ENDIF           
+      ENDIF
+ ENDPROC 
+ ****  
+ PROCEDURE COMBO1.INTERACTIVECHANGE  
+       IF EMPTY(ALLTRIM(THISFORM.COMBO1.DISPLAYVALUE))
+          THISFORM.LBLF11.CAPTION='計算方式：'
+       ELSE       
+          SELECT S00
+          SEEK 'B'+LEFT(ALLTRIM(THISFORM.COMBO1.DISPLAYVALUE),2)
+          IF FOUND()
+             IF EMPTY(S00.F08)
+                THISFORM.LBLF11.CAPTION='計算方式：總時數 X ( 金額'+ALLTRIM(TRANSFORM(S00.F10,'@R 999,999,999'))+' )'+IIF(EMPTY(S00.F46),'',' ＋ '+ALLTRIM(S00.F46)+'補助 '+ALLTRIM(TRANSFORM(S00.F47*S14.F12,'@R 999,999,999')))  
+             ELSE
+                THISFORM.LBLF11.CAPTION='計算方式：總時數 X '+IIF(S00.F08='H','時薪',IIF(S00.F08='D','日薪','底薪'))+' X ( 費率 '+ALLTRIM(TRANSFORM(S00.F09,'@R 999,999.99'))+' )'++IIF(EMPTY(S00.F46),'',' ＋ '+ALLTRIM(S00.F46)+'補助 '+ALLTRIM(TRANSFORM(S00.F47*S14.F12,'@R 999,999,999')))                       
+             ENDIF    
+          ENDIF     
+       ENDIF   
+ENDPROC   
+ PROCEDURE COMBO2.INTERACTIVECHANGE  
+       IF EMPTY(ALLTRIM(THISFORM.COMBO2.DISPLAYVALUE))
+          THISFORM.LBLF21.CAPTION='計算方式：'
+       ELSE
+          SELECT S00
+          SEEK 'B'+LEFT(ALLTRIM(THISFORM.COMBO2.DISPLAYVALUE),2)
+          IF FOUND()
+             IF EMPTY(S00.F08)
+                THISFORM.LBLF21.CAPTION='計算方式：總時數 X ( 金額'+ALLTRIM(TRANSFORM(S00.F10,'@R 999,999,999'))+' )'+IIF(EMPTY(S00.F46),'',' ＋ '+ALLTRIM(S00.F46)+'補助 '+ALLTRIM(TRANSFORM(S00.F47*S14.F13,'@R 999,999,999')))  
+             ELSE
+                THISFORM.LBLF21.CAPTION='計算方式：總時數 X '+IIF(S00.F08='H','時薪',IIF(S00.F08='D','日薪','底薪'))+' X ( 費率 '+ALLTRIM(TRANSFORM(S00.F09,'@R 999,999.99'))+' )'++IIF(EMPTY(S00.F46),'',' ＋ '+ALLTRIM(S00.F46)+'補助 '+ALLTRIM(TRANSFORM(S00.F47*S14.F13,'@R 999,999,999')))                       
+             ENDIF    
+          ENDIF    
+       ENDIF   
+ENDPROC  
+********確認鍵******
+PROCEDURE CMND1.CLICK   
+       MONTH_MONEY = S10_SALARY_CLASS(S10_1.F15,'M',S10_1.F01)	&&發薪總類(M:底薪,D:日薪,T:時薪),薪資別(M:底薪,D:日薪,T:時薪),員工編號														
+       DAY_MONEY = S10_SALARY_CLASS(S10_1.F15,'D',S10_1.F01)
+       TIME_MONEY = S10_SALARY_CLASS(S10_1.F15,'T',S10_1.F01) 
+       *****         
+       IF !EMPTY(ALLTRIM(THISFORM.COMBO1.DISPLAYVALUE)) AND !EMPTY(ALLTRIM(THISFORM.COMBO2.DISPLAYVALUE));
+      	  AND LEFT(ALLTRIM(THISFORM.COMBO1.DISPLAYVALUE),2)=LEFT(ALLTRIM(THISFORM.COMBO2.DISPLAYVALUE),2)
+      	  SELECT S00
+          SEEK 'B'+LEFT(ALLTRIM(THISFORM.COMBO1.DISPLAYVALUE),2)	
+          IF FOUND()  
+	    	 SELECT S10_F
+	   		 APPEND BLANK
+		     REPLACE S10_F.F01 WITH S10_1.F01
+			 REPLACE S10_F.F03 WITH S10_1.F05
+    		 REPLACE S10_F.F32 WITH LEFT(ALLTRIM(THISFORM.COMBO1.DISPLAYVALUE),2)
+    		 REPLACE S10_F.F33 WITH S00.F06
+    		 REPLACE S10_F.F34 WITH S00.F07
+    		 REPLACE S10_F.F35 WITH S14.F09+S14.F10
+    		 REPLACE S10_F.F36 WITH S00.F46 
+    		 REPLACE S10_F.F37 WITH S00.F47
+    		 REPLACE S10_F.F44 WITH S14.F12+S14.F13
+		     DO CASE 
+		        CASE S00.F08='H'  &&時薪 
+		             REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F09*TIME_MONEY),0)		&&補助金額+(加班數值*時薪)
+		        CASE S00.F08='D'  &&日薪 
+		             REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F09*DAY_MONEY),0)		&&補助金額+(加班數值*日薪)
+		        CASE S00.F08='B'  &&底薪 
+		             REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F09*MONTH_MONEY),0)		&&補助金額+(加班數值*月薪)
+		        OTHERWISE         &&給予金額 
+		             REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F10),0)					&&補助金額+(加班數值*給予金額)
+		     ENDCASE     			   
+    		 REPLACE S10_F.F39 WITH  S10_F.F38-(S10_F.F37*S10_F.F44)											&&加班小計=加班總所得(包括津貼金額)-津貼金額
+    		 REPLACE S10_F.F43 WITH '3'
+    		 REPLACE S10_F.F97 WITH 'F'
+    		 REPLACE S10_F.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')    
+    		 SELECT S10
+   			 APPEND BLANK
+			 REPLACE S10.F01 WITH S10_1.F01
+		     REPLACE S10.F02 WITH S10_1.F02
+		     REPLACE S10.F03 WITH S10_1.F05
+		     REPLACE S10.F04 WITH S10_1.F06
+			 REPLACE S10.F32 WITH S10_F.F32
+			 REPLACE S10.F33 WITH S10_F.F33
+			 REPLACE S10.F34 WITH S10_F.F34
+			 REPLACE S10.F35 WITH S10_F.F35 
+			 REPLACE S10.F36 WITH S10_F.F36
+			 REPLACE S10.F37 WITH S10_F.F37
+			 REPLACE S10.F38 WITH S10_F.F38
+			 REPLACE S10.F39 WITH S10_F.F39
+			 REPLACE S10.F43 WITH '3'
+			 REPLACE S10.F44 WITH S10_F.F44
+			 REPLACE S10.F97 WITH 'F'    
+			 REPLACE S10.F98 WITH 'N'			     
+			 REPLACE S10.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')    
+			 SELECT S14
+    		 REPLACE S14.F11 WITH '3' 	    			           	               
+      	  ENDIF   
+       ELSE 
+      	  SELECT S00
+    	  SEEK 'B'+LEFT(ALLTRIM(THISFORM.COMBO1.DISPLAYVALUE),2)	
+    	  IF FOUND() AND !EMPTY(ALLTRIM(THISFORM.COMBO1.DISPLAYVALUE))
+		     SELECT S10_F
+   	 	     APPEND BLANK
+		     REPLACE S10_F.F01 WITH S10_1.F01
+		     REPLACE S10_F.F03 WITH S10_1.F05
+		     REPLACE S10_F.F32 WITH LEFT(ALLTRIM(THISFORM.COMBO1.DISPLAYVALUE),2)
+			 REPLACE S10_F.F33 WITH S00.F06
+			 REPLACE S10_F.F34 WITH S00.F07
+			 REPLACE S10_F.F35 WITH S14.F09
+			 REPLACE S10_F.F36 WITH S00.F46 
+			 REPLACE S10_F.F37 WITH S00.F47
+			 REPLACE S10_F.F44 WITH S14.F12
+	         DO CASE 
+	            CASE S00.F08='H'  &&時薪 
+	       	         REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F09*TIME_MONEY),0)		&&補助金額+(加班數值*時薪)
+	            CASE S00.F08='D'  &&日薪 
+	       	         REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F09*DAY_MONEY),0)		&&補助金額+(加班數值*日薪)
+	            CASE S00.F08='B'  &&底薪 
+	       	         REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F09*MONTH_MONEY),0)		&&補助金額+(加班數值*月薪)
+	            OTHERWISE         &&給予金額 
+	                 REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F10),0)					&&補助金額+(加班數值*給予金額)
+		     ENDCASE     			   
+    		 REPLACE S10_F.F39 WITH  S10_F.F38-(S10_F.F37*S10_F.F44)											&&加班小計=加班總所得(包括津貼金額)-津貼金額
+    		 REPLACE S10_F.F43 WITH IIF(S10_F.F43='2','3','1')
+    		 REPLACE S10_F.F97 WITH 'F'
+    		 REPLACE S10_F.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')    
+    		 SELECT S10
+   			 APPEND BLANK
+			 REPLACE S10.F01 WITH S10_1.F01
+			 REPLACE S10.F02 WITH S10_1.F02
+			 REPLACE S10.F03 WITH S10_1.F05
+			 REPLACE S10.F04 WITH S10_1.F06
+    		 REPLACE S10.F32 WITH S10_F.F32
+    		 REPLACE S10.F33 WITH S10_F.F33
+    		 REPLACE S10.F34 WITH S10_F.F34
+    		 REPLACE S10.F35 WITH S10_F.F35 
+    		 REPLACE S10.F36 WITH S10_F.F36
+    		 REPLACE S10.F37 WITH S10_F.F37
+    		 REPLACE S10.F38 WITH S10_F.F38
+    		 REPLACE S10.F39 WITH S10_F.F39
+    		 REPLACE S10.F43 WITH IIF(S10.F43='2','3','1')
+    		 REPLACE S10.F44 WITH S10_F.F44
+    		 REPLACE S10.F97 WITH 'F'    
+    		 REPLACE S10.F98 WITH 'N'			     
+    		 REPLACE S10.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')  	   
+    		 SELECT S14
+    		 REPLACE S14.F11 WITH IIF(S14.F11='2','3','1')     			   			        
+          ENDIF      
+          **************    	               
+      	  SELECT S00
+          SEEK 'B'+LEFT(ALLTRIM(THISFORM.COMBO2.DISPLAYVALUE),2)	
+          IF FOUND() AND !EMPTY(ALLTRIM(THISFORM.COMBO2.DISPLAYVALUE))
+    		 SELECT S10_F
+   			 APPEND BLANK
+			 REPLACE S10_F.F01 WITH S10_1.F01
+			 REPLACE S10_F.F03 WITH S10_1.F05
+    		 REPLACE S10_F.F32 WITH LEFT(ALLTRIM(THISFORM.COMBO2.DISPLAYVALUE),2)
+    		 REPLACE S10_F.F33 WITH S00.F06
+    		 REPLACE S10_F.F34 WITH S00.F07
+    		 REPLACE S10_F.F35 WITH S14.F10
+    		 REPLACE S10_F.F36 WITH S00.F46 
+    		 REPLACE S10_F.F37 WITH S00.F47
+    		 REPLACE S10_F.F44 WITH S14.F13
+		     DO CASE 
+		        CASE S00.F08='H'  &&時薪 
+		       	     REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F09*TIME_MONEY),0)		&&補助金額+(加班數值*時薪)
+		        CASE S00.F08='D'  &&日薪 
+		       	     REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F09*DAY_MONEY),0)		&&補助金額+(加班數值*日薪)
+		        CASE S00.F08='B'  &&底薪 
+		       	     REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F09*MONTH_MONEY),0)		&&補助金額+(加班數值*月薪)
+		        OTHERWISE         &&給予金額 
+		             REPLACE S10_F.F38 WITH ROUND((S10_F.F37*S10_F.F44)+(S10_F.F35*S00.F10),0)					&&補助金額+(加班數值*給予金額)
+		     ENDCASE     			   
+    		 REPLACE S10_F.F39 WITH  S10_F.F38-(S10_F.F37*S10_F.F44)											&&加班小計=加班總所得(包括津貼金額)-津貼金額
+    		 REPLACE S10_F.F43 WITH IIF(S10_F.F43='1','3','2')
+    		 REPLACE S10_F.F97 WITH 'F'
+    		 REPLACE S10_F.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')    
+    		 SELECT S10
+   			 APPEND BLANK
+			 REPLACE S10.F01 WITH S10_1.F01
+			 REPLACE S10.F02 WITH S10_1.F02
+			 REPLACE S10.F03 WITH S10_1.F05
+			 REPLACE S10.F04 WITH S10_1.F06
+    		 REPLACE S10.F32 WITH S10_F.F32
+    		 REPLACE S10.F33 WITH S10_F.F33
+    		 REPLACE S10.F34 WITH S10_F.F34
+    		 REPLACE S10.F35 WITH S10_F.F35 
+    		 REPLACE S10.F36 WITH S10_F.F36
+    		 REPLACE S10.F37 WITH S10_F.F37
+    		 REPLACE S10.F38 WITH S10_F.F38
+    		 REPLACE S10.F39 WITH S10_F.F39
+    		 REPLACE S10.F43 WITH IIF(S10.F43='1','3','2')
+    		 REPLACE S10.F44 WITH S10_F.F44
+    		 REPLACE S10.F97 WITH 'F'    
+    		 REPLACE S10.F98 WITH 'N'			     
+    		 REPLACE S10.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')  	   
+    		 SELECT S14
+    		 REPLACE S14.F11 WITH IIF(S14.F11='1','3','2')    
+          ENDIF          	                           	                    
+       ENDIF         
+       THISFORM.CMND2.CLICK  
+ENDPROC       
+********離開鍵***********
+ PROCEDURE CMND2.CLICK     
+     THISFORM.RELEASE 
+     RETURN  
+ ENDPROC   
+ PROC CMND1.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND1.TOP=INT_015*166
+             THISFORM.CMND1.LEFT=INT_015*121
+  ENDPROC     
+  PROC CMND1.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND1.TOP=INT_015*165
+             THISFORM.CMND1.LEFT=INT_015*120                
+  ENDPROC 
+ PROC CMND2.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND2.TOP=INT_015*166
+             THISFORM.CMND2.LEFT=INT_015*231
+  ENDPROC     
+  PROC CMND2.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND2.TOP=INT_015*165
+             THISFORM.CMND2.LEFT=INT_015*230                
+  ENDPROC   
+ ENDDEFINE
+ ******
+************F.加班時段(S14.年度出勤紀錄使用)
+DEFINE CLASS COMBO AS COMBOBOX 
+       VISIBLE=.F.
+       HEIGHT=INT_015*25
+       WIDTH=INT_015*110
+       FONTSIZE=INT_015*9   
+       BOUNDCOLUMN=1
+       ROWSOURCETYPE=1
+       STYLE=2    
+       VALUE=1
+       NAME='COMBO'
+ PROCEDURE INIT    
+       SELECT F05,F06,F07,F08,F09,F10,F46,F47 FROM S00 WHERE F01='B'  ORDER BY F05 INTO CURSOR S00_TEMP
+       SELECT S00_TEMP
+       GO TOP
+       THIS.ADDITEM('')
+       DO WHILE !EOF()
+          THIS.ADDITEM(ALLTRIM(S00_TEMP.F05)+SPACE(5)+ALLTRIM(IIF(S00_TEMP.F06='1','平日加班','假日加班')))
+      	  SELECT  S00_TEMP
+      	  SKIP
+       ENDDO
+       SELECT S00_TEMP
+       USE   
+  ENDPROC     
+ ENDDEFINE     
+*******************      
+DEFINE CLASS CMDGROUP1 AS COMMANDGROUP
+  AUTOSIZE=.F.
+  BUTTONCOUNT=5  
+  BACKSTYLE=0
+  BORDERSTYLE=0
+  VALUE=1       
+  LEFT=10
+  TOP=INT_015*415
+  LEFT=INT_015*10
+  WIDTH=INT_015*218
+  HEIGHT=INT_015*30 
+  NAME='CMDGROUP1'  
+  COMMAND1.AUTOSIZE=.F.
+  COMMAND1.TOP=INT_015*5
+  COMMAND1.LEFT=INT_015*5    
+  COMMAND1.HEIGHT=INT_015*25
+  COMMAND1.WIDTH=INT_015*40
+  COMMAND1.FONTSIZE=INT_015*9
+  COMMAND1.CAPTION='第一筆'
+  COMMAND1.TOOLTIPTEXT='移至第一筆記錄'
+  COMMAND1.NAME='TOP_BOTT' 
+  COMMAND2.AUTOSIZE=.F.
+  COMMAND2.TOP=INT_015*5
+  COMMAND2.LEFT=INT_015*47
+  COMMAND2.HEIGHT=INT_015*25
+  COMMAND2.WIDTH=INT_015*40
+  COMMAND2.FONTSIZE=INT_015*9  
+  COMMAND2.CAPTION='上一筆'
+  COMMAND2.TOOLTIPTEXT='移至上一筆記錄'
+  COMMAND2.NAME='UP_BOTT'
+  COMMAND3.AUTOSIZE=.F.
+  COMMAND3.TOP=INT_015*5
+  COMMAND3.LEFT=INT_015*89
+  COMMAND3.HEIGHT=INT_015*25
+  COMMAND3.WIDTH=INT_015*40
+  COMMAND3.FONTSIZE=INT_015*9  
+  COMMAND3.CAPTION='下一筆'
+  COMMAND3.TOOLTIPTEXT='移至下一筆記錄'
+  COMMAND3.NAME='NEXT_BOTT'
+  COMMAND4.AUTOSIZE=.F.
+  COMMAND4.TOP=INT_015*5
+  COMMAND4.LEFT=INT_015*131    
+  COMMAND4.HEIGHT=INT_015*25
+  COMMAND4.WIDTH=INT_015*40
+  COMMAND4.FONTSIZE=INT_015*9  
+  COMMAND4.CAPTION='最尾筆'
+  COMMAND4.TOOLTIPTEXT='移至最後一筆記錄'
+  COMMAND4.NAME='END_BOTT'
+  COMMAND5.AUTOSIZE=.F.
+  COMMAND5.TOP=INT_015*5
+  COMMAND5.LEFT=INT_015*173
+  COMMAND5.HEIGHT=INT_015*25
+  COMMAND5.WIDTH=INT_015*40
+  COMMAND5.FONTSIZE=INT_015*9  
+  COMMAND5.CAPTION='\<F.搜尋'
+  COMMAND5.TOOLTIPTEXT='快速搜尋單筆資料!快速鍵->ALT+F'
+  COMMAND5.NAME='SEEK_BOTT'
+  PROCEDURE INIT
+      WITH THIS
+          .SETALL('MOUSEPOINTER',99,'COMMANDBUTTON')
+          .SETALL('MOUSEICON','BMPS\harrow.cur','COMMANDBUTTON')                            
+     ENDWITH
+  ENDPROC    
+  PROCEDURE INTERACTIVECHANGE
+     IF ALLTRIM(FCH)='GRID2' OR ALLTRIM(FCH)='GRID3' OR ALLTRIM(FCH)='GRID4';
+        OR ALLTRIM(FCH)='GRID5'  OR ALLTRIM(FCH)='GRID6' OR ALLTRIM(FCH)='GRID7'  
+        SELECT  &AREA2
+     ELSE 
+        SELECT  &AREA1
+     ENDIF           
+     DO CASE
+        CASE THIS.VALUE=1
+             GO TOP                  
+        CASE THIS.VALUE=2
+	         IF BOF()
+	            GO TOP
+	         ELSE
+	            SKIP -1                  
+	         ENDIF                   
+        CASE THIS.VALUE=3
+             IF EOF()
+                GO BOTT
+             ELSE
+                SKIP   
+             ENDIF                   
+        CASE THIS.VALUE=4
+             GO BOTTOM
+        CASE THIS.VALUE=5
+             HEAD_SEEK=CREATEOBJECT("HEAD_SEEK")  
+             HEAD_SEEK.SHOW    
+             IF FLG='0'
+                =MESSAGEBOX('找不到您指定的鍵值',0+48,'警示')
+             ENDIF   
+             FLG='0'
+             CHK=''
+     ENDCASE                     
+     DO CASE
+        CASE ALLTRIM(FCH)='GRID1'
+             THISFORM.GRID1.SETFOCUS() 
+        CASE ALLTRIM(FCH)='GRID2'
+             THISFORM.GRID2.SETFOCUS() 
+        CASE ALLTRIM(FCH)='GRID3'
+             THISFORM.GRID3.SETFOCUS() 
+        CASE ALLTRIM(FCH)='GRID4'
+             THISFORM.GRID4.SETFOCUS() 
+        CASE ALLTRIM(FCH)='GRID5'
+             THISFORM.GRID5.SETFOCUS() 
+        CASE ALLTRIM(FCH)='GRID6'
+             THISFORM.GRID6.SETFOCUS() 
+        CASE ALLTRIM(FCH)='GRID7'
+             THISFORM.GRID7.SETFOCUS()
+     ENDCASE 
+  ENDPROC    
+ENDDEFINE
+************************************************發薪總類
+FUNCTION S10_SALARY_CLASS
+     PARAMETERS SC1,SC2,SC3	&& SC1:發薪總類(M:底薪,D:日薪,T:時薪),SC2:薪資別(M:底薪,D:日薪,T:時薪),SC3:員工編號
+     RETURN_MONEY = 0
+     MON_MON = 0		&&底薪
+     DAY_MON = 0		&&日薪
+     TIM_MON = 0		&&時薪
+     DO CASE
+        CASE SC1 = 'M'
+        	 MON_MON = IIF(INDEXSEEK(SC3 + 'A',.T.,'S06','S061'),S06.F08,0)
+        	 DAY_MON = IIF(IIF(INDEXSEEK('Z',.T.,'S00','S001'),S00.F02,0) <> 0,MON_MON / S00.F02,0)
+        	 TIM_MON = IIF(IIF(INDEXSEEK('Z',.T.,'S00','S001'),S00.F03,0) <> 0,DAY_MON / S00.F03,0)
+        CASE SC1 = 'D'
+             DAY_MON = IIF(INDEXSEEK(SC3 + 'B',.T.,'S06','S061'),S06.F08,0)
+             TIM_MON = IIF(IIF(INDEXSEEK('Z',.T.,'S00','S001'),S00.F03,0) <> 0,DAY_MON / S00.F03,0)
+        CASE SC1 = 'T'	 
+       		 TIM_MON = IIF(INDEXSEEK(SC3 + 'C',.T.,'S06','S061'),S06.F08,0)
+     ENDCASE
+     DO CASE
+        CASE SC2 = 'M'
+        	 RETURN_MONEY = MON_MON 
+        CASE SC2 = 'D'
+        	 RETURN_MONEY = DAY_MON 
+        CASE SC2 = 'T'
+        	 RETURN_MONEY = TIM_MON 
+     ENDCASE     
+     RETURN RETURN_MONEY
+************************************************確認薪資函數
+FUNCTION S10_ANS_CLASS
+	 PARAMETERS ANS1,ANS2		&&ANS1:確認方式(A:單筆,B:全部),ANS2:單筆確認員工編號
+	 TRY
+	    IF ANS1 = 'A' 
+	       SELECT * FROM S10_1 WHERE S10_1.F01 = ANS2 ORDER BY S10_1.F01 INTO CURSOR S10_1TEMP READWRITE 
+	    ELSE
+	       SELECT * FROM S10_1 ORDER BY S10_1.F01 INTO CURSOR S10_1TEMP
+	    ENDIF
+	    *****
+	    SELECT S10_1TEMP
+        GO TOP
+        DO WHILE !EOF()	
+           IF S10_1TEMP.F98 <> 'Y' 
+              SELECT S11
+              APPEND BLANK
+              LOCK()
+              IF RLOCK()
+	             REPLACE S11.F01 WITH CTOD(HK + '/01')
+	             REPLACE S11.F02 WITH S10_1TEMP.F01
+	             REPLACE S11.F03 WITH S10_1TEMP.F02
+			     REPLACE S11.F04 WITH S10_1TEMP.F05
+			     REPLACE S11.F05 WITH S10_1TEMP.F06
+			     REPLACE S11.F06 WITH S10_1TEMP.F15
+			     REPLACE S11.F07 WITH IIF(INDEXSEEK(S10_1TEMP.F01,.T.,'S10_A','S10_A1'),S10_A.F05,0)	&&上班天數或時數
+			     REPLACE S11.F08 WITH IIF(INDEXSEEK(S10_1TEMP.F01,.T.,'S10_A','S10_A1'),S10_A.F09,0)	&&遲到額外扣款小計
+			     REPLACE S11.F09 WITH IIF(INDEXSEEK(S10_1TEMP.F01,.T.,'S10_A','S10_A1'),S10_A.F10,0)	&&早退額外扣款小計
+			     REPLACE S11.F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')        	       
+			     ****C.薪資所得明細
+			     S11_F12 = 0
+	             SELECT RECNO() FROM S10 WHERE ALLTRIM(S10.F01) = ALLTRIM(S10_1TEMP.F01) AND S10.F97 = 'C' AND S10.F98 <> 'Y' INTO ARRAY BK1              
+		         JJ1 = ''                
+		         IF _TALLY > 0   
+	                FOR I = 1 TO ALEN(BK1)
+	                    JJ1 = JJ1 + ALLTRIM(STR(BK1(I))) + ','
+	                ENDFOR    
+	                KK1 = STUFF(JJ1,RAT(',',JJ1,1),1,'')              
+	                RLOCK(KK1,'S10')
+	                LL1 = RLOCK(KK1,'S10')
+	             ELSE
+	                LL1 = .T.   
+	             ENDIF  		  
+                 IF LL1 = .T. AND LEN(ALLTRIM(JJ1)) > 0  	 	    
+                    FOR I = 1 TO ALEN(BK1)    
+              	        SELECT S10                  
+                        GO BK1(I) 	
+                        SELECT S11		
+                        S11_F12 = S11_F12 + IIF(S10.F21 <> 0,S10.F20,0)						&&本月基本薪資所得(不包含新增薪資所得)(依發薪總類為月薪時計算使用)					
+                        REPLACE S11.F10 WITH IIF(S10_1TEMP.F15 = 'M',S11.F10 + S10.F21,0)	&&基本薪資所得總計
+                        REPLACE S11.F13 WITH S11.F13 + IIF(S10.F21 = 0,S10.F20,0)			&&本月新增薪資所得
+                        DO CASE
+                           CASE S10.F18 = 'A' OR S10.F18 = 'B' OR S10.F18 = 'B'				&&A:底薪,B:日薪,C:時薪
+                     	       	REPLACE S11.F14	WITH S10.F20								&&底/日/時 薪金額
+                           CASE S10.F18 = 'D' 												&&伙食費
+                     	  	    REPLACE S11.F15 WITH S10.F20
+                           CASE S10.F18 = 'E' 												&&交通費
+                   		        REPLACE S11.F16 WITH S10.F20
+                           CASE S10.F18 = 'F' 												&&全勤獎金
+                     		    REPLACE S11.F17 WITH S10.F20
+                     		    REPLACE S11.F18 WITH S10.F21 - S10.F20						&&全勤獎金扣款
+                           CASE S10.F18 = 'G'												&&職務津貼
+                     		    REPLACE S11.F19 WITH S10.F20
+                           CASE S10.F18 = 'H'  												&&自設項目
+                                REPLACE S11.F20 WITH S11.F20 + S10.F20
+                           CASE S10.F18 = 'I' 												&&其他所得發放
+                                REPLACE S11.F21 WITH S11.F21 + S10.F20
+                        ENDCASE
+                        REPLACE S10.F98 WITH 'Y'
+                        REPLACE S10.F99 WITH DTOC(DATE()) +' '+ IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+	  	            ENDFOR
+	  	            IF S10_1TEMP.F15 = 'M'	&&月薪			IIF(每月共計幾日=本月上班天數,本月基本薪資所得,ROUND((本月基本薪資所得/每月共計幾日)*本月上班天數,0))
+	  	               REPLACE S11.F12 WITH IIF(INDEXSEEK('Z',.T.,'S00','S001'),IIF(S00.F02 = S11.F07,S11_F12,ROUND((S11_F12 / S00.F02) * S11.F07,0)),S11_F12)
+		  	        ELSE				&&日薪或時薪
+		  	   	       REPLACE S11.F12 WITH ROUND(S11.F07 * S11.F14,0)
+		  	        ENDIF     
+		         ENDIF
+                 ***F.加班明細
+	    	     SELECT RECNO() FROM S10 WHERE ALLTRIM(S10.F01) = ALLTRIM(S10_1TEMP.F01) AND S10.F97 = 'F' AND S10.F98 <> 'Y' INTO ARRAY BK2              
+		         JJ2 = ''                
+		         IF _TALLY>0   
+	                FOR I = 1 TO ALEN(BK2)
+	                    JJ2=JJ2 + ALLTRIM(STR(BK2(I))) + ','
+	                ENDFOR    
+	                KK2 = STUFF(JJ2,RAT(',',JJ2,1),1,'')              
+	                RLOCK(KK2,'S10')
+	                LL2 = RLOCK(KK2,'S10')
+	             ELSE
+	                LL2 = .T.   
+	             ENDIF  		  
+                 IF LL2 = .T. AND LEN(ALLTRIM(JJ2)) > 0  	 	    
+                    FOR I = 1 TO ALEN(BK2)  
+                        SELECT S10       
+                        GO BK2(I) 
+                        SELECT S11
+                        REPLACE S11.F22 WITH S11.F22 + S10.F39				&&加班所得(不包含補助金額)
+                        REPLACE S11.F23 WITH S11.F23 + (S10.F37 * S10.F44)		&&加班津貼補助金額
+                        REPLACE S10.F98 WITH 'Y'
+                        REPLACE S10.F99 WITH DTOC(DATE()) + ' ' + IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')    
+                    ENDFOR
+                 ENDIF 		       
+		         *****D.薪資扣款明細
+	    	     SELECT RECNO() FROM S10 WHERE ALLTRIM(S10.F01) = ALLTRIM(S10_1TEMP.F01) AND S10.F97 = 'D' AND S10.F98 <> 'Y' INTO ARRAY BK3              
+		         JJ3 = ''                
+		         IF _TALLY > 0   
+	                FOR I = 1 TO ALEN(BK3)
+	                    JJ3 = JJ3 + ALLTRIM(STR(BK3(I))) + ','
+	                ENDFOR    
+	                KK3 = STUFF(JJ3,RAT(',',JJ3,1),1,'')              
+	                RLOCK(KK3,'S10')
+	                LL3 = RLOCK(KK3,'S10')
+	             ELSE
+	                LL3 = .T.   
+	             ENDIF  		  
+                 IF LL3 = .T. AND LEN(ALLTRIM(JJ3)) > 0  	 	    
+                    FOR I = 1 TO ALEN(BK3)
+                        SELECT S10                       
+                        GO BK3(I)
+                        SELECT S11
+                        REPLACE S11.F11 WITH S11.F11 + S10.F23		&&基本薪資扣款總計
+                        DO CASE 
+                    	   CASE S10.F24 = 'J'		&&勞保費
+                           	 	REPLACE S11.F24 WITH  S10.F26
+                           CASE S10.F24 = 'K'		&&健保費
+                           	 	REPLACE S11.F25 WITH  S10.F26
+                           CASE S10.F24 = 'L'		&&所得稅
+                           	 	REPLACE S11.F26 WITH  S10.F26
+                           CASE S10.F24 = 'M'		&&其他扣款
+                           	 	REPLACE S11.F27 WITH  S11.F27 + S10.F26
+                           CASE S10.F24 = 'N'		&&其他所得發放扣稅金額
+                           	    REPLACE S11.F28 WITH  S11.F28 + S10.F26
+                           CASE S10.F24 = 'O'		&&勞退自行提撥金額 
+                           	 	REPLACE S11.F32 WITH  S10.F26                                   	                
+                        ENDCASE
+                        REPLACE S10.F98 WITH 'Y'
+                        REPLACE S10.F99 WITH DTOC(DATE()) + ' ' + IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')                                   
+                    ENDFOR
+                 ENDIF
+                 *****B.缺勤扣款
+	    	     SELECT RECNO() FROM S10 WHERE ALLTRIM(S10.F01) = ALLTRIM(S10_1TEMP.F01) AND S10.F97 = 'B' AND S10.F98 <> 'Y' INTO ARRAY BK4              
+		         JJ4 = ''                
+		         IF _TALLY>0   
+	                FOR I = 1 TO ALEN(BK4)
+	                    JJ4 = JJ4 + ALLTRIM(STR(BK4(I))) + ','
+	                ENDFOR    
+	                KK4 = STUFF(JJ4,RAT(',',JJ4,1),1,'')              
+	                RLOCK(KK4,'S10')
+	                LL4 = RLOCK(KK4,'S10')
+	             ELSE
+	                LL4 = .T.   
+	             ENDIF  		  
+                 IF LL4 = .T. AND LEN(ALLTRIM(JJ4)) > 0  	 	    
+                    FOR I = 1 TO ALEN(BK4)  
+                        SELECT S10                     
+                        GO BK4(I)        
+                        SELECT S11               
+                        REPLACE S11.F29 WITH S11.F29 + S10.F16		&&缺勤扣款
+                        ***把缺勤之數值加入S0A.年度缺勤天數累計
+                        IF EMPTY(S10.F42)	 &&只加入非S18.請假作業之缺勤項目
+                           IF S10.F12 = 'A1' 	&&若是缺勤為年假時,則S05人事薪資基本檔已休年假加上缺勤數值
+                              SELECT S05
+                              SET ORDER TO S051
+                              SEEK S11.F02
+                              IF FOUND()
+                                 IF (S05.F11 - (S05.F12 + S10.F14)) < 0
+                 	             **先紀錄該年度剩餘的年假
+                                    IF ((S05.F12 + S10.F14) - S05.F11) <> S10.F14
+                                        SELECT S0A
+                                        SET ORDER TO S0A1
+                                        SEEK S10.F01 + 'A1' + DTOS(CTOD(HK + '/01')) + S10.F15 + SPACE(10)
+                                        IF FOUND() 
+                                           REPLACE S0A.F07 WITH S0A.F07 + (S05.F11 - S05.F12)
+                                        ELSE
+                                           SELECT S0A
+                                           APPEND BLANK
+                                           REPLACE S0A.F01 WITH S11.F02
+                                           REPLACE S0A.F02 WITH S11.F03
+                                           REPLACE S0A.F03 WITH S11.F04
+                                           REPLACE S0A.F04 WITH S11.F05
+                                           REPLACE S0A.F05 WITH S10.F12
+                                           REPLACE S0A.F06 WITH S10.F13
+                                           REPLACE S0A.F07 WITH (S05.F11 - S05.F12)
+                                           REPLACE S0A.F08 WITH CTOD(HK + '/01')
+                                           REPLACE S0A.F09 WITH S10.F15 
+                                           REPLACE S0A.F99 WITH DTOC(DATE()) + ' ' + IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+                                        ENDIF   
+                                     ENDIF
+*!*	                                     REPLACE S05.F12 WITH S05.F12 + S10.F14  
+                                     **再紀錄不足年假至下年度
+                                     SELECT S0A
+                                     SET ORDER TO S0A1
+                                     SEEK S10.F01 + 'A1' + ALLTRIM(ALLTRIM(STR(YEAR(CTOD(HK + '/01')) + 1)) + '0101') + S10.F15 + SPACE(10)
+                                     IF FOUND() 
+                                        REPLACE S0A.F07 WITH S0A.F07 + (S05.F12 - S05.F11)
+                                     ELSE
+                                        SELECT S0A
+                                        APPEND BLANK
+                                        REPLACE S0A.F01 WITH S11.F02
+                                        REPLACE S0A.F02 WITH S11.F03
+                                        REPLACE S0A.F03 WITH S11.F04
+                                        REPLACE S0A.F04 WITH S11.F05
+                                        REPLACE S0A.F05 WITH S10.F12
+                                        REPLACE S0A.F06 WITH S10.F13
+                                        REPLACE S0A.F07 WITH (S05.F12 - S05.F11)
+                                        REPLACE S0A.F08 WITH CTOD(ALLTRIM(STR(YEAR(CTOD(HK + '/01')) + 1)) + '/01/01')
+                                        REPLACE S0A.F09 WITH S10.F15 
+                                        REPLACE S0A.F99 WITH DTOC(DATE()) + ' ' + IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+                                     ENDIF  							
+                                 ENDIF                                                  
+                              ENDIF
+                              ******
+                           ELSE
+                              SELECT S0A
+                              SET ORDER TO S0A1
+                              SEEK S10.F01 + S10.F12 + DTOS(CTOD(HK + '/01')) + S10.F15 + SPACE(10)
+                              IF FOUND() 
+                                 REPLACE S0A.F07 WITH S0A.F07 + S10.F14 	
+                              ELSE
+                                 SELECT S0A
+                                 APPEND BLANK
+                                 REPLACE S0A.F01 WITH S11.F02
+                                 REPLACE S0A.F02 WITH S11.F03
+                                 REPLACE S0A.F03 WITH S11.F04
+                                 REPLACE S0A.F04 WITH S11.F05
+                                 REPLACE S0A.F05 WITH S10.F12
+                                 REPLACE S0A.F06 WITH S10.F13
+                                 REPLACE S0A.F07 WITH S10.F14
+                                 REPLACE S0A.F08 WITH CTOD(HK + '/01')
+                                 REPLACE S0A.F09 WITH S10.F15 
+                                 REPLACE S0A.F99 WITH DTOC(DATE()) + ' ' + IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')
+                              ENDIF     
+                           ENDIF
+                        ENDIF
+                        REPLACE S10.F98 WITH 'Y'
+                        REPLACE S10.F99 WITH DTOC(DATE()) + ' ' + IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')                                   
+                    ENDFOR
+                 ENDIF               
+                 *****本月實領薪資(不包括懲處扣款)
+                 SELECT S11
+                 REPLACE S11.F31 WITH (S11.F12 + S11.F13 + S11.F22 + S11.F23) - (S11.F08 + S11.F09 + S11.F24 + S11.F25 + S11.F26 + S11.F27 + S11.F28 + S11.F29 + S11.F30 + S11.F32)       
+                 ***E.懲處扣款    
+	    	     SELECT RECNO() FROM S10 WHERE ALLTRIM(S10.F01) = ALLTRIM(S10_1TEMP.F01) AND S10.F97 = 'E' AND S10.F98 <> 'Y' INTO ARRAY BK5              
+		         JJ5 = ''                
+		         IF _TALLY>0   
+	                FOR I = 1 TO ALEN(BK5)
+	                    JJ5 = JJ5+ALLTRIM(STR(BK5(I))) + ','
+	                ENDFOR    
+	                KK5 = STUFF(JJ5,RAT(',',JJ5,1),1,'')              
+	                RLOCK(KK5,'S10')
+	                LL5 = RLOCK(KK5,'S10')
+	             ELSE
+	                LL5 = .T.   
+	             ENDIF  		  
+                 IF LL5 = .T. AND LEN(ALLTRIM(JJ5)) > 0  	 	    
+                    FOR I = 1 TO ALEN(BK5)  
+                        SELECT S10                     
+                        GO BK5(I)  
+                        IF S10.F40 = 'T'			&&扣款底數若為T:薪資總額則計算扣款小計
+                       	   REPLACE S10.F30 WITH ROUND(S11.F12 * (S10.F41 / 100),0)
+                        ENDIF
+                        SELECT S10_E
+                        SET ORDER TO S10_E1	&& F01+DTOS(F27)+F28
+                        SEEK S10.F01 + DTOS(S10.F27) + S10.F28
+                        IF FOUND()
+                       	   REPLACE S10_E.F30 WITH S10.F30
+                        ENDIF 
+                        REPLACE S11.F30 WITH S11.F30 + S10.F30
+                        ***至S08 懲處作業中減掉懲處剩餘次數 
+                        SELECT S08
+                        SET ORDER TO S081		&& F01+DTOS(F05)+F06
+                        SEEK S10.F01 + DTOS(S10.F27) + S10.F28
+                		IF FOUND()
+                		   REPLACE S08.F12 WITH S08.F12 - 1		&&加上懲處剩餘次數
+                		ENDIF
+                        REPLACE S10.F98 WITH 'Y'
+                        REPLACE S10.F99 WITH DTOC(DATE()) + ' ' + IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')                                   
+                    ENDFOR
+                 ENDIF   
+                 *** 最後再減掉懲處金額  
+                 SELECT S11
+                 REPLACE S11.F31 WITH S11.F31 - S11.F30        	&&實發薪資  
+              ELSE
+                 DO FILE_IMPACT
+                 UNLOCK ALL
+                 RETURN          
+              ENDIF 
+ 	   	      SELECT S10
+     	   	  SET ORDER TO S101
+     	   	  SEEK S10_1TEMP.F01 + 'A'
+     	   	  IF FOUND()
+	     	     REPLACE S10.F98 WITH 'Y'
+	     	     REPLACE S10.F99 WITH DTOC(DATE()) + ' ' + IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')      	   	  	
+     	   	  ENDIF   
+              SELECT S10_1
+              SET ORDER TO S10_11
+              SEEK S10_1TEMP.F01
+              IF FOUND()
+     	   	     REPLACE S10_1.F98 WITH 'Y'
+     	   	     REPLACE S10_1.F99 WITH DTOC(DATE()) + ' ' + IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+     	   	  ENDIF      	   	    
+		      RELEASE ALL LIKE BK*  	 	 
+	       ENDIF
+	       SELECT S10_1TEMP
+	       SKIP
+	    ENDDO
+	    SELECT S10_1TEMP
+	    USE
+	    ANS = .T.
+     CATCH  
+        ANS = .F.
+     ENDTRY
+     RETURN ANS 

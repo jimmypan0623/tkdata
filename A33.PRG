@@ -1,0 +1,202 @@
+********A33.定義報表格式設定作業****
+IF !USED('A32')
+   SELE 0
+   USE A32 INDE A32
+ELSE
+   SELE A32
+ENDIF
+SET ORDER TO A321
+********************
+A33FORM=CREATEOBJECT("TKA33")
+A33FORM.SHOW       
+DEFINE CLASS TKA33 AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='A33.定義報表格式設定作業'
+  LEFT=INT_015*240
+  TOP=INT_015*230  
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*155
+  WIDTH=INT_015*250
+  FONTSIZE=INT_015*9
+  MAXBUTTON=.F.
+  MINBUTTON=.F.  
+  CONTROLBOX=.F.
+  CLOSABLE=.F.
+  BORDERSTYLE=1
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='TKA33'
+  ADD OBJECT LBLF01 AS LABEL WITH;
+      LEFT=INT_015*15,;
+      TOP=INT_015*15,;
+      AUTOSIZE=.T.,;
+      CAPTION='請選擇要定義之報表格式'    
+  ADD OBJECT COMBOBOX01 AS COMBOBOX WITH;    
+      LEFT=INT_015*160,;
+      TOP=INT_015*11,;       
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*70,;
+      FONTSIZE=INT_015*9,;
+      BOUNDCOLUMN=1,;
+      ROWSOURCETYPE=1,;
+      STYLE=2       
+  ADD OBJECT LBLF03 AS LABEL WITH;
+      LEFT=INT_015*15,;
+      TOP=INT_015*50,;
+      AUTOSIZE=.T.,;
+      CAPTION='請選擇要定義之列印方向'   
+  ADD OBJECT COMBOBOX03 AS COMBOBOX WITH;    
+      LEFT=INT_015*160,;
+      TOP=INT_015*46,;       
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*70,;
+      FONTSIZE=INT_015*9,;
+      BOUNDCOLUMN=1,;
+      ROWSOURCETYPE=1,;
+      STYLE=2                
+  ADD OBJECT LBLF02 AS LABEL WITH;
+      LEFT=INT_015*20,;
+      TOP=INT_015*85,;
+      AUTOSIZE=.T.,;
+      CAPTION=''          
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*40,;     
+      TOP=INT_015*115,;  
+      HEIGHT=INT_015*25,;    
+      WIDTH=INT_015*55,;
+      CAPTION='\<Y.確定',;
+      TOOLTIPTEXT='確認所選擇的鍵值!快速鍵->ALT+Y',;
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*150,;
+      TOP=INT_015*115,;
+      HEIGHT=INT_015*25,;    
+      WIDTH=INT_015*55,;
+      CAPTION='\<X.離開',;
+      TOOLTIPTEXT='離開此作業!快速鍵->ALT+X',;
+      NAME='CMND2'  
+  PROCEDURE COMBOBOX01.INIT
+     SELECT A32.F03 FROM A32 ORDER BY F03 GROUP BY A32.F03 INTO CURSOR A32A
+     SELECT A32A
+     GO TOP
+     WITH THIS 
+          .VISIBLE=.T.
+          .VALUE=1
+          DO WHILE !EOF()
+            .ADDITEM(ALLTRIM(A32A.F03))
+            SELECT A32A
+            SKIP
+          ENDDO
+     ENDWITH   
+     SELECT A32A
+     USE
+  ENDPROC       
+  PROCEDURE COMBOBOX03.INIT
+     WITH THIS 
+          .VISIBLE=.T.
+          .VALUE=1
+          .ADDITEM('直式')
+		  .ADDITEM('橫式')
+     ENDWITH   
+  ENDPROC     
+ PROCEDURE INIT 
+     THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')
+     THISFORM.SETALL('FONTSIZE',INT_015*9,'COMMANDBUTTON')  
+     THISFORM.COMBOBOX01.SETFOCUS
+ ENDPROC       
+ PROCEDURE CMND1.CLICK
+ 	 IF FILE(ALLTRIM(INT_116) + 'TEMP.frx') = .T.
+	 	 CK = ''
+	 	 THISFORM.COMBOBOX01.ENABLED=.F.
+	 	 THISFORM.COMBOBOX03.ENABLED=.F.
+	 	 THISFORM.CMND1.ENABLED=.F.
+	 	 THISFORM.CMND2.ENABLED=.F.
+	 	 SELECT 0
+	 	 SELECT A32.* FROM A32 WHERE ALLTRIM(A32.F03) = ALLTRIM(THISFORM.COMBOBOX01.DISPLAYVALUE) AND A32.F04 = THISFORM.COMBOBOX03.VALUE ORDER BY A32.F01,A32.F02 INTO CURSOR A32_TEMP
+	 	 SELECT A32
+	 	 IF _TALLY > 0 
+		    SELECT 0
+		    USE ALLTRIM(INT_116) + 'TEMP.frx' EXCLUSIVE 
+		    FORMAT_NO = SYS(1037,1) 
+	  	    = FORMAT_NO   	 
+	  	    IF FORMAT_NO = '1'
+		  	   SELECT TEMP
+		  	   GO TOP
+			   SELECT 0
+			   CREATE CURSOR REPORT_TEMP (EXPR1 M(10),TAG1 M(10),TAG2 M(10))
+			   SELECT REPORT_TEMP 
+			   APPEND BLANK 
+			   REPLACE REPORT_TEMP.EXPR1 WITH TEMP.EXPR 
+			   REPLACE REPORT_TEMP.TAG1 WITH TEMP.TAG
+			   REPLACE REPORT_TEMP.TAG2 WITH TEMP.TAG2 
+			   SELECT TEMP
+			   USE
+	 	       SELECT A32_TEMP
+	 	       GO TOP
+	 	       DO WHILE !EOF()
+	 	          ReportFileName = ALLTRIM(A32_TEMP.f02)
+		          IF FILE(ALLTRIM(INT_116) + ReportFileName + '.frx') = .T.
+		             THISFORM.LBLF02.CAPTION = A32_TEMP.F01 + ALLTRIM(A32_TEMP.F05)
+		   	  	     TRY
+					    SELECT 0
+					    USE ALLTRIM(INT_116) + ReportFileName + '.frx' EXCLUSIVE 
+					    GO TOP
+					    REPLACE &ReportFileName..EXPR WITH REPORT_TEMP.EXPR1 
+					    REPLACE &ReportFileName..TAG WITH REPORT_TEMP.TAG1
+					    REPLACE &ReportFileName..TAG2 WITH REPORT_TEMP.TAG2
+					    SELECT &ReportFileName
+					    USE   
+					 CATCH
+					     CK = '1'
+					    =MESSAGEBOX(ALLTRIM(THISFORM.LBLF02.CAPTION) + '  報表已被開啟,請關閉使用中之報表後再做格式設定!',0+64,'提示訊息視窗')				    
+				     ENDTRY
+			      ENDIF
+			      SELECT A32_TEMP
+			      SKIP	  	 	       
+	 	       ENDDO
+	 	       SELECT REPORT_TEMP 
+	 	       USE
+	 	       THISFORM.LBLF02.CAPTION = ''
+	 	       IF EMPTY(CK)
+	 	      	  =MESSAGEBOX('完成報表格式之設定!',0+64,'提示訊息視窗')
+	 	       ENDIF
+	 	    ELSE
+	 	       SELECT TEMP
+	 	       USE
+	 	    ENDIF   
+	 	 ELSE
+	 	   =MESSAGEBOX('系統中無使用此格式之報表!',0+64,'提示訊息視窗')
+	 	 ENDIF
+	 	 SELECT A32_TEMP
+	 	 USE
+	 ELSE
+	   =MESSAGEBOX('TEMP.FRX報表遺失無法執行此作業,請通知系統管理人員!',0+64,'提示訊息視窗')
+	 ENDIF	 
+ 	 THISFORM.COMBOBOX01.ENABLED=.T.
+ 	 THISFORM.COMBOBOX03.ENABLED=.T.
+ 	 THISFORM.CMND1.ENABLED=.T.
+ 	 THISFORM.CMND2.ENABLED=.T. 	 
+     THISFORM.CMND2.SETFOCUS
+ ENDPROC      
+ **************************      
+ PROCEDURE CMND2.CLICK       
+     IF !USED('A05')
+        SELECT 0
+        USE A05
+     ELSE
+        SELECT A05
+     ENDIF
+     SET ORDER TO 1
+     SEEK sys_oper+'A33'
+     IF FOUND()
+        DELETE 
+     ENDIF      
+     THISFORM.RELEASE 
+     RETURN  
+ ENDPROC      
+ENDDEFINE
+
+
+
+ 

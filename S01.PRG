@@ -1,0 +1,1320 @@
+**程式名稱:S01.薪資資料設定
+SET EXCL OFF
+CLOSE ALL
+CLEAR 
+AREA1='S01_1'
+AREA1='S01_2'
+FLG='0'
+FCH=''
+CHK=''
+R=0
+IF !USED('A01')	&&操作人員資料設定
+   SELE 0
+   USE A01
+ELSE 
+   SELE A01
+ENDIF
+SET ORDER TO A01      
+IF !USED('A02')	&&權限設定檔
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK SYS_OPER+'S01'          
+IF !USED('A14')	&&部門設定檔
+   SELE 0
+   USE A14
+ELSE 
+   SELE A14
+ENDIF
+SET ORDER TO A141  
+SET FILTER TO LEN(ALLTRIM(F01))=4  
+GO TOP  
+IF !USED('S05')	&&人事薪資基本檔
+   SELE 0
+   USE S05 
+ELSE
+   SELE S05
+ENDIF
+SET ORDER TO S053      
+IF !USED('S01')	&&薪資資料設定
+   SELE 0
+   USE S01 
+ELSE
+   SELE S01
+ENDIF
+SET ORDER TO S011
+***
+CREATE CURSOR S01_2 (F01 C(1),F02 C(4),F07 C(30),TEMP C(1),F99 C(17))	&&為避免GRID欄位出現其他資料故增加TEMP
+INDE ON F01 TAG S01_21
+SET ORDER TO S01_21
+*****部門名稱-A
+SELECT F01,F02,F07 FROM A14 WHERE LEN(ALLTRIM(F01))=4 ORDER BY F01 INTO CURSOR A14_TEMP
+SELECT A14_TEMP
+GO TOP
+DO WHILE !EOF()
+       SELECT S01_2
+       APPEND BLANK 
+       REPLACE F01 WITH 'A'
+       REPLACE F02 WITH A14_TEMP.F01
+       REPLACE F07 WITH A14_TEMP.F02
+       REPLACE F99 WITH A14_TEMP.F07
+       SELECT A14_TEMP
+       SKIP
+ENDDO
+SELECT A14_TEMP
+USE
+*****職務名稱-D
+SELECT F07,F99 FROM S01 ORDER BY F07 WHERE F01='D' INTO CURSOR S01_D
+SELE S01_D
+GO TOP
+DO WHILE !EOF()
+       SELECT S01_2
+       APPEND BLANK 
+       REPLACE F01 WITH 'D'
+       REPLACE F07 WITH S01_D.F07
+       REPLACE F99 WITH S01_D.F99
+       SELECT S01_D
+       SKIP
+ENDDO
+SELECT S01_D
+USE
+*****職務等級-E
+SELECT F07,F99 FROM S01 ORDER BY F07 WHERE F01='E' INTO CURSOR S01_E
+SELE S01_E
+GO TOP
+DO WHILE !EOF()
+       SELECT S01_2
+       APPEND BLANK 
+       REPLACE F01 WITH 'E'
+       REPLACE F07 WITH S01_E.F07
+       REPLACE F99 WITH S01_E.F99
+       SELECT S01_E
+       SKIP
+ENDDO
+SELECT S01_E
+USE
+******薪資項目名稱-F
+SELECT F07,F99 FROM S01 ORDER BY F07 WHERE F01='F' INTO CURSOR S01_F
+SELE S01_F
+GO TOP
+DO WHILE !EOF()
+       SELECT S01_2
+       APPEND BLANK 
+       REPLACE F01 WITH 'F'
+       REPLACE F07 WITH S01_F.F07
+       REPLACE F99 WITH S01_F.F99
+       SELECT S01_F
+       SKIP
+ENDDO
+SELECT S01_F
+USE
+*****其他所得發放項目-G
+SELECT F07,F99 FROM S01 ORDER BY F07 WHERE F01='G' INTO CURSOR S01_G
+SELE S01_G
+GO TOP
+DO WHILE !EOF()
+       SELECT S01_2
+       APPEND BLANK 
+       REPLACE F01 WITH 'G'
+       REPLACE F07 WITH S01_G.F07
+       REPLACE F99 WITH S01_G.F99
+       SELECT S01_G
+       SKIP
+ENDDO
+SELECT S01_G
+USE 
+*****撥款銀行-H
+SELECT F07,F99 FROM S01 ORDER BY F07 WHERE F01='H' INTO CURSOR S01_H
+SELE S01_H
+GO TOP
+DO WHILE !EOF()
+       SELECT S01_2
+       APPEND BLANK 
+       REPLACE F01 WITH 'H'
+       REPLACE F07 WITH S01_H.F07
+       REPLACE F99 WITH S01_H.F99
+       SELECT S01_H
+       SKIP
+ENDDO
+SELECT S01_H
+USE
+********調薪說明項目-I
+SELECT F07,F99 FROM S01 ORDER BY F07 WHERE F01='I' INTO CURSOR S01_I
+SELE S01_I
+GO TOP
+DO WHILE !EOF()
+       SELECT S01_2
+       APPEND BLANK 
+       REPLACE F01 WITH 'I'
+       REPLACE F07 WITH S01_I.F07
+       REPLACE F99 WITH S01_I.F99
+       SELECT S01_I
+       SKIP
+ENDDO
+SELECT S01_I
+USE
+********薪資條備註-J
+SELECT F01,F07,F99 FROM S01 ORDER BY F07 WHERE F01='J' INTO CURSOR S01_J
+SELE S01_J
+GO TOP
+DO WHILE !EOF()
+       SELECT S01_2
+       APPEND BLANK 
+       REPLACE F01 WITH 'J'
+       REPLACE F07 WITH S01_J.F07
+       REPLACE F99 WITH S01_J.F99
+       SELECT S01_J
+       SKIP
+ENDDO
+SELECT S01_J
+USE
+*****國內外各縣市清單-Y
+SELECT F07,F99 FROM S01 ORDER BY F07 WHERE F01='Y' INTO CURSOR S01_Y
+SELE S01_Y
+GO TOP
+DO WHILE !EOF()
+       SELECT S01_2
+       APPEND BLANK 
+       REPLACE F01 WITH 'Y'
+       REPLACE F07 WITH S01_Y.F07
+       REPLACE F99 WITH S01_Y.F99
+       SELECT S01_Y
+       SKIP
+ENDDO
+SELECT S01_Y
+USE
+***
+CREATE CURSOR S01_1 (F01 C(1),F02 C(30)) 
+INDE ON F01 TAG S01_11
+SELECT S01_1
+APPEND BLANK
+REPLACE F01 WITH 'A'
+REPLACE F02 WITH '部門名稱設定'
+APPEND BLANK
+REPLACE F01 WITH 'D'
+REPLACE F02 WITH '職務名稱設定'
+APPEND BLANK
+REPLACE F01 WITH 'E'
+REPLACE F02 WITH '職務等級設定'
+APPEND BLANK
+REPLACE F01 WITH 'F'
+REPLACE F02 WITH '薪資項目名稱設定'
+APPEND BLANK
+REPLACE F01 WITH 'G'
+REPLACE F02 WITH '其他所得發放項目設定'
+APPEND BLANK
+REPLACE F01 WITH 'H'
+REPLACE F02 WITH '撥款銀行名稱設定'
+APPEND BLANK
+REPLACE F01 WITH 'I'
+REPLACE F02 WITH '調薪說明項目設定'
+APPEND BLANK
+REPLACE F01 WITH 'J'
+REPLACE F02 WITH '薪資條備註設定'
+APPEND BLANK
+REPLACE F01 WITH 'Y'
+REPLACE F02 WITH '國內外各縣市清單'
+SELECT S01_1
+SET ORDER TO S01_11
+GO TOP
+********
+S01FORM=CREATEOBJECT("TKS01")
+S01FORM.SHOW  
+DEFINE CLASS TKS01 AS FORM
+  CAPTION='S01.薪資資料設定'
+*!*	  AUTOCENTER=.T.
+  CONTROLBOX=.F.
+  BORDERSTYLE=1
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  CONTROLCOUNT=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WIDTH=INT_015*791
+  WINDOWTYPE=1
+  NAME='TKS01'
+  ADD OBJECT SHAPE1 AS SHAPE1 WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT SHAPE2 AS SHAPE2 WITH;
+      AUTOCENTER=.F.
+  ADD OBJECT SHAPE3 AS SHAPE3 WITH;
+      AUTOCENTER=.T.  
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      TOP=INT_015*10,;
+      HEIGHT=INT_015*405,;
+      COLUMNCOUNT=1,;            
+      RECORDSOURCE='S01_1',;      
+      COLUMN1.NAME='COLUMN1'
+  ADD OBJECT GRID2 AS GRID2 WITH;  
+      COLUMNCOUNT=2,;              
+      RECORDSOURCE='S01_2',;
+      LINKMASTER='S01_1',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='S01_21',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'       
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      AUTOSIZE=.T.              
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+      AUTOSIZE=.T.
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*100,;
+      LEFT=INT_015*400   
+  ADD OBJECT ED_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*460,;
+      LEFT=INT_015*56,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*42,;      
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<E.修改',;
+      NAME='ED_BOTT'            
+   ***   
+  ADD OBJECT LBLF01 AS LABEL WITH;
+      VISIBLE=.T.,;
+      LEFT=INT_015*250,;
+      TOP=INT_015*50,;
+      WIDTH=INT_015*50,;
+      CAPTION='部門編號'      
+  ADD OBJECT TXTF01 AS TEXTBOX WITH;
+      VISIBLE=.T.,;
+      LEFT=INT_015*301,;
+      TOP=INT_015*44,;
+      WIDTH=INT_015*45,;
+      HEIGHT=INT_015*25,;
+      MAXLENGTH=4        
+  ADD OBJECT LBLF02 AS LABEL WITH;
+      VISIBLE=.T.,;
+      LEFT=INT_015*250,;
+      TOP=INT_015*75,;
+      WIDTH=INT_015*50,;
+      CAPTION='部門名稱'       
+  ADD OBJECT TXTF02 AS TEXTBOX WITH;
+      VISIBLE=.T.,;
+      LEFT=INT_015*301,;
+      TOP=INT_015*69,;
+      WIDTH=INT_015*70,;
+      HEIGHT=INT_015*25,;
+      MAXLENGTH=8                 
+  ADD OBJECT LBLF99 AS LABEL WITH;
+      VISIBLE=.T.,;
+      LEFT=INT_015*250,;
+      TOP=INT_015*140,;
+      WIDTH=INT_015*50,;
+      CAPTION='安全資料'         
+  ADD OBJECT LBLF991 AS LABEL WITH;
+      VISIBLE=.T.,;
+      LEFT=INT_015*301,;
+      TOP=INT_015*140,;
+      AUTOSIZE=.T.,;
+      CAPTION=''       
+  *****                                   
+  PROC INIT  
+       THISFORM.KEY_LIST.VISIBLE=.F.
+       THISFORM.SHRGROUP.VISIBLE=.F.
+       THISFORM.SHRGROUP.ENABLED=.F.
+       THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.  
+       THISFORM.SETALL('HEIGHT',INT_015*25,'TEXTBOX')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'TEXTBOX')
+       THISFORM.SETALL('HEIGHT',INT_015*17,'LABEL')       
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'HEADER')  
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID2.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+       THISFORM.GRID2.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID2.SETALL('FONTSIZE',INT_015*9,'HEADER')                  
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='設定項目'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='S01_1.F02'
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*185       
+       THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='部門編號'
+       THISFORM.GRID2.COLUMN2.HEADER1.CAPTION='部門名稱'
+       THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S01_2.F02'
+       THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S01_2.F07'
+       THISFORM.GRID2.COLUMN1.WIDTH=INT_015*60
+       THISFORM.GRID2.COLUMN2.WIDTH=INT_015*200
+       THISFORM.GRID1.READONLY=.T.       
+       THISFORM.GRID2.READONLY=.T. 
+       THISFORM.GRID1.SETFOCUS
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.EDIT_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.   
+       THISFORM.ED_BOTT.ENABLED=.F.    
+       THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)       
+       JK=''
+  ENDPROC
+  *********
+  PROC GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex
+       AREA1='S01_1'
+       THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+       THISFORM.ED_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","","COLUMN") 
+       DO CASE
+             CASE S01_1.F01='A'
+            		THISFORM.LBLF01.LEFT=INT_015*250
+            		THISFORM.LBLF01.WIDTH=INT_015*50
+            		THISFORM.LBLF01.CAPTION='部門編號' 
+            		THISFORM.TXTF01.LEFT=INT_015*301
+            	        THISFORM.TXTF01.WIDTH=INT_015*45
+            	        THISFORM.TXTF01.MAXLENGTH=4  
+           		THISFORM.LBLF02.VISIBLE=.T.
+		        THISFORM.TXTF02.VISIBLE=.T.
+		        THISFORM.TXTF01.VALUE=S01_2.F02
+		        THISFORM.TXTF02.VALUE=S01_2.F07		        
+		        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='部門編號'
+		        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION='部門名稱'
+		        THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S01_2.F02'
+		        THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S01_2.F07'
+		        THISFORM.GRID2.COLUMN1.WIDTH=INT_015*60
+		        THISFORM.GRID2.COLUMN2.WIDTH=INT_015*200
+      	     CASE S01_1.F01='D'
+            		THISFORM.LBLF01.LEFT=INT_015*250
+            		THISFORM.LBLF01.WIDTH=INT_015*50	                
+	                THISFORM.LBLF01.CAPTION='職務名稱' 
+            		THISFORM.TXTF01.LEFT=INT_015*301
+            	        THISFORM.TXTF01.WIDTH=INT_015*150
+            	        THISFORM.TXTF01.MAXLENGTH=30  
+	                THISFORM.LBLF02.VISIBLE=.F.
+		        THISFORM.TXTF02.VISIBLE=.F.       
+		        THISFORM.TXTF01.VALUE=S01_2.F07		        
+		        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='職務名稱'
+		        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION=''
+		        THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S01_2.F07'
+		        THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S01_2.TEMP'
+	                THISFORM.GRID2.COLUMN1.WIDTH=INT_015*200
+	                THISFORM.GRID2.COLUMN2.WIDTH=INT_015*200         	     
+      	     CASE S01_1.F01='E'
+            		THISFORM.LBLF01.LEFT=INT_015*250
+            		THISFORM.LBLF01.WIDTH=INT_015*50	                
+	                THISFORM.LBLF01.CAPTION='職務等級' 
+            		THISFORM.TXTF01.LEFT=INT_015*301
+            	        THISFORM.TXTF01.WIDTH=INT_015*150
+            	        THISFORM.TXTF01.MAXLENGTH=30  
+	                THISFORM.LBLF02.VISIBLE=.F.
+		        THISFORM.TXTF02.VISIBLE=.F.       
+		        THISFORM.TXTF01.VALUE=S01_2.F07
+		        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='職務等級'
+		        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION=''
+		        THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S01_2.F07'
+		        THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S01_2.TEMP'
+	                THISFORM.GRID2.COLUMN1.WIDTH=INT_015*200
+	                THISFORM.GRID2.COLUMN2.WIDTH=INT_015*200          	     
+      	     CASE S01_1.F01='F'
+            		THISFORM.LBLF01.LEFT=INT_015*250
+            		THISFORM.LBLF01.WIDTH=INT_015*75	                
+	                THISFORM.LBLF01.CAPTION='薪資項目名稱' 
+            		THISFORM.TXTF01.LEFT=INT_015*326
+            	        THISFORM.TXTF01.WIDTH=INT_015*150
+            	        THISFORM.TXTF01.MAXLENGTH=30  
+	                THISFORM.LBLF02.VISIBLE=.F.
+		        THISFORM.TXTF02.VISIBLE=.F.       
+		        THISFORM.TXTF01.VALUE=S01_2.F07
+		        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='薪資項目名稱'
+		        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION=''
+		        THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S01_2.F07'
+		        THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S01_2.TEMP'
+	                THISFORM.GRID2.COLUMN1.WIDTH=INT_015*200
+	                THISFORM.GRID2.COLUMN2.WIDTH=INT_015*200          	     
+      	     CASE S01_1.F01='G'
+            		THISFORM.LBLF01.LEFT=INT_015*250
+            		THISFORM.LBLF01.WIDTH=INT_015*95	                
+	                THISFORM.LBLF01.CAPTION='其他所得發放項目' 
+            		THISFORM.TXTF01.LEFT=INT_015*346
+            	        THISFORM.TXTF01.WIDTH=INT_015*150
+            	        THISFORM.TXTF01.MAXLENGTH=30  
+	                THISFORM.LBLF02.VISIBLE=.F.
+		        THISFORM.TXTF02.VISIBLE=.F.       
+		        THISFORM.TXTF01.VALUE=S01_2.F07
+		        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='其他所得發放項目'
+		        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION=''
+		        THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S01_2.F07'
+		        THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S01_2.TEMP'
+	                THISFORM.GRID2.COLUMN1.WIDTH=INT_015*200
+	                THISFORM.GRID2.COLUMN2.WIDTH=INT_015*200          	     
+      	     CASE S01_1.F01='H'
+            		THISFORM.LBLF01.LEFT=INT_015*250
+            		THISFORM.LBLF01.WIDTH=INT_015*75                
+	                THISFORM.LBLF01.CAPTION='撥款銀行名稱' 
+            		THISFORM.TXTF01.LEFT=INT_015*326
+            	        THISFORM.TXTF01.WIDTH=INT_015*150
+            	        THISFORM.TXTF01.MAXLENGTH=30  
+	                THISFORM.LBLF02.VISIBLE=.F.
+		        THISFORM.TXTF02.VISIBLE=.F.     
+		        THISFORM.TXTF01.VALUE=S01_2.F07  
+		        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='撥款銀行名稱'
+		        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION=''
+		        THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S01_2.F07'
+		        THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S01_2.TEMP'
+	                THISFORM.GRID2.COLUMN1.WIDTH=INT_015*200
+	                THISFORM.GRID2.COLUMN2.WIDTH=INT_015*200          	     
+      	     CASE S01_1.F01='I'
+            		THISFORM.LBLF01.LEFT=INT_015*250
+            		THISFORM.LBLF01.WIDTH=INT_015*50	                
+	                THISFORM.LBLF01.CAPTION='調薪說明' 
+            		THISFORM.TXTF01.LEFT=INT_015*301
+            	        THISFORM.TXTF01.WIDTH=INT_015*150
+            	        THISFORM.TXTF01.MAXLENGTH=30  
+	                THISFORM.LBLF02.VISIBLE=.F.
+		        THISFORM.TXTF02.VISIBLE=.F.     
+		        THISFORM.TXTF01.VALUE=S01_2.F07  
+		        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='調薪說明'
+		        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION=''
+		        THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S01_2.F07'
+		        THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S01_2.TEMP'
+	                THISFORM.GRID2.COLUMN1.WIDTH=INT_015*200
+	                THISFORM.GRID2.COLUMN2.WIDTH=INT_015*200          	     
+      	     CASE S01_1.F01='J'
+            		THISFORM.LBLF01.LEFT=INT_015*250
+            		THISFORM.LBLF01.WIDTH=INT_015*65                
+	                THISFORM.LBLF01.CAPTION='薪水條備註' 
+            		THISFORM.TXTF01.LEFT=INT_015*316
+            	        THISFORM.TXTF01.WIDTH=INT_015*350
+            	        THISFORM.TXTF01.MAXLENGTH=40  
+	                THISFORM.LBLF02.VISIBLE=.F.
+		        THISFORM.TXTF02.VISIBLE=.F.       
+		        THISFORM.TXTF01.VALUE=S01_2.F07
+		        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='薪水條備註'
+		        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION=''
+		        THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S01_2.F07'
+		        THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S01_2.TEMP'
+	                THISFORM.GRID2.COLUMN1.WIDTH=INT_015*400
+	                THISFORM.GRID2.COLUMN2.WIDTH=INT_015*50     
+	                THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.) AND IIF(INDEXSEEK('J',.F.,'S01','S011'),.F.,.T.)	  
+      	     CASE S01_1.F01='Y'
+            		THISFORM.LBLF01.LEFT=INT_015*250
+            		THISFORM.LBLF01.WIDTH=INT_015*75                
+	                THISFORM.LBLF01.CAPTION='縣市名稱' 
+            		THISFORM.TXTF01.LEFT=INT_015*301
+            	    THISFORM.TXTF01.WIDTH=INT_015*150
+            	    THISFORM.TXTF01.MAXLENGTH=30  
+	                THISFORM.LBLF02.VISIBLE=.F.
+			        THISFORM.TXTF02.VISIBLE=.F.     
+			        THISFORM.TXTF01.VALUE=S01_2.F07  
+			        THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='縣市名稱'
+			        THISFORM.GRID2.COLUMN2.HEADER1.CAPTION=''
+			        THISFORM.GRID2.COLUMN1.CONTROLSOURCE='S01_2.F07'
+			        THISFORM.GRID2.COLUMN2.CONTROLSOURCE='S01_2.TEMP'
+	                THISFORM.GRID2.COLUMN1.WIDTH=INT_015*200
+	                THISFORM.GRID2.COLUMN2.WIDTH=INT_015*200  	                   
+       ENDCASE
+       THISFORM.LBLF991.CAPTION=S01_2.F99
+       FCH='GRID1'
+       CHK=''
+*!*	       THISFORM.REFRESH
+  ENDPROC   
+ ****   
+   PROC GRID1.MOUSEENTER
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord
+         IF THISFORM.SHRGROUP.VISIBLE=.F. 
+             THISFORM.GRID1.ENABLED=.T. 
+         ELSE    
+             THISFORM.GRID1.ENABLED=.F.                         
+         ENDIF    
+ ENDPROC
+*********
+  PROC GRID2.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex   
+       AREA2='S01_2'
+       R=RECNO('&AREA1')
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+       THISFORM.GRID1.ENABLED=.F. 
+       IF S01_1.F01='A'
+          THISFORM.TXTF01.VALUE=S01_2.F02
+          THISFORM.TXTF02.VALUE=S01_2.F07
+       ELSE
+          THISFORM.TXTF01.VALUE=S01_2.F07
+       ENDIF   
+       THISFORM.LBLF991.CAPTION=S01_2.F99
+       IF THISFORM.GRID2.ACTIVEROW=0 
+           THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+           THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+           THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+           THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.       
+           THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+           THISFORM.ED_BOTT.ENABLED=.F.
+           THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+       ELSE
+           THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+           THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+           THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+           THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.            
+           THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) 
+           THISFORM.ED_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) 
+           THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.) 
+       ENDIF
+       IF S01_1.F01='J'
+          THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.) AND S01_2.F01<>'J'
+       ELSE
+          THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)   
+       ENDIF   
+       FCH='GRID2'
+       JK=THIS.COLUMN1.HEADER1.CAPTION
+       CHK=THISFORM.TXTF01.VALUE        
+  ENDPROC         
+  ********** 
+  PROCEDURE ORPGROUP.NEW_BOTT.CLICK  
+       R=RECNO('&AREA1')
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")  
+       THISFORM.GRID1.ENABLED=.F.  
+       THISFORM.GRID2.ENABLED=.F.    
+       THISFORM.ED_BOTT.ENABLED=.F.           
+       THISFORM.SETALL('READONLY',.F.,'TEXTBOX')         	         	           	                	       
+       THISFORM.TXTF01.VALUE=''
+       THISFORM.TXTF02.VALUE=''
+       THISFORM.LBLF991.CAPTION=''
+       THISFORM.TXTF01.SETFOCUS
+  ENDPROC  
+************
+  PROCEDURE SHRGROUP.SHURE1_BOTT.CLICK
+    DO CASE 
+  	  CASE S01_1.F01='A'
+		    IF EMPTY(THISFORM.TXTF01.VALUE)
+		       =MESSAGEBOX('部門編號不得空白!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF    
+		    IF LEN(ALLTRIM(THISFORM.TXTF01.VALUE))<4
+		       =MESSAGEBOX('部門編號不得少於四碼!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF   		  
+		    IF INDEXSEEK(THISFORM.TXTF01.VALUE,.F.,'A14','A141')=.T.
+		       =MESSAGEBOX('此部門編號已存在,請重新輸入!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF   		      	
+		    IF EMPTY(THISFORM.TXTF02.VALUE)
+		       =MESSAGEBOX('部門名稱不得空白!',0+64,'提示視窗')
+		       THISFORM.TXTF02.SETFOCUS
+		       RETURN
+		    ENDIF   		     
+		    SELECT  A14
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F02 WITH THISFORM.TXTF02.VALUE
+		        REPLACE F07 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF
+		    SELECT  S01_2
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'A'
+		        REPLACE F02 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F07 WITH THISFORM.TXTF02.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF		    
+  	  CASE S01_1.F01='D'
+		    IF EMPTY(THISFORM.TXTF01.VALUE)
+		       =MESSAGEBOX('職務名稱不得空白!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF    		  
+         	    IF INDEXSEEK('D'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                         =MESSAGEBOX('此職務名稱已存在,請重新輸入!',0+64,'提示視窗')
+      		         THISFORM.TXTF01.SETFOCUS
+                         RETURN
+                    ENDIF   		      	 		     
+		    SELECT  S01
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'D'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF
+		    SELECT  S01_2
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'D'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF	  	  
+  	  CASE S01_1.F01='E'
+		    IF EMPTY(THISFORM.TXTF01.VALUE)
+		       =MESSAGEBOX('職務等級不得空白!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF    		  
+         	    IF INDEXSEEK('E'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                         =MESSAGEBOX('此職務等級已存在,請重新輸入!',0+64,'提示視窗')
+      		         THISFORM.TXTF01.SETFOCUS
+                         RETURN
+                    ENDIF   		      	 		     
+		    SELECT  S01
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'E'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF
+		    SELECT  S01_2
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'E'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF	    	  
+  	  CASE S01_1.F01='F'
+		    IF EMPTY(THISFORM.TXTF01.VALUE)
+		       =MESSAGEBOX('薪資項目名稱不得空白!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF    		  
+         	    IF INDEXSEEK('F'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                         =MESSAGEBOX('此薪資項目名稱已存在,請重新輸入!',0+64,'提示視窗')
+      		         THISFORM.TXTF01.SETFOCUS
+                         RETURN
+                    ENDIF   		      	 		     
+		    SELECT  S01
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'F'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF
+		    SELECT  S01_2
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'F'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF	    	  
+  	  CASE S01_1.F01='G'
+		    IF EMPTY(THISFORM.TXTF01.VALUE)
+		       =MESSAGEBOX('其他所得發放項目不得空白!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF    		  
+         	    IF INDEXSEEK('G'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                         =MESSAGEBOX('此其他所得發放項目已存在,請重新輸入!',0+64,'提示視窗')
+      		         THISFORM.TXTF01.SETFOCUS
+                         RETURN
+                    ENDIF   		      	 		     
+		    SELECT  S01
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'G'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF
+		    SELECT  S01_2
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'G'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF	    	  
+  	  CASE S01_1.F01='H'
+		    IF EMPTY(THISFORM.TXTF01.VALUE)
+		       =MESSAGEBOX('撥款銀行名稱不得空白!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF    		  
+         	    IF INDEXSEEK('H'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                         =MESSAGEBOX('此撥款銀行名稱已存在,請重新輸入!',0+64,'提示視窗')
+      		         THISFORM.TXTF01.SETFOCUS
+                         RETURN
+                    ENDIF   		      	 		     
+		    SELECT  S01
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'H'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF
+		    SELECT  S01_2
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'H'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF	    	  
+  	  CASE S01_1.F01='I'
+		    IF EMPTY(THISFORM.TXTF01.VALUE)
+		       =MESSAGEBOX('調薪說明項目不得空白!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF    		  
+         	    IF INDEXSEEK('I'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                         =MESSAGEBOX('此調薪說明項目已存在,請重新輸入!',0+64,'提示視窗')
+      		         THISFORM.TXTF01.SETFOCUS
+                         RETURN
+                    ENDIF   		      	 		     
+		    SELECT  S01
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'I'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF
+		    SELECT  S01_2
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'I'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF	    	  
+  	  CASE S01_1.F01='J'
+		    IF EMPTY(THISFORM.TXTF01.VALUE)
+		       =MESSAGEBOX('薪資條備註不得空白!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF    		  		      	 		     
+		    SELECT  S01
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'J'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF
+		    SELECT  S01_2
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'J'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF	
+  	  CASE S01_1.F01='Y'
+		    IF EMPTY(THISFORM.TXTF01.VALUE)
+		       =MESSAGEBOX('縣市名稱名稱不得空白!',0+64,'提示視窗')
+		       THISFORM.TXTF01.SETFOCUS
+		       RETURN
+		    ENDIF    		  
+         	IF INDEXSEEK('Y'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+               =MESSAGEBOX('此縣市行名稱已存在,請重新輸入!',0+64,'提示視窗')
+      		   THISFORM.TXTF01.SETFOCUS
+               RETURN
+            ENDIF   		      	 		     
+		    SELECT S01
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'Y'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F15 WITH 0
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF
+		    SELECT  S01_2
+		    APPEND BLANK
+		    LOCK()	 
+		    IF RLOCK()     
+		        REPLACE F01 WITH 'Y'
+		        REPLACE F07 WITH THISFORM.TXTF01.VALUE
+		        REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		    ENDIF		        	  
+    ENDCASE
+    UNLOCK
+    IF   S01_1.F01<>'J'
+   	  THISFORM.ORPGROUP.NEW_BOTT.CLICK 
+    ELSE
+    	   THISFORM.SHRGROUP.ABANDON_BOTT.CLICK 
+    ENDIF      
+    THISFORM.REFRESH            
+  ENDPROC
+************  
+  PROCEDURE ED_BOTT.CLICK
+     SELECT S01_2
+     R=RECNO('&AREA1')
+     THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+     THISFORM.GRID1.ENABLED=.F.   
+     THISFORM.GRID2.ENABLED=.F. 
+     THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+     THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+     THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+     THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.      
+     THISFORM.ED_BOTT.ENABLED=.F.
+     THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.
+     THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+     THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+     THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+     THISFORM.ORPGROUP.ESC_BOTT.ENABLED=.F.
+     THISFORM.SHRGROUP.ENABLED=.T.
+     THISFORM.SHRGROUP.VISIBLE=.T.
+     THISFORM.SHRGROUP.SHURE1_BOTT.ENABLED=.F.
+     THISFORM.SHRGROUP.SHURE1_BOTT.VISIBLE=.F.
+     THISFORM.SHRGROUP.SHURE2_BOTT.ENABLED=.T.
+     THISFORM.SHRGROUP.SHURE2_BOTT.VISIBLE=.T.  
+     THISFORM.SHRGROUP.ABANDON_BOTT.VISIBLE=.T.
+     THISFORM.SHRGROUP.FINISH_BOTT.ENABLED=.F.
+     THISFORM.SHRGROUP.FINISH_BOTT.VISIBLE=.F.   
+     THISFORM.SETALL('READONLY',.F.,'TEXTBOX')   
+     THISFORM.LBLF991.CAPTION=''     
+     THISFORM.TXTF01.SETFOCUS     
+     IF S01_2.F01='A'
+         THISFORM.TXTF01.READONLY=.T.
+         THISFORM.TXTF02.SETFOCUS
+     ENDIF
+     LOCK()
+     IF !RLOCK()
+        DO FILE_IMPACT
+        RETURN
+     ENDIF
+  ENDPROC 
+************  
+  PROCEDURE SHRGROUP.SHURE2_BOTT.CLICK    
+    DO CASE
+          CASE S01_2.F01='A'
+		     IF EMPTY(THISFORM.TXTF02.VALUE)
+		          =MESSAGEBOX('部門名稱不得空白!',0+64,'提示視窗')
+		          THISFORM.TXTF02.SETFOCUS
+		          RETURN
+		     ENDIF 
+          	     SELECT A14
+          	     SET ORDER TO A141
+          	     SEEK S01_2.F02
+          	     IF FOUND()
+          	          REPLACE F02 WITH THISFORM.TXTF02.VALUE
+          	          REPLACE F07 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+          	     ENDIF
+          	     SELECT S01_2
+          	     IF RLOCK()
+          	          REPLACE F07 WITH THISFORM.TXTF02.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')           	          
+          	     ENDIF
+          CASE S01_2.F01='D'
+		     IF EMPTY(THISFORM.TXTF01.VALUE)
+		         =MESSAGEBOX('職務名稱不得空白!',0+64,'提示視窗')
+		         THISFORM.TXTF01.SETFOCUS
+		         RETURN
+		     ENDIF 
+		     IF ALLTRIM(S01_2.F07)<>ALLTRIM(THISFORM.TXTF01.VALUE)
+		          IF INDEXSEEK('D'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                              =MESSAGEBOX('此職務名稱已存在,請重新輸入!',0+64,'提示視窗')
+      		              THISFORM.TXTF01.SETFOCUS
+                              RETURN
+                          ENDIF    		          
+		     ENDIF
+          	     SELECT S01
+          	     SET ORDER TO S011
+          	     SEEK 'D'+S01_2.F07
+          	     IF FOUND()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+          	     ENDIF
+          	     SELECT S01_2
+          	     IF RLOCK()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')           	          
+          	     ENDIF          
+          CASE S01_2.F01='E'
+		     IF EMPTY(THISFORM.TXTF01.VALUE)
+		         =MESSAGEBOX('職務等級不得空白!',0+64,'提示視窗')
+		         THISFORM.TXTF01.SETFOCUS
+		         RETURN
+		     ENDIF 
+		     IF ALLTRIM(S01_2.F07)<>ALLTRIM(THISFORM.TXTF01.VALUE)
+		          IF INDEXSEEK('E'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                              =MESSAGEBOX('此職務等級已存在,請重新輸入!',0+64,'提示視窗')
+      		              THISFORM.TXTF01.SETFOCUS
+                              RETURN
+                          ENDIF    		          
+		     ENDIF
+          	     SELECT S01
+          	     SET ORDER TO S011
+          	     SEEK 'E'+S01_2.F07
+          	     IF FOUND()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+          	     ENDIF
+          	     SELECT S01_2
+          	     IF RLOCK()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')           	          
+          	     ENDIF           
+          CASE S01_2.F01='F'
+		     IF EMPTY(THISFORM.TXTF01.VALUE)
+		         =MESSAGEBOX('薪資項目名稱不得空白!',0+64,'提示視窗')
+		         THISFORM.TXTF01.SETFOCUS
+		         RETURN
+		     ENDIF 
+		     IF ALLTRIM(S01_2.F07)<>ALLTRIM(THISFORM.TXTF01.VALUE)
+		          IF INDEXSEEK('F'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                              =MESSAGEBOX('此薪資項目名稱已存在,請重新輸入!',0+64,'提示視窗')
+      		              THISFORM.TXTF01.SETFOCUS
+                              RETURN
+                          ENDIF    		          
+		     ENDIF
+          	     SELECT S01
+          	     SET ORDER TO S011
+          	     SEEK 'F'+S01_2.F07
+          	     IF FOUND()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+          	     ENDIF
+          	     SELECT S01_2
+          	     IF RLOCK()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')           	          
+          	     ENDIF                  
+          CASE S01_2.F01='G'
+		     IF EMPTY(THISFORM.TXTF01.VALUE)
+		         =MESSAGEBOX('其他所得發放項目不得空白!',0+64,'提示視窗')
+		         THISFORM.TXTF01.SETFOCUS
+		         RETURN
+		     ENDIF 
+		     IF ALLTRIM(S01_2.F07)<>ALLTRIM(THISFORM.TXTF01.VALUE)
+		          IF INDEXSEEK('G'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                              =MESSAGEBOX('此其他所得發放項目已存在,請重新輸入!',0+64,'提示視窗')
+      		              THISFORM.TXTF01.SETFOCUS
+                              RETURN
+                          ENDIF    		          
+		     ENDIF
+          	     SELECT S01
+          	     SET ORDER TO S011
+          	     SEEK 'G'+S01_2.F07
+          	     IF FOUND()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+          	     ENDIF
+          	     SELECT S01_2
+          	     IF RLOCK()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')           	          
+          	     ENDIF                  
+          CASE S01_2.F01='H'
+		     IF EMPTY(THISFORM.TXTF01.VALUE)
+		         =MESSAGEBOX('撥款銀行名稱不得空白!',0+64,'提示視窗')
+		         THISFORM.TXTF01.SETFOCUS
+		         RETURN
+		     ENDIF 
+		     IF ALLTRIM(S01_2.F07)<>ALLTRIM(THISFORM.TXTF01.VALUE)
+		          IF INDEXSEEK('H'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                              =MESSAGEBOX('此撥款銀行名稱存在,請重新輸入!',0+64,'提示視窗')
+      		              THISFORM.TXTF01.SETFOCUS
+                              RETURN
+                          ENDIF    		          
+		     ENDIF
+          	     SELECT S01
+          	     SET ORDER TO S011
+          	     SEEK 'H'+S01_2.F07
+          	     IF FOUND()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+          	     ENDIF
+          	     SELECT S01_2
+          	     IF RLOCK()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')           	          
+          	     ENDIF                  
+          CASE S01_2.F01='I'
+		     IF EMPTY(THISFORM.TXTF01.VALUE)
+		         =MESSAGEBOX('調薪說明項目不得空白!',0+64,'提示視窗')
+		         THISFORM.TXTF01.SETFOCUS
+		         RETURN
+		     ENDIF 
+		     IF ALLTRIM(S01_2.F07)<>ALLTRIM(THISFORM.TXTF01.VALUE)
+		          IF INDEXSEEK('I'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                              =MESSAGEBOX('此調薪說明項目已存在,請重新輸入!',0+64,'提示視窗')
+      		              THISFORM.TXTF01.SETFOCUS
+                              RETURN
+                          ENDIF    		          
+		     ENDIF
+          	     SELECT S01
+          	     SET ORDER TO S011
+          	     SEEK 'I'+S01_2.F07
+          	     IF FOUND()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+          	     ENDIF
+          	     SELECT S01_2
+          	     IF RLOCK()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')           	          
+          	     ENDIF                  
+          CASE S01_2.F01='J'
+		     IF EMPTY(THISFORM.TXTF01.VALUE)
+		         =MESSAGEBOX('薪資條備註不得空白!',0+64,'提示視窗')
+		         THISFORM.TXTF01.SETFOCUS
+		         RETURN
+		     ENDIF 
+          	     SELECT S01
+          	     SET ORDER TO S011
+          	     SEEK 'J'+S01_2.F07
+          	     IF FOUND()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+          	     ENDIF
+          	     SELECT S01_2
+          	     IF RLOCK()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')           	          
+          	     ENDIF                  
+          CASE S01_2.F01='Y'
+		     IF EMPTY(THISFORM.TXTF01.VALUE)
+		         =MESSAGEBOX('縣市名稱不得空白!',0+64,'提示視窗')
+		         THISFORM.TXTF01.SETFOCUS
+		         RETURN
+		     ENDIF 
+		     IF ALLTRIM(S01_2.F07)<>ALLTRIM(THISFORM.TXTF01.VALUE)
+		        IF INDEXSEEK('Y'+THISFORM.TXTF01.VALUE,.F.,'S01','S011')=.T.
+                   =MESSAGEBOX('此縣市名稱已存在,請重新輸入!',0+64,'提示視窗')
+      		       THISFORM.TXTF01.SETFOCUS
+                   RETURN
+                 ENDIF    		          
+		     ENDIF
+          	     SELECT S01
+          	     SET ORDER TO S011
+          	     SEEK 'Y'+S01_2.F07
+          	     IF FOUND()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'') 
+          	     ENDIF
+          	     SELECT S01_2
+          	     IF RLOCK()
+          	          REPLACE F07 WITH THISFORM.TXTF01.VALUE
+          	          REPLACE F99 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')           	          
+          	     ENDIF             	     
+    ENDCASE      
+    THISFORM.SHRGROUP.ABANDON_BOTT.CLICK    
+  ENDPROC
+*******************
+  PROCEDURE ORPGROUP.DEL_BOTT.CLICK
+     IF MESSAGEBOX('是否確定要刪除此筆資料',4+32+256,'請確認') = 6	      
+         DO CASE
+       	        CASE S01_1.F01='A'
+         	           SELECT S05
+         	           SET ORDER TO S053
+         	           SEEK ALLTRIM(S01_2.F02)
+         	           IF  FOUND()
+         	       	        =MESSAGEBOX('人事薪資基本檔已存在此部門,請至S05 人事薪資基本檔修改後再刪除!',0+64,'提示視窗')
+         	           ELSE  
+	         	         SELECT A14
+		         	 SET ORDER TO A141
+		         	 SEEK S01_2.F02
+		         	 IF FOUND()
+		         	     DELETE 
+		         	 ENDIF
+		         	 SELECT S01_2
+		         	 LOCK()
+		         	 IF RLOCK()
+		         	      DELETE 
+		         	      UNLOCK
+		         	      SKIP -1
+		         	      IF BOF()
+		         	           GO TOP
+		         	      ENDIF  
+				 ELSE
+				       DO FILE_IMPACT
+				 ENDIF           	     
+	         	   ENDIF     
+	       CASE S01_1.F01='D'
+	         	  SELECT S01
+		          SET ORDER TO S011
+		          SEEK 'D'+S01_2.F07
+		          IF FOUND()
+		              DELETE 
+		          ENDIF
+		          SELECT S01_2
+		          LOCK()
+		          IF RLOCK()
+		              DELETE 
+		              UNLOCK
+		              SKIP -1
+		              IF BOF()
+		                  GO TOP
+		              ENDIF  
+			  ELSE
+			      DO FILE_IMPACT
+			  ENDIF    	       
+	       CASE S01_1.F01='E'
+	         	  SELECT S01
+		          SET ORDER TO S011
+		          SEEK 'E'+S01_2.F07
+		          IF FOUND()
+		              DELETE 
+		          ENDIF
+		          SELECT S01_2
+		          LOCK()
+		          IF RLOCK()
+		              DELETE 
+		              UNLOCK
+		              SKIP -1
+		              IF BOF()
+		                  GO TOP
+		              ENDIF  
+			  ELSE
+			      DO FILE_IMPACT
+			  ENDIF  	       
+	       CASE S01_1.F01='F'
+	         	  SELECT S01
+		          SET ORDER TO S011
+		          SEEK 'F'+S01_2.F07
+		          IF FOUND()
+		              DELETE 
+		          ENDIF
+		          SELECT S01_2
+		          LOCK()
+		          IF RLOCK()
+		              DELETE 
+		              UNLOCK
+		              SKIP -1
+		              IF BOF()
+		                  GO TOP
+		              ENDIF  
+			  ELSE
+			      DO FILE_IMPACT
+			  ENDIF  	       
+	       CASE S01_1.F01='G'
+	         	  SELECT S01
+		          SET ORDER TO S011
+		          SEEK 'G'+S01_2.F07
+		          IF FOUND()
+		              DELETE 
+		          ENDIF
+		          SELECT S01_2
+		          LOCK()
+		          IF RLOCK()
+		              DELETE 
+		              UNLOCK
+		              SKIP -1
+		              IF BOF()
+		                  GO TOP
+		              ENDIF  
+			  ELSE
+			      DO FILE_IMPACT
+			  ENDIF  	       
+	       CASE S01_1.F01='H'
+	         	  SELECT S01
+		          SET ORDER TO S011
+		          SEEK 'H'+S01_2.F07
+		          IF FOUND()
+		              DELETE 
+		          ENDIF
+		          SELECT S01_2
+		          LOCK()
+		          IF RLOCK()
+		              DELETE 
+		              UNLOCK
+		              SKIP -1
+		              IF BOF()
+		                  GO TOP
+		              ENDIF  
+			  ELSE
+			      DO FILE_IMPACT
+			  ENDIF  	       
+	       CASE S01_1.F01='I'
+	         	  SELECT S01
+		          SET ORDER TO S011
+		          SEEK 'I'+S01_2.F07
+		          IF FOUND()
+		              DELETE 
+		          ENDIF
+		          SELECT S01_2
+		          LOCK()
+		          IF RLOCK()
+		              DELETE 
+		              UNLOCK
+		              SKIP -1
+		              IF BOF()
+		                  GO TOP
+		              ENDIF  
+			  ELSE
+			      DO FILE_IMPACT
+			  ENDIF  	       
+	       CASE S01_1.F01='J'
+	         	  SELECT S01
+		          SET ORDER TO S011
+		          SEEK 'J'+S01_2.F07
+		          IF FOUND()
+		              DELETE 
+		          ENDIF
+		          SELECT S01_2
+		          LOCK()
+		          IF RLOCK()
+		              DELETE 
+		              UNLOCK
+		              SKIP -1
+		              IF BOF()
+		                  GO TOP
+		              ENDIF  
+			  ELSE
+			      DO FILE_IMPACT
+			  ENDIF  
+	       CASE S01_1.F01='Y'
+	         	  SELECT S01
+		          SET ORDER TO S011
+		          SEEK 'Y'+S01_2.F07
+		          IF FOUND()
+		              DELETE 
+		          ENDIF
+		          SELECT S01_2
+		          LOCK()
+		          IF RLOCK()
+		              DELETE 
+		              UNLOCK
+		              SKIP -1
+		              IF BOF()
+		                  GO TOP
+		              ENDIF  
+			  ELSE
+			      DO FILE_IMPACT
+			  ENDIF			  	       
+         ENDCASE
+         THISFORM.SHRGROUP.ABANDON_BOTT.CLICK 
+     ENDIF   
+  ENDPROC
+*************   
+  PROCEDURE SHRGROUP.ABANDON_BOTT.CLICK
+      THISFORM.KEY_LIST.VISIBLE=.F.  
+      THISFORM.ORPGROUP.EDIT_BOTT.VISIBLE=.F.
+      THISFORM.SHRGROUP.ENABLED=.F.
+      THISFORM.SHRGROUP.VISIBLE=.F.      
+      THISFORM.ORPGROUP.ENABLED=.T.
+      THISFORM.ORPGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.ORPGROUP.ESC_BOTT.ENABLED=.T.
+      THISFORM.CMDGROUP.ENABLED=.T.
+      THISFORM.CMDGROUP.SETALL('ENABLED',.T.,'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F. 
+      THISFORM.SETALL('READONLY',.T.,'TEXTBOX')   
+      THISFORM.GRID1.ENABLED=.T. 
+      THISFORM.GRID2.ENABLED=.T.
+      THISFORM.GRID2.SETFOCUS 
+       IF THISFORM.GRID2.ACTIVEROW=0 
+           THISFORM.GRID1.SETFOCUS
+       ELSE
+           THISFORM.GRID2.SETFOCUS
+       ENDIF
+       UNLOCK ALL
+  ENDPROC
+  ********
+  PROCEDURE SHRGROUP.FINISH_BOTT.CLICK 
+       THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+  ENDPROC   
+ENDDEFINE
+***********************************************列印程序
+PROCEDURE PNT_PRC  
+
+ENDPROC
+
+

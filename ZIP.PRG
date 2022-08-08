@@ -1,0 +1,22 @@
+CLOSE ALL
+CLEAR ALL
+SELECT 0
+USE ZIP
+SELECT * FROM ZIP WHERE CITY='°ò¶©¥«' ORDER BY TOWN,ROAD INTO CURSOR ZIPTEMP NOWAIT
+IF _TALLY>0
+   SELECT ZIPTEMP
+   GO TOP
+   KTMP=''
+   S=-1
+   DO WHILE !EOF()
+      IF TOWN<>KTMP
+         aTown[S]=TOWN
+         S=S+1
+      ELSE
+               
+      ENDIF
+      SELECT ZIPTEMP
+      
+      SKIP
+   ENDDO
+ENDIF

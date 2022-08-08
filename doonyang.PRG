@@ -1,0 +1,112 @@
+****程式名稱 C02報價紀錄日期查詢轉EXCEL
+CLEAR ALL
+SET TALK OFF
+SET EXCL OFF
+SET DELE ON
+SET CENT OFF
+SET SAFE OFF
+SET DECIMALS TO 6
+SET REPROCESS TO 1
+_SCREEN.CAPTION=''
+_SCREEN.CONTROLBOX=.F.
+ZOOM WIND SCREEN MIN
+HIDE WINDOW SCREEN
+DEACTIVATE WIND SCREEN
+SET SYSMENU OFF
+SET STATUS BAR OFF
+SET MULTILOCKS ON
+CAPSLOCK(.T.)
+PUBLIC DTYPE
+IF !USED('A26')
+     SELECT 0
+     USE A26
+ELSE
+     SELECT A26
+ENDIF     
+SET ORDER TO 1
+ SEEK 'INT_012'
+ IF FOUND()
+      IF ALLTRIM(F06)='1'
+          SET DATE TO TAIWAN
+      ELSE
+          SET DATE TO YMD
+      ENDIF    
+      DTYPE=VAL(F06)    
+ENDIF     
+IF !USED('A23')
+    SELECT 0
+    USE A23
+ELSE
+   SELECT A23
+ENDIF
+SET ORDER TO 1
+GO TOP
+FIRST_DATE=DTOS(A23.F01) &&系統月份檔第一筆開帳月份
+GO BOTTOM
+LAST_DATE=DTOS(A23.F01)  &&系統月份檔最後一筆開帳月份
+IF !USED('C03')
+   SELECT 0
+   USE C03
+ELSE
+   SELECT C03
+ENDIF
+SET ORDER TO 1    
+IF !USED('C04')
+   SELECT 0
+   USE C04
+ELSE
+   SELECT C04
+ENDIF
+SET ORDER TO 1    
+IF !USED('C02')
+   SELECT 0
+   USE C02
+ELSE
+   SELECT C02
+ENDIF
+SET ORDER TO C023         
+DO FORM doonyang
+
+***********************
+FUNCTION CMDT(IN_ORD,STK,CUS_NO)
+      tmpdte=CTOD('')
+      SELECT C04
+      SEEK IN_ORD+STK
+      IF FOUND()
+         SELECT C02
+         SEEK CUS_NO+STK+C04.F06+C04.F13
+         DO WHILE F01+F03+F06+F12=CUS_NO+STK+C04.F06+C04.F13
+             DO WHILE C02.F02>=C04.F01
+               SKIP
+             ENDDO
+             IF C02.F07<>C04.F07
+                tmpdte=C02.F02
+                
+             ENDIF   
+             EXIT
+         ENDDO
+      ENDIF
+      RETURN tmpdte
+FUNCTION CMPR(IN_ORD,STK,CUS_NO)
+      tmprice=0
+      SELECT C04
+      SEEK IN_ORD+STK
+      IF FOUND()
+         SELECT C02
+         SEEK CUS_NO+STK+C04.F06+C04.F13
+         DO WHILE F01+F03+F06+F12=CUS_NO+STK+C04.F06+C04.F13
+            DO WHILE C02.F02>=C04.F01                  
+                  SKIP              
+             ENDDO
+             IF C02.F07<>C04.F07
+                tmprice=C02.F07                
+             ENDIF   
+             EXIT
+         ENDDO
+      ENDIF
+      RETURN tmprice
+ ***********
+FUNCTION DTCX
+PARAMETERS DT
+DTF=IIF(DTYPE=2,DTOC(DT),ALLTRIM(STR(VAL(LEFT(DTOS(DT),4))-1911))+RIGHT(DTOC(DT),6))
+RETURN DTF      

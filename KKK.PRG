@@ -1,0 +1,3 @@
+FOR I=1 TO 6
+?8*RAND()
+ENDFOR

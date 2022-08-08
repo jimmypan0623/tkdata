@@ -1,0 +1,1382 @@
+***程式名稱:B22.盤點差異表
+CLOSE ALL
+CLEAR 
+FLG='0'
+FCH=''
+CHK=''
+R=0
+AREA1='B22_1'
+AREA2='B22'
+IF ! USED('A01')
+   SELE 0
+   USE A01 INDE A01
+ELSE
+   SELE A01
+ENDIF      
+SET ORDER TO A01
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK SYS_OPER+'B22'
+IF !USED('A09')
+   SELE 0
+   USE A09
+ELSE
+   SELE A09
+ENDIF
+SET ORDER TO 1
+IF !USED('A14')
+   SELE 0
+   USE A14
+ELSE 
+   SELE A14
+ENDIF
+SET ORDER TO 1   
+IF !USED('A23')
+    SELE 0
+    USE A23
+ELSE 
+   SELE A23
+ENDIF
+SET ORDER TO 1       
+IF !USED('B01')
+   SELE 0
+   USE B01 INDE B01
+ELSE
+   SELE B01
+ENDIF
+SET ORDER TO 1    
+
+IF !USED('B23')
+   SELE 0
+   USE B23 
+ELSE
+   SELE B23
+ENDIF
+SET ORDER TO B231    
+IF !USED('B22')
+   SELE 0
+   USE B22 
+ELSE
+   SELE B22
+ENDIF
+SET ORDER TO B222        
+SET RELA TO F02 INTO B01
+CREATE CURSOR B22_1; 
+(F01 C(10),F09 C(5),F06 C(1),F07 C(17),F08 C(10),F90 C(17))
+INDE ON F01 TAG B22_11
+INDE ON F09 TAG B22_12
+SELE F01,F06,F07,F08,F90 FROM B22 GROUP BY F01 ORDER BY F01 INTO CURSOR B22_TEMP
+SELE B22_TEMP
+GO TOP
+DO WHILE !EOF()
+   SELE B22_1
+   APPEND BLANK
+   REPL F01 WITH B22_TEMP.F01
+   REPL F09 WITH SUBSTR(B22_TEMP.F01,6,5)	 &&部門編號
+   REPL F06 WITH B22_TEMP.F06  				 &&狀態(' '未處理,'2' 轉盤差單)
+   REPL F07 WITH B22_TEMP.F07   				 &&安全資料
+   REPL F08 WITH B22_TEMP.F08   				 &&B09.盤差單號
+   REPL F90 WITH B22_TEMP.F90 
+   SELE B22_TEMP
+   SKIP   
+ENDDO
+SELE B22_TEMP
+USE   
+SELE B22_1
+SET ORDER TO B22_11
+SET RELA TO F09 INTO A14 
+***********
+B22FORM=CREATEOBJECT("TKB22")
+B22FORM.SHOW  
+DEFINE CLASS TKB22 AS FORM
+  CAPTION='B22.盤點差異表'
+*!*	  AUTOCENTER=.T.
+  CONTROLBOX=.F.
+  BORDERSTYLE=1  
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  CONTROLCOUNT=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WIDTH=INT_015*789
+  WINDOWTYPE=1
+  NAME='TKB22'
+  ADD OBJECT LBL_REC AS LBL_REC WITH;
+      AUTOCENTER =.T.
+  ADD OBJECT REC_COUNT AS REC_COUNT  WITH;
+      CAPTION=STR(RECCOUNT())        
+  ADD OBJECT SHAPE1 AS SHAPE1 WITH;
+      AUTOCENTER=.T.    
+  ADD OBJECT SHAPE2 AS SHAPE2 WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT SHAPE3 AS SHAPE3 WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT PAGEFRAME1 AS PAGEFRAME WITH;
+      LEFT=INT_015*236,;
+      WIDTH=INT_015*540,;
+      HEIGHT=INT_015*220,;
+      FONTSIZE=INT_015*9,;
+      PAGECOUNT=2,;
+      TABSTRETCH=1,;
+      ACTIVEPAGE=1,;
+      VISIBLE=.T.,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;         
+      PAGE1.NAME='PAGE1',;
+      PAGE1.VISIBLE=.T.,;
+      PAGE1.CAPTION='表頭資料',;
+      PAGE2.NAME='PAGE2',;
+      PAGE2.VISIBLE=.T.,;
+      PAGE2.CAPTION='表身詳細資料內容'   
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      COLUMNCOUNT=3,;            
+      RECORDSOURCE='B22_1',;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;      
+      COLUMN3.NAME='COLUMN3'        
+  ADD OBJECT GRID2 AS GRID2 WITH;
+      TOP=INT_015*227,;
+      HEIGHT=INT_015*290,;
+      COLUMNCOUNT=4,;            
+      RECORDSOURCE='B22',; 
+      LINKMASTER='B22_1',;
+      RELATIONALEXPR='F01',;
+      CHILDORDER='B222',;  
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4'
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+     AUTOSIZE=.T.         
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+      AUTOSIZE=.T.        
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*185,;
+      LEFT=INT_015*620                      
+  ADD OBJECT ANS_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*10,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*90,;      
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;         
+      CAPTION='\<A.轉B09.盤差單',;
+      NAME='ANS_BOTT'   
+ ADD OBJECT VRT_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*103,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*105 ,;       
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;         
+      CAPTION='\<V.反轉B09.盤差單',;
+      NAME='VRT_BOTT'                   
+ *******************                    
+ PROCEDURE PAGEFRAME1.PAGE1.INIT     
+    THIS.ADDOBJECT('LBLF01','LABEL')
+     WITH THIS.LBLF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*15
+          .WIDTH=INT_015*50
+          .CAPTION='單據編號'          
+     ENDWITH
+  THIS.ADDOBJECT('TXTF01','TEXTBOX')          
+     WITH THIS.TXTF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*9
+          .WIDTH=INT_015*81
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+     ENDWITH                             
+    THIS.ADDOBJECT('LBLF10','LABEL')
+     WITH THIS.LBLF10
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*40
+         .WIDTH=INT_015*60
+         .CAPTION='盤點日期'
+     ENDWITH  
+   THIS.ADDOBJECT('TXTF10','TEXTBOX')          
+     WITH THIS.TXTF10
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*34
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+     ENDWITH 
+         THIS.ADDOBJECT('LBLF09','LABEL')     
+     WITH THIS.LBLF09
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*65
+          .WIDTH=INT_015*50  
+          .CAPTION='盤點部門'
+     ENDWITH  
+     THIS.ADDOBJECT('LBLF091','LABEL')     
+     WITH THIS.LBLF091
+          .VISIBLE=.T.
+          .LEFT=INT_015*115
+          .TOP=INT_015*65
+          .AUTOSIZE=.T.
+          .CAPTION=''
+     ENDWITH   
+     THIS.ADDOBJECT('TXTF09','TEXTBOX')
+     WITH THIS.TXTF09
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*59
+          .WIDTH=INT_015*50
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=5
+     ENDWITH                 
+     THIS.ADDOBJECT('LBLF06','LABEL')
+     WITH THIS.LBLF06
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*90
+         .WIDTH=INT_015*50
+         .CAPTION='狀        態'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF061','LABEL')
+     WITH THIS.LBLF061
+         .VISIBLE=.T.
+         .LEFT=INT_015*64
+         .TOP=INT_015*90
+         .AUTOSIZE=.T.
+          .CAPTION=''
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF07','LABEL')
+     WITH THIS.LBLF07
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*115
+         .WIDTH=INT_015*50
+         .CAPTION='安全資料'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF071','LABEL')
+     WITH THIS.LBLF071
+         .VISIBLE=.T.
+         .LEFT=INT_015*419
+         .TOP=INT_015*115
+         .AUTOSIZE=.T.
+          .CAPTION=''
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF90','LABEL')
+     WITH THIS.LBLF90
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*140
+         .WIDTH=INT_015*50
+         .CAPTION='確認人員'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF901','LABEL')
+     WITH THIS.LBLF901
+         .VISIBLE=.T.
+         .LEFT=INT_015*419
+         .TOP=INT_015*140
+         .AUTOSIZE=.T.
+          .CAPTION=''
+     ENDWITH         
+  ENDPROC   
+*************  
+PROCEDURE PAGEFRAME1.PAGE2.INIT  
+   THIS.ADDOBJECT('LBLF02','LABEL')
+     WITH THIS.LBLF02
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*15
+         .WIDTH=INT_015*50
+         .CAPTION='料品編號'
+     ENDWITH 
+     THIS.ADDOBJECT('TXTF02','TEXTBOX') 
+     WITH THIS.TXTF02
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*9
+          .WIDTH=INT_015*261
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=43
+     ENDWITH 
+    THIS.ADDOBJECT('LBLF021','LABEL')
+     WITH THIS.LBLF021
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*40
+          .WIDTH=INT_015*50
+          .CAPTION='品名規格'
+     ENDWITH 
+    THIS.ADDOBJECT('LBLF022','LABEL')
+     WITH THIS.LBLF022
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*40
+          .AUTOSIZE=.T.
+          .CAPTION=''
+     ENDWITH           
+    THIS.ADDOBJECT('LBLF03','LABEL')
+     WITH THIS.LBLF03
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*65
+         .WIDTH=INT_015*50
+         .CAPTION='庫存數量'
+     ENDWITH
+    THIS.ADDOBJECT('TXTF03','TEXTBOX')          
+     WITH THIS.TXTF03
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*59
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+          .ALIGNMENT=1
+     ENDWITH 
+     THIS.ADDOBJECT('LBLF031','LABEL')
+     WITH THIS.LBLF031
+         .VISIBLE=.F.
+         .LEFT=INT_015*205
+         .TOP=INT_015*65
+         .WIDTH=INT_015*50
+         .CAPTION='庫存金額'
+     ENDWITH
+     THIS.ADDOBJECT('TXTF031','TEXTBOX')          
+     WITH THIS.TXTF031
+          .VISIBLE=.F.
+          .LEFT=INT_015*256
+          .TOP=INT_015*59
+          .WIDTH=INT_015*100
+          .HEIGHT=INT_015*25
+          .ALIGNMENT=1
+     ENDWITH 
+     THIS.ADDOBJECT('LBLF04','LABEL')
+     WITH THIS.LBLF04
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*90
+         .WIDTH=INT_015*50
+         .CAPTION='實盤數量'
+     ENDWITH  
+   THIS.ADDOBJECT('TXTF04','TEXTBOX')          
+     WITH THIS.TXTF04
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*84
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+          .ALIGNMENT=1
+     ENDWITH
+    THIS.ADDOBJECT('LBLF041','LABEL')
+     WITH THIS.LBLF041
+         .VISIBLE=.F.
+         .LEFT=INT_015*205
+         .TOP=INT_015*90
+         .WIDTH=INT_015*50
+         .CAPTION='實盤金額'
+     ENDWITH  
+   THIS.ADDOBJECT('TXTF041','TEXTBOX')          
+     WITH THIS.TXTF041
+          .VISIBLE=.F.
+          .LEFT=INT_015*256
+          .TOP=INT_015*84
+          .WIDTH=INT_015*100
+          .HEIGHT=INT_015*25
+          .ALIGNMENT=1
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF05','LABEL')
+     WITH THIS.LBLF05
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*115
+         .WIDTH=INT_015*50
+         .CAPTION='差異數量'
+     ENDWITH  
+   THIS.ADDOBJECT('TXTF05','TEXTBOX')          
+     WITH THIS.TXTF05
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*109
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+          .ALIGNMENT=1
+     ENDWITH 
+    THIS.ADDOBJECT('LBLF051','LABEL')
+     WITH THIS.LBLF051
+         .VISIBLE=.F.
+         .LEFT=INT_015*205
+         .TOP=INT_015*115
+         .WIDTH=INT_015*50
+         .CAPTION='差異金額'
+     ENDWITH  
+   THIS.ADDOBJECT('TXTF051','TEXTBOX')          
+     WITH THIS.TXTF051
+          .VISIBLE=.F.
+          .LEFT=INT_015*256
+          .TOP=INT_015*109
+          .WIDTH=INT_015*100
+          .HEIGHT=INT_015*25
+          .ALIGNMENT=1
+     ENDWITH 
+   THIS.ADDOBJECT('LBLF09','LABEL')
+     WITH THIS.LBLF09
+         .VISIBLE=.F.
+         .LEFT=INT_015*14
+         .TOP=INT_015*140
+         .WIDTH=INT_015*60
+         .CAPTION='平均單價'
+     ENDWITH  
+   THIS.ADDOBJECT('TXTF09','TEXTBOX')          
+     WITH THIS.TXTF09
+          .VISIBLE=.F.
+          .LEFT=INT_015*64
+          .TOP=INT_015*134
+          .WIDTH=INT_015*118
+          .HEIGHT=INT_015*25
+          .ALIGNMENT=1
+     ENDWITH   
+   THIS.ADDOBJECT('LBLF10','LABEL')
+     WITH THIS.LBLF10
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*165
+         .WIDTH=INT_015*60
+         .CAPTION='備註說明'
+     ENDWITH  
+   THIS.ADDOBJECT('TXTF10','TEXTBOX')          
+     WITH THIS.TXTF10
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*159
+          .WIDTH=INT_015*295
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=50
+     ENDWITH        
+  THIS.ADDOBJECT('LBLF07','LABEL')
+     WITH THIS.LBLF07
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*140
+         .WIDTH=INT_015*50
+         .CAPTION='安全資料'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF071','LABEL')
+     WITH THIS.LBLF071
+         .VISIBLE=.T.
+         .LEFT=INT_015*419
+         .TOP=INT_015*140
+         .AUTOSIZE=.T.
+          .CAPTION=''
+     ENDWITH  
+  ENDPROC
+*********************   
+  PROC INIT       
+       THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.T.
+       THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,255)           
+       THISFORM.PAGEFRAME1.PAGE1.FONTSIZE=INT_015*10
+       THISFORM.PAGEFRAME1.PAGE2.FONTSIZE=INT_015*10  
+       THISFORM.SETALL('HEIGHT',INT_015*25,'TEXTBOX')
+       THISFORM.SETALL('HEIGHT',INT_015*17,'LABEL')     
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'TEXTBOX')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')         
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+       THISFORM.PAGEFRAME1.PAGE2.LBLF031.VISIBLE=IIF(A02.F09='*',.T.,.F.)
+       THISFORM.PAGEFRAME1.PAGE2.LBLF041.VISIBLE=IIF(A02.F09='*',.T.,.F.)
+       THISFORM.PAGEFRAME1.PAGE2.LBLF051.VISIBLE=IIF(A02.F09='*',.T.,.F.)
+       THISFORM.PAGEFRAME1.PAGE2.LBLF09.VISIBLE=IIF(A02.F09='*',.T.,.F.)
+       THISFORM.PAGEFRAME1.PAGE2.TXTF031.VISIBLE=IIF(A02.F09='*',.T.,.F.)
+       THISFORM.PAGEFRAME1.PAGE2.TXTF041.VISIBLE=IIF(A02.F09='*',.T.,.F.)
+       THISFORM.PAGEFRAME1.PAGE2.TXTF051.VISIBLE=IIF(A02.F09='*',.T.,.F.)
+       THISFORM.PAGEFRAME1.PAGE2.TXTF09.VISIBLE=IIF(A02.F09='*',.T.,.F.)
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')        
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID2.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='單據編號'
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='盤點部門'
+       THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='部門簡稱'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B22_1.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='B22_1.F09'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE='A14.F02'
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*81
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*49
+       THISFORM.GRID1.COLUMN3.WIDTH=INT_015*80
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(B22_1.F06<>'2',RGB(255,0,0),'')","COLUMN") 
+       THISFORM.GRID2.SETALL("DYNAMICBACKCOLOR","IIF(B22.F05<>0,RGB(0,255,255),'')","COLUMN")           
+       THISFORM.GRID2.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID2.SETALL('FONTSIZE',INT_015*9,'HEADER')       
+       THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='料品編號'       
+       THISFORM.GRID2.COLUMN2.HEADER1.CAPTION='庫存數量'
+       THISFORM.GRID2.COLUMN3.HEADER1.CAPTION='實盤數量'
+       THISFORM.GRID2.COLUMN4.HEADER1.CAPTION='差異數量'
+       THISFORM.GRID2.LINKMASTER='B22_1'
+       THISFORM.GRID2.RELATIONALEXPR='F01'
+       THISFORM.GRID2.COLUMN1.CONTROLSOURCE='B22.F02'
+       THISFORM.GRID2.COLUMN2.CONTROLSOURCE='B22.F03'
+       THISFORM.GRID2.COLUMN3.CONTROLSOURCE='B22.F04'
+       THISFORM.GRID2.COLUMN4.CONTROLSOURCE='B22.F05'
+       THISFORM.GRID2.COLUMN1.WIDTH=INT_015*149
+       THISFORM.GRID2.COLUMN2.WIDTH=INT_015*80
+       THISFORM.GRID2.COLUMN3.WIDTH=INT_015*80
+       THISFORM.GRID2.COLUMN4.WIDTH=INT_015*80
+       THISFORM.SHRGROUP.VISIBLE=.F.
+       THISFORM.SHRGROUP.ENABLED=.F.          
+       THISFORM.GRID1.READONLY=.T.      
+       THISFORM.GRID2.READONLY=.T.            
+       THISFORM.GRID1.SETFOCUS
+       IF THISFORM.GRID1.ACTIVEROW=0
+          THISFORM.CMDGROUP.ENABLED=.F.
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+          THISFORM.ANS_BOTT.ENABLED=.F.
+          THISFORM.VRT_BOTT.ENABLED=.F.
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.GRID1.AFTERROWCOLCHANGE
+          THISFORM.CMDGROUP.ENABLED=.T.      
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限       
+          THISFORM.ANS_BOTT.ENABLED=IIF(B22_1.F06='2',.F.,.T.)  AND IIF(A02.F08='*',.T.,.F.)
+          THISFORM.VRT_BOTT.ENABLED=IIF(B22_1.F06='2',.T.,.F.)  AND IIF(A02.F11='*',.T.,.F.)
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   AND IIF(B22_1.F06<>'2',.T.,.F.) &&判斷有無刪除的權限
+       ENDIF          
+       JK='單據編號'
+       SELE B22_1
+       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=B22_1.F01
+  ENDPROC        
+************* 
+  PROCEDURE PAGEFRAME1.PAGE1.ACTIVATE
+     SELECT  B22_1
+     R=0
+     DO CASE 
+           CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工編號排列'
+                      SET ORDER TO B22_11
+           CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工姓名排列'
+                       SET ORDER TO B22_12
+     ENDCASE   
+     THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.T.
+     THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,255)
+     THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.F.
+     THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,0)       
+     THISFORM.ORPGROUP.NEW_BOTT.VISIBLE=.F.
+     THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+     THISFORM.KEY_LIST.ENABLED=.T.  
+     THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(B22_1.F06<>'2',RGB(255,0,0),'')","COLUMN")         
+     THISFORM.GRID1.ENABLED=.T.   
+     THISFORM.GRID1.SETFOCUS           
+     IF THISFORM.GRID1.ACTIVEROW=0 
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+        THISFORM.ANS_BOTT.ENABLED=.F.
+        THISFORM.VRT_BOTT.ENABLED=.F.
+        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.   
+        THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=''    
+        THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF061.CAPTION=''   
+        THISFORM.PAGEFRAME1.PAGE1.LBLF071.CAPTION=''   
+        THISFORM.PAGEFRAME1.PAGE1.LBLF091.CAPTION=''       
+        THISFORM.PAGEFRAME1.PAGE1.LBLF901.CAPTION=''            
+     ELSE
+        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   AND IIF(B22_1.F06<>'2',.T.,.F.) &&判斷有無刪除的權限
+        THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)    &&判斷有無列印的權限  
+        THISFORM.ANS_BOTT.ENABLED=IIF(B22_1.F06='2',.F.,.T.) AND IIF(A02.F08='*',.T.,.F.)
+        THISFORM.VRT_BOTT.ENABLED=IIF(B22_1.F06='2',.T.,.F.)  AND IIF(A02.F11='*',.T.,.F.)        
+     ENDIF   
+  ENDPROC
+*******************  
+  PROCEDURE PAGEFRAME1.PAGE2.ACTIVATE
+        SELECT  B22
+        THISFORM.PAGEFRAME1.PAGE1.FONTITALIC=.F.
+        THISFORM.PAGEFRAME1.PAGE1.FORECOLOR=RGB(0,0,0)
+        THISFORM.PAGEFRAME1.PAGE2.FONTITALIC=.T.
+        THISFORM.PAGEFRAME1.PAGE2.FORECOLOR=RGB(0,0,255)          
+        THISFORM.KEY_LIST.ENABLED=.F.     
+        THISFORM.ANS_BOTT.ENABLED=.F.
+        THISFORM.VRT_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.        
+        THISFORM.GRID2.SETALL("DYNAMICBACKCOLOR","IIF(B22.F05<>0,RGB(0,255,255),'')","COLUMN")   
+        THISFORM.GRID2.READONLY=.T.   
+        THISFORM.GRID2.SETFOCUS   
+     IF THISFORM.GRID2.ACTIVEROW=0 
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+        THISFORM.ANS_BOTT.ENABLED=.F.
+        THISFORM.VRT_BOTT.ENABLED=.F.
+        THISFORM.PAGEFRAME1.PAGE2.TXTF02.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF031.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF041.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF051.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.LBLF022.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE2.LBLF071.CAPTION=''
+     ELSE
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)   AND IIF(B22_1.F06<>'2',.T.,.F.) &&判斷有無刪除的權限
+        THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&判斷有無列印的權限  
+        THISFORM.PAGEFRAME1.PAGE2.LBLF031.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限  
+        THISFORM.PAGEFRAME1.PAGE2.TXTF031.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限 
+        THISFORM.PAGEFRAME1.PAGE2.LBLF041.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限  
+        THISFORM.PAGEFRAME1.PAGE2.TXTF041.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限 
+        THISFORM.PAGEFRAME1.PAGE2.LBLF051.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限  
+        THISFORM.PAGEFRAME1.PAGE2.TXTF051.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限                 
+        THISFORM.PAGEFRAME1.PAGE2.LBLF09.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限  
+        THISFORM.PAGEFRAME1.PAGE2.TXTF09.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限         
+     ENDIF   
+     R=RECNO('&AREA1')
+     THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+     THISFORM.GRID1.ENABLED=.F.     
+  ENDPROC  
+ *************** 
+  PROC GRID1.AFTERROWCOLCHANGE
+     LPARAMETERS NCOLINDEX
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(B22_1.F06<>'2',RGB(255,0,0),'')","COLUMN")    
+       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=B22_1.F01
+       THISFORM.PAGEFRAME1.PAGE1.TXTF09.VALUE=B22_1.F09
+       THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=ALLTRIM(STR(VAL(SUBSTR(B22_1.F01,2,2))+89))+'/'+SUBSTR(B22_1.F01,4,2)
+       THISFORM.PAGEFRAME1.PAGE1.LBLF061.CAPTION=IIF(EMPTY(B22_1.F06),'尚未處理','已轉B09.盤差單,單號：'+B22_1.F08)
+       THISFORM.PAGEFRAME1.PAGE1.LBLF061.BACKCOLOR=IIF(EMPTY(B22_1.F06),RGB(255,0,0),RGB(58,186,152))
+       THISFORM.PAGEFRAME1.PAGE1.LBLF071.CAPTION=B22_1.F07
+       THISFORM.PAGEFRAME1.PAGE1.LBLF901.CAPTION=B22_1.F90
+       THISFORM.PAGEFRAME1.PAGE1.LBLF091.CAPTION=A14.F02
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+       IF THIS.ACTIVEROW=0
+          THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+          THISFORM.ANS_BOTT.ENABLED=.F.
+          THISFORM.VRT_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   AND IIF(B22_1.F06<>'2',.T.,.F.) &&判斷有無刪除的權限
+          THISFORM.ANS_BOTT.ENABLED=IIF(B22_1.F06='2',.F.,.T.) AND IIF(A02.F08='*',.T.,.F.)
+          THISFORM.VRT_BOTT.ENABLED=IIF(B22_1.F06='2',.T.,.F.)  AND IIF(A02.F11='*',.T.,.F.)
+       ENDIF
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       JK=THIS.COLUMN1.HEADER1.CAPTION            
+       CHK=''     
+*!*	       THISFORM.REFRESH
+  ENDPROC 
+ ****   
+   PROC GRID1.MOUSEENTER
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord
+         IF THISFORM.SHRGROUP.VISIBLE=.F. 
+             THISFORM.GRID1.ENABLED=.T. 
+         ELSE    
+             THISFORM.GRID1.ENABLED=.F.                         
+         ENDIF    
+ ENDPROC    
+ ***********     
+  PROC GRID2.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+       THISFORM.GRID2.SETALL("DYNAMICBACKCOLOR","IIF(B22.F05<>0,RGB(0,255,255),'')","COLUMN")   
+       THISFORM.PAGEFRAME1.PAGE2.LBLF031.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限  
+       THISFORM.PAGEFRAME1.PAGE2.TXTF031.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限 
+       THISFORM.PAGEFRAME1.PAGE2.LBLF041.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限  
+       THISFORM.PAGEFRAME1.PAGE2.TXTF041.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限 
+       THISFORM.PAGEFRAME1.PAGE2.LBLF051.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限  
+       THISFORM.PAGEFRAME1.PAGE2.TXTF051.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限                 
+       THISFORM.PAGEFRAME1.PAGE2.LBLF09.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限  
+       THISFORM.PAGEFRAME1.PAGE2.TXTF09.VISIBLE=IIF(A02.F09='*',.T.,.F.) &&判斷有無查看平均單價的權限       
+       THISFORM.PAGEFRAME1.PAGE2.TXTF02.VALUE=B22.F02
+       THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=B22.F03
+       THISFORM.PAGEFRAME1.PAGE2.TXTF031.VALUE=TRANSFORM(B22.F03*B22.F09,'@R 999,999,999.999999')
+       THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=B22.F04
+       THISFORM.PAGEFRAME1.PAGE2.TXTF041.VALUE=TRANSFORM(B22.F04*B22.F09,'@R 999,999,999.999999')
+       THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE=B22.F05
+       THISFORM.PAGEFRAME1.PAGE2.TXTF051.VALUE=TRANSFORM(B22.F05*B22.F09,'@R 999,999,999.999999')
+       THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=B22.F09
+       THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=B22.F10
+       THISFORM.PAGEFRAME1.PAGE2.LBLF022.CAPTION=B01.F02
+       THISFORM.PAGEFRAME1.PAGE2.LBLF071.CAPTION=B22.F07
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)   AND IIF(B22_1.F06<>'2',.T.,.F.) &&判斷有無刪除的權限
+       IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+           R=RECNO('&AREA1')
+           THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+           THISFORM.GRID1.ENABLED=.F. 
+           THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+           THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.          
+           THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+           THISFORM.ANS_BOTT.ENABLED=.F.
+           THISFORM.VRT_BOTT.ENABLED=.F.
+       ENDIF   
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       JK=THIS.COLUMN1.HEADER1.CAPTION
+       CHK=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+*!*	      THISFORM.REFRESH
+  ENDPROC 
+  ****************          
+  PROC KEY_LIST.INIT 
+       WITH THIS 
+           .ADDITEM('依單據編號排列')
+           .ADDITEM('依盤點部門排列')
+           .VALUE=1
+       ENDWITH
+  ENDPROC 
+ ********* 
+  PROC KEY_LIST.INTERACTIVECHANGE                 
+       SELE B22_1 
+       DO CASE
+          CASE THIS.DISPLAYVALUE='依單據編號排列'
+               SET ORDER TO B22_11 
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='單據編號'
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B22_1.F01'
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*70
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='盤點部門'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='B22_1.F09'
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*55
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='部門簡稱'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*55           
+          CASE THIS.DISPLAYVALUE='依盤點部門排列'
+               SET ORDER TO B22_12
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='盤點部門'
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B22_1.F09'
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*55
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='部門簡稱'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*55
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='單據編號'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='B22_1.F01'
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*70                                                                                                            
+       ENDCASE 
+        THISFORM.GRID1.SETFOCUS
+  ENDPROC  
+***********    
+  PROCEDURE ORPGROUP.EDIT_BOTT.CLICK 
+     THISFORM.KEY_LIST.ENABLED=.F. 
+     THISFORM.ANS_BOTT.ENABLED=.F.
+     THISFORM.VRT_BOTT.ENABLED=.F.
+     THISFORM.GRID1.ENABLED=.F.   
+     THISFORM.GRID2.ENABLED=.F.                
+     THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.        
+     THISFORM.SETALL('READONLY',.T.,'TEXTBOX')  
+     THISFORM.PAGEFRAME1.PAGE2.TXTF10.READONLY=.F.      
+     THISFORM.PAGEFRAME1.PAGE2.TXTF10.SETFOCUS      
+     LOCK()
+     IF !RLOCK()
+          DO FILE_IMPACT
+          RETURN
+     ENDIF   
+ ENDPROC
+ PROCEDURE SHRGROUP.SHURE2_BOTT.CLICK   &&修改確認     
+    SELE B22          
+    IF RLOCK()
+    	REPLACE F10 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE
+    ELSE
+          DO FILE_IMPACT
+          RETURN   
+    ENDIF  
+    THISFORM.GRID2.SETFOCUS		      		          	    	              
+    THISFORM.SHRGROUP.ABANDON_BOTT.CLICK      
+ ENDPROC  
+ ******   
+ PROCEDURE  ORPGROUP.DEL_BOTT.CLICK                    &&刪除資料程序
+       IF MESSAGEBOX('是否確定要刪除此筆資料',4+32+256,'請確認') = 6	
+            IF B22_1.F06='2'
+                 =MESSAGEBOX('此筆資料已轉至B09.盤點差異表,請反轉B09後再進行刪除',0+64,'提示訊息視窗')
+                 RETURN
+                 THISFORM.GRID1.SETFOCUS	 
+            ELSE
+                 SELECT B22_1
+                 PO=B22_1.F01
+                 SELECT  RECNO() FROM B23 WHERE ALLTRIM(B23.F10)=ALLTRIM(PO) AND B23.F08='1' INTO ARRAY BK3
+	         JJ3=''                
+	         IF _TALLY>0   
+	             FOR I= 1 TO ALEN(BK3)
+	                     JJ3=JJ3+ALLTRIM(STR(BK3(I)))+','
+	             ENDFOR    
+		     KK3=STUFF(JJ3,RAT(',',JJ3,1),1,'')              
+		     RLOCK(KK3,'B23')
+		     LL3=RLOCK(KK3,'B23')
+                 ELSE
+		     LL3=.T.   
+	         ENDIF  
+	         IF LL3=.T.  AND LEN(ALLTRIM(JJ3))>0    
+	             SELECT B23
+	             FOR I= 1 TO ALEN(BK3)
+	                     GO BK3(I)
+	                     REPLACE  B23.F08 WITH ''
+	                     REPLACE  B23.F10 WITH ''
+	             ENDFOR
+	         ENDIF
+	         **
+                 SELECT  RECNO() FROM B22 WHERE ALLTRIM(B22.F01)=ALLTRIM(PO) AND B22.F06='' INTO ARRAY BK4
+	         JJ4=''                
+	         IF _TALLY>0   
+	             FOR I= 1 TO ALEN(BK4)
+	                     JJ4=JJ4+ALLTRIM(STR(BK4(I)))+','
+	             ENDFOR    
+		     KK4=STUFF(JJ4,RAT(',',JJ4,1),1,'')              
+		     RLOCK(KK4,'B22')
+		     LL4=RLOCK(KK4,'B22')
+                 ELSE
+		     LL4=.T.   
+	         ENDIF  
+	         IF LL4=.T.  AND LEN(ALLTRIM(JJ4))>0    
+	             SELECT B22
+	             FOR I= 1 TO ALEN(BK4)
+	                     GO BK4(I)
+	                     SELECT B22
+	                     DELETE 
+	             ENDFOR
+	         ENDIF
+	         SELECT B22_1
+	         DELETE 
+	         UNLOCK ALL
+	          RELEASE ALL LIKE BK*                 
+                 =MESSAGEBOX('此筆資料已刪除成功,請至B23.簡易盤點表確認',0+64,'提示訊息視窗')
+            ENDIF
+       ENDIF	
+       THISFORM.GRID1.SETFOCUS
+ ENDPROC          
+****************
+  PROCEDURE SHRGROUP.ABANDON_BOTT.CLICK
+      THISFORM.SHRGROUP.ENABLED=.F.
+      THISFORM.SHRGROUP.VISIBLE=.F.      
+      THISFORM.ORPGROUP.ENABLED=.T.
+      THISFORM.ORPGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.CMDGROUP.ENABLED=.T.
+      THISFORM.CMDGROUP.SETALL('ENABLED',.T.,'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.SETALL('READONLY',.T.,'TEXTBOX')  
+      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.T.      
+      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.      
+      THISFORM.GRID2.ENABLED=.T.       
+      THISFORM.GRID2.SETFOCUS   
+*!*	      THISFORM.REFRESH   
+      UNLOCK ALL          
+  ENDPROC
+**********  
+  PROCEDURE SHRGROUP.FINISH_BOTT.CLICK
+     SELECT  B22_1
+     DO CASE 
+           CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工編號排列'
+                      SET ORDER TO B22_11
+           CASE THISFORM.KEY_LIST.DISPLAYVALUE='依員工姓名排列'
+                       SET ORDER TO B22_12
+     ENDCASE   
+       THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+  ENDPROC       
+*********************
+PROC ANS_BOTT.CLICK     &&轉入B09 盤差調整單
+  PO=B22_1.F01
+     IF MESSAGEBOX('是否確認資料無誤可以轉入B09 盤差調整單?',4+32+256,'請確認') = 6	 
+      	IF B22_1.F06<>'2'
+      	    IF  RLOCK('B22_1')
+      	    	WAIT WINDOW "資料轉出中,請稍後!" AT 0,150 NOWAIT NOCLEAR
+      	    	S1=SUBSTR(ALLTRIM(PO),2,4)
+		H1='B0920'+ALLTRIM(S1)
+		F1=ALLTRIM(H1)+'.DBF'
+		H2='A2420'+ALLTRIM(S1)
+		F2=ALLTRIM(H2)+'.DBF'		
+		IF  FILE('&F1')<>.T.  .OR. FILE('&F2')<>.T. 
+		      =MESSAGEBOX('尚未建立20'+S1+'之月份檔,請至A27.檔案處理中建立!',0+64,'提示訊息視窗')
+		      RETURN
+		ELSE
+		     IF !USED('&F1')
+	   	         SELE 0
+	                 USE &F1 
+	             ELSE
+	                 SELE &F1
+	             ENDIF     
+	    	     SELECT &H1
+	    	     SET ORDER TO 1  
+		     IF !USED('&F2')
+	   	         SELE 0
+	                 USE &F2 
+	             ELSE
+	                 SELE &F2
+	             ENDIF      	        
+      	             H='B008 '+ALLTRIM(SUBSTR(ALLTRIM(PO),2,4))
+	    	     SELECT &H2	
+	    	     SET ORDER TO 1      	             
+                     SEEK H           
+                     IF FOUND() 
+                         PO_NO=&H2..F08
+                         RLOCK()
+                         DELE 
+                         UNLOCK
+                     ELSE
+                         SELE A09
+                         SEEK H            
+                         IF .NOT.FOUND()                                                  &&如果為本月第一張請購單則重頭開始編號
+		    	     APPEND BLANK                                                
+			     REPL F01 WITH 'B008 '
+	  		     REPL F02 WITH  ALLTRIM(S1)
+			     REPL F05 WITH 'BH'+F02
+	  		     REPL F06 WITH '盤差調整單'
+			     REPL F08 WITH ALLTRIM(F05)+'0000'
+		         ENDIF
+		         LOCK()
+		         PO_NO=RIGHT(F08,4)
+		         HX=VAL(PO_NO)+1
+		         PO_NO='0000'
+		         PO_NO=LEFT(F08,6)+STUFF(PO_NO,5-INT(LOG(HX)/LOG(10)+1),INT(LOG(HX)/LOG(10)+1),RIGHT(STR(HX),INT(LOG(HX)/LOG(10)+1)))
+		         REPL F08 WITH PO_NO                                            &&記錄本單號碼,本月份後續的請購單號碼將以此往下編
+		         UNLOCK
+		     ENDIF        
+		     SELECT &H1
+		     SEEK PO_NO    
+		     IF FOUND()=.T.  &&如果編號重複
+                         SELECT  &H2  
+                         SEEK 'B008 '+ALLTRIM(SUBSTR(ALLTRIM(PO),2,4))
+                         IF FOUND()
+                             DO WHILE &H2..F08=PO_NO
+                                    RLOCK()
+	                            DELETE 
+	                            UNLOCK
+	                            SKIP
+	                    ENDDO
+                            SELECT  A09
+                            SEEK 'B008 '+ALLTRIM(SUBSTR(ALLTRIM(PO),2,4))
+                            IF FOUND()
+                                RLOCK()
+     		                HX=VAL(RIGHT(F08,4))+1
+   	                        PO_NO=LEFT(F08,6)+PADL(ALLTRIM(STR(HX)),4,'0')
+		                REPLACE  F08 WITH PO_NO                                             &&記錄本請購單號碼,本月份後續的請購單號碼將以此往下編
+      		                UNLOCK  
+		                THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=PO_NO
+        	                THISFORM.PAGEFRAME1.PAGE1.TXTF01.REFRESH
+                             ENDIF   		                                        
+                          ENDIF
+                      ENDIF                       
+                      *****
+		      SELECT * FROM B22 WHERE ALLTRIM(B22.F01)=ALLTRIM(PO) AND B22.F06<>'2' ORDER BY  B22.F02 INTO CURSOR B22_TEMP 
+		      SELECT B22_TEMP
+		      GO TOP
+                      DO WHILE !EOF()   &&將資料轉至B09盤差調整單
+                   	      IF B22_TEMP.F05<>0 &&只轉出差異量不等於零的資料
+				  SELECT  &H1
+			          APPEND BLANK
+			          REPLACE  &H1..F01 WITH PO_NO
+			          REPLACE  &H1..F02 WITH RIGHT(DTOC(DATE()),2)
+			          REPLACE  &H1..F03 WITH B22_TEMP.F02
+			          REPLACE  &H1..F04 WITH B22_TEMP.F05
+			          REPLACE  &H1..F05 WITH  IIF(LEN(ALLTRIM(PO))<10,RIGHT(ALLTRIM(PO),4),RIGHT(PO,5))
+			          REPLACE  &H1..F07 WITH '盤點差異表'+ALLTRIM(PO)
+			          REPLACE  &H1..F12 WITH IIF(INT_012=1,PADL(ALLTRIM(STR(YEAR(DATE())-1911)),3,' ')+RIGHT(DTOC(DATE()),6),dtoc(DATE())+' ')+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+			          REPLACE  &H1..F13 WITH ALLTRIM(PO)
+		              ENDIF   
+		              SELECT B22_TEMP
+	                      SKIP
+                      ENDDO     
+                      SELECT &H1
+                      USE
+                      SELECT &H2
+                      USE                      
+                      SELECT B22_TEMP
+                      USE
+                      ****將B23狀態改為已轉盤差單
+                      SELECT  RECNO() FROM B23 WHERE ALLTRIM(B23.F02)=IIF(LEN(ALLTRIM(PO))<10,RIGHT(ALLTRIM(PO),4),RIGHT(PO,5));
+                                      AND  ALLTRIM(LEFT(DTOS(B23.F04),6))=ALLTRIM('20'+SUBSTR(PO,2,4)) INTO ARRAY BK1
+		      JJ1=''                
+		      IF _TALLY>0   
+		           FOR I= 1 TO ALEN(BK1)
+		                   JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+		           ENDFOR    
+		           KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')              
+		           RLOCK(KK1,'B23')
+		           LL1=RLOCK(KK1,'B23')
+		       ELSE
+		           LL1=.T.   
+		       ENDIF  
+		       IF LL1=.T. 
+		           IF LEN(ALLTRIM(JJ1))>0 
+	                       SELECT  B23
+	                       FOR  I= 1 TO ALEN(BK1)  
+	                	       SELECT B23                      
+		                       GO BK1(I) 
+		                       REPLACE F08 WITH '2'  
+		               ENDFOR
+		           ENDIF
+		       ENDIF 
+		      ***將B22狀態改為已轉盤差單
+		      SELECT  RECNO() FROM B22 WHERE B22.F01=PO AND B22.F06<>'2' INTO ARRAY BK2
+		      JJ2=''                
+		      IF _TALLY>0   
+		          FOR I= 1 TO ALEN(BK2)
+		                  JJ2=JJ2+ALLTRIM(STR(BK2(I)))+','
+		          ENDFOR    
+		          KK2=STUFF(JJ2,RAT(',',JJ2,1),1,'')              
+		          RLOCK(KK2,'B22')
+		          LL2=RLOCK(KK2,'B22')
+		       ELSE
+		          LL2=.T.   
+		       ENDIF  
+		       IF LL2=.T. 
+		           IF LEN(ALLTRIM(JJ2))>0 
+	                       SELECT  B22
+	                       FOR  I= 1 TO ALEN(BK2)  
+	                	        SELECT B22                      
+		                        GO BK2(I) 
+		                        REPLACE F06 WITH '2'  
+		                        REPLACE F08 WITH PO_NO
+		                        REPLACE F90 WITH IIF(INT_012=1,PADL(ALLTRIM(STR(YEAR(DATE())-1911)),3,' ')+RIGHT(DTOC(DATE()),6),dtoc(DATE())+' ')+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		              ENDFOR
+		           ENDIF
+		        ENDIF               
+	                SELECT B22_1
+	                REPLACE B22_1.F06 WITH '2'       
+	                REPLACE B22_1.F08 WITH PO_NO
+	                REPLACE B22_1.F90 WITH IIF(INT_012=1,PADL(ALLTRIM(STR(YEAR(DATE())-1911)),3,' ')+RIGHT(DTOC(DATE()),6),dtoc(DATE())+' ')+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+      	                UNLOCK ALL
+      	                THISFORM.ANS_BOTT.ENABLED=.F.
+      	                =MESSAGEBOX('已轉入B09.盤差調整單,單號為'+PO_NO,0+48,'請至B09.盤差調整單再次確認')          
+                        IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+                            THISFORM.GRID1.SETFOCUS
+                        ELSE
+                            THISFORM.GRID2.SETFOCUS
+                       ENDIF  
+                  ENDIF       
+             ELSE 
+                 DO FILE_IMPACT
+                 UNLOCK ALL
+                 RETURN
+            ENDIF
+       ELSE
+  	    =MESSAGEBOX('此差異表已轉入B09.盤差調整單,請勿重複轉入,並請至B09.盤差調整單查詢',0+48)      
+  	    RETURN
+       ENDIF 
+   ENDIF    
+   WAIT CLEAR
+   THISFORM.GRID1.SETFOCUS	 
+ ENDPROC 
+ ***********
+  PROC VRT_BOTT.CLICK                    &&反轉B09 盤差調整單
+    PO=B22_1.F01
+    B09_NO=B22_1.F08
+     IF MESSAGEBOX('是否要將此筆資料至B09 盤差調整單反轉?',4+32+256,'請確認') = 6	 
+      	IF B22_1.F06='2'  AND !EMPTY(B22_1.F08) AND RLOCK('B22_1')
+      	    WAIT WINDOW "資料反轉中,請稍後!" AT 0,150 NOWAIT NOCLEAR
+      	     S1=SUBSTR(ALLTRIM(B09_NO),3,4) 
+    	     H1='B0920'+ALLTRIM(S1)
+	     F1=ALLTRIM(H1)+'.DBF'
+	     H2='A2420'+ALLTRIM(S1)
+	     F2=ALLTRIM(H2)+'.DBF'		
+	     IF  FILE('&F1')<>.T.  .OR. FILE('&F2')<>.T. 
+		   =MESSAGEBOX('尚未建立20'+S1+'之月份檔,請至A27.檔案處理中建立!',0+64,'提示訊息視窗')
+		   WAIT CLEAR
+		   RETURN
+	     ELSE
+		   IF !USED('&F1')
+	   	        SELE 0
+	                USE &F1 
+	           ELSE
+	                SELE &F1
+	           ENDIF     
+	    	   SELECT &H1
+	    	   SET ORDER TO 1  
+		   IF !USED('&F2')
+	   	       SELE 0
+	               USE &F2 
+	           ELSE
+	               SELE &F2
+	           ENDIF      	        
+                   SELECT  RECNO() FROM B22 WHERE B22.F01=PO  AND B22.F06='2' INTO ARRAY BK1              
+                   JJ1=''                
+                   IF _TALLY>0   
+                       FOR I= 1 TO ALEN(BK1)
+                               JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+                       ENDFOR    
+                       KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')              
+                       RLOCK(KK1,'B22')
+                       LL1=RLOCK(KK1,'B22')
+                   ELSE
+                       LL1=.T.   
+                   ENDIF 	             
+	           IF LL1=.T.  AND LEN(ALLTRIM(JJ1))>0 
+	               SELECT  B22
+	               FOR  I= 1 TO ALEN(BK1)  
+	                        SELECT B22                      
+		                GO BK1(I) 
+		                REPLACE F06 WITH ''  
+		                REPLACE F08 WITH ''
+		                REPLACE F90 WITH IIF(INT_012=1,PADL(ALLTRIM(STR(YEAR(DATE())-1911)),3,' ')+RIGHT(DTOC(DATE()),6),dtoc(DATE())+' ')+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+		       ENDFOR
+	               DELETE FROM &H1 WHERE &H1..F01=B09_NO
+	               SELECT B22_1
+	               REPLACE F06 WITH ''
+	               REPLACE F08 WITH ''
+	               REPLACE F90 WITH IIF(INT_012=1,PADL(ALLTRIM(STR(YEAR(DATE())-1911)),3,' ')+RIGHT(DTOC(DATE()),6),dtoc(DATE())+' ')+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+	               UNLOCK ALL
+	               SELECT &H2
+	               APPEND BLANK
+	               LOCK()
+	               REPLACE  &H2..F01 WITH 'B008 '
+	               REPLACE  &H2..F02 WITH  SUBSTR(ALLTRIM(B09_NO),3,4)
+	               REPLACE  &H2..F05 WITH 'BH'+F02
+	               REPLACE  &H2..F06 WITH '盤差調整單'
+	               REPLACE  &H2..F08 WITH  B09_NO
+	               UNLOCK	            
+	               SELECT &H1
+	               USE
+	               SELECT &H2
+	               USE                                 
+                       ****將B23狀態改為已轉盤點差異表
+                       SELECT  RECNO() FROM B23 WHERE ALLTRIM(B23.F10)=ALLTRIM(PO)  AND B23.F08='2' INTO ARRAY BK2
+		       JJ2=''                
+		       IF _TALLY>0   
+		           FOR I= 1 TO ALEN(BK2)
+		                   JJ2=JJ2+ALLTRIM(STR(BK2(I)))+','
+		           ENDFOR    
+		           KK2=STUFF(JJ2,RAT(',',JJ2,1),1,'')              
+		           RLOCK(KK2,'B23')
+		           LL2=RLOCK(KK2,'B23')
+		       ELSE
+		           LL2=.T.   
+		       ENDIF  
+		       IF LL2=.T. 
+		           IF LEN(ALLTRIM(JJ2))>0 
+	                       SELECT  B23
+	                       FOR  I= 1 TO ALEN(BK2)  
+	                 	        SELECT B23                      
+		                        GO BK2(I) 
+		                        REPLACE F08 WITH '1'  
+		               ENDFOR
+		           ENDIF
+		       ENDIF 
+      	               UNLOCK ALL
+      	               THISFORM.VRT_BOTT.ENABLED=.F.
+      	               =MESSAGEBOX('此反轉作業成功!',0+64,'提示訊息視窗')       
+                       IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+                           THISFORM.GRID1.SETFOCUS
+                       ELSE
+                           THISFORM.GRID2.SETFOCUS
+                       ENDIF      
+                  ELSE 
+                       DO FILE_IMPACT
+                       UNLOCK ALL
+                       RETURN
+                  ENDIF
+              ENDIF
+       ENDIF       
+   ENDIF    
+   WAIT CLEAR
+   THISFORM.GRID1.SETFOCUS	 
+  ENDPROC  
+ENDDEFINE 
+***********************************************列印程序
+PROCEDURE PNT_PRC  
+    LK=B22_1.F01 
+    PA_NO=ALLTRIM(SUBSTR(LK,6,5))+SPACE(5-LEN(ALLTRIM(SUBSTR(LK,6,5))))
+    PNT_CK=CREATEOBJECT("PNT_CK")
+    PNT_CK.SHOW  
+ENDPROC
+***
+DEFINE CLASS PNT_CK AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='請選擇作業項目'
+  FONTSIZE=INT_015*9
+  TOP=INT_015*200
+  LEFT=INT_015*280  
+  HEIGHT=INT_015*120
+  WIDTH=INT_015*270
+  MOVABLE=.F.
+  MAXBUTTON=.F.
+  MINBUTTON=.F.  
+  CONTROLBOX=.F.
+  BORDERSTYLE=1
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='PNT_CK '
+ ADD OBJECT OPTIONGROUP_CHOICE AS OPTIONGROUP WITH;
+     TOP=INT_015*20,;
+     LEFT=INT_015*25,;  
+     ENABLED=.T.,;
+     ALIGNMENT=0,;
+     HEIGHT=INT_015*85,;
+    WIDTH=INT_015*120,;
+     BUTTONCOUNT=2,;
+     VALUE=1,; 
+     OPTION1.CAPTION='全    部    明    細',;
+     OPTION1.FONTSIZE=INT_015*10,;  
+     OPTION1.TOP=INT_015*7,;
+     OPTION1.AUTOSIZE=.T.,;
+     OPTION1.LEFT=INT_015*5,;
+     OPTION1.NAME='OPTION1',;
+     OPTION2.CAPTION='差異數量不為零',;
+     OPTION2.FONTSIZE=INT_015*10,; 	   
+     OPTION2.TOP=INT_015*60,;
+     OPTION2.AUTOSIZE=.T.,;
+     OPTION2.LEFT=INT_015*5,;
+     OPTION2.NAME='OPTION2'           
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*180,;
+      TOP=INT_015*20,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*55,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<Y.列  印',;
+      TOOLTIPTEXT='列印報表!快速鍵->ALT+Y',;
+      NAME='CMND1'
+ ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*180,;
+      TOP=INT_015*50,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*55,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<E.EXCEL',;
+      TOOLTIPTEXT='轉檔成EXCEL!快速鍵->ALT+E'
+      NAME='CMND2'
+ ADD OBJECT CMND3 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*180,;
+      TOP=INT_015*80,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*55,;
+      FONTSIZE=INT_015*10,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;        
+      CAPTION='\<C.取  消',;
+      TOOLTIPTEXT='取消此畫面!快速鍵->ALT+C'
+      NAME='CMND3'      
+********************
+ PROCEDURE INIT 
+         THISFORM.OPTIONGROUP_CHOICE.OPTION1.FONTSIZE=INT_015*10
+	 THISFORM.OPTIONGROUP_CHOICE.OPTION2.FONTSIZE=INT_015*10
+         THISFORM.SETALL('FONTSIZE',INT_015*10,'COMMANDBUTTON')    
+ENDPROC         
+************
+PROCEDURE CMND1.CLICK
+     SUM_F03=0
+     SUM_F04=0
+     SUM_F05=0   
+     SELECT B22.F01,B22.F02,B22.F03,B22.F04,B22.F05,B22.F09,B22.F10,B01.F02,A14.F02 FROM B22,B01,A14;
+	           WHERE B22.F01=LK AND B01.F01=B22.F02 AND A14.F01=PA_NO AND;
+	            IIF(THISFORM.OPTIONGROUP_CHOICE.VALUE=1,.T.,B22.F05<>0) ORDER BY B22.F02 INTO CURSOR B22B
+     IF _TALLY >0
+	    
+	       SELECT B22B
+	       GO TOP 
+	       DO WHILE !EOF()
+	   	      SUM_F03=SUM_F03+(B22B.F03*B22B.F09)
+		      SUM_F04=SUM_F04+(B22B.F04*B22B.F09)
+		      SUM_F05=SUM_F05+(B22B.F05*B22B.F09)
+		      SELECT B22B
+		      SKIP
+           ENDDO
+        IF A02.F09='*'   
+	       REPORT FORM ALLTRIM(INT_116)+'B22B'  TO PRINT PROMPT PREVIEW 
+        ELSE
+	      REPORT FORM ALLTRIM(INT_116)+'B22A'  TO PRINT PROMPT PREVIEW
+        ENDIF  
+        CLEAR 
+    ENDIF   
+    SELECT B22B
+    USE 
+    THISFORM.CMND3.CLICK
+ENDPROC      
+PROCEDURE CMND2.CLICK
+     FILE_NAME='B22 盤點差異表 20'+SUBSTR(LK,2,4)+'('+IIF(SEEK(PA_NO,'A14'),ALLTRIM(A14.F02),'')+')'
+     IF A02.F09='*'
+         SELECT B22.F02 料號,;
+	                B01.F02 品名規格,; 
+	                B22.F03 庫存數量,;
+	                B22.F03*B22.F09 庫存金額,;
+	                B22.F04 實盤數量,; 
+	                B22.F04*B22.F09 實盤金額,;
+	                B22.F05 差異數量,;
+	                B22.F05*B22.F09 差異金額,;
+	                B22.F09 平均單價,;
+	                B22.F10 備註說明;
+	               FROM B22,B01 WHERE B22.F01=LK AND B01.F01=B22.F02  AND  IIF(THISFORM.OPTIONGROUP_CHOICE.VALUE=1,.T.,B22.F05<>0)  ORDER BY 料號 NOWAIT
+    ELSE
+          SELECT B22.F02 料號,;
+	                 B01.F02 品名規格,; 
+	                 B22.F03 庫存數量,;
+	                 B22.F04 實盤數量,; 
+	                 B22.F05 差異數量,;
+	                 B22.F10 備註說明;
+	                 FROM B22,B01 WHERE B22.F01=LK AND B01.F01=B22.F02   AND  IIF(THISFORM.OPTIONGROUP_CHOICE.VALUE=1,.T.,B22.F05<>0)  ORDER BY 料號 NOWAIT	
+    ENDIF     
+    GCDELIMFILE=PUTFILE('儲存路徑',FILE_NAME,'XLS')
+    IF EMPTY(GCDELIMFILE)  && ESC PRESSED
+        RETURN
+    ELSE
+       ON ERROR DO FILE_IMPACT
+       IF _TALLY >0
+            COPY TO (GCDELIMFILE) TYPE XL5   
+            =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗')
+       ENDIF                             
+     ENDIF	  
+     THISFORM.CMND3.CLICK
+ENDPROC    
+********離開鍵***********
+ PROCEDURE CMND3.CLICK     
+     THISFORM.RELEASE 
+     RETURN  
+ ENDPROC    
+ *****
+ PROC CMND1.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND1.TOP=INT_015*21
+             THISFORM.CMND1.LEFT=INT_015*181
+  ENDPROC     
+  PROC CMND1.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND1.TOP=INT_015*20
+             THISFORM.CMND1.LEFT=INT_015*180             
+  ENDPROC 
+ PROC CMND2.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND2.TOP=INT_015*51
+             THISFORM.CMND2.LEFT=INT_015*181
+  ENDPROC     
+  PROC CMND2.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND2.TOP=INT_015*50
+             THISFORM.CMND2.LEFT=INT_015*180              
+  ENDPROC     
+ PROC CMND3.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND3.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND3.TOP=INT_015*81
+             THISFORM.CMND3.LEFT=INT_015*181
+  ENDPROC     
+  PROC CMND3.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND3.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND3.TOP=INT_015*80
+             THISFORM.CMND3.LEFT=INT_015*180              
+  ENDPROC  
+ENDDEFINE          

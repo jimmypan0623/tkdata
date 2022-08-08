@@ -1,0 +1,363 @@
+close all
+clear 
+FLG='0'
+FCH=''
+AREA1='D00'
+CHK=''
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE 
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK sys_oper+'D00'   
+IF !USED('A01')
+   SELE 0
+   USE A01 INDE A01
+ELSE 
+   SELE A01
+ENDIF
+SET ORDER TO A01
+IF !USED('D0Z')
+   SELE 0
+   USE D0Z ALIA CRY
+ELSE
+   SELE CRY
+ENDIF
+SET ORDER TO 1 
+IF !USED('D00')
+   SELE 0
+   USE D00 INDE D00
+ELSE
+   SELE D00
+ENDIF
+SET ORDER TO 1  
+GO TOP
+D00form=createobject("tkD00")
+D00form.show  
+define class tkD00 as form
+  caption='D00.採購幣別匯率設定'
+*!*	  autocenter=.t.
+  controlbox=.F.
+  BORDERSTYLE=1
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  controlcount=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  showtips=.t.
+  showwindow=1
+  WIDTH=INT_015*789
+  windowtype=1
+  NAME='TKD00'
+  add object shape1 as shape1 with;
+      autocenter=.t.
+  add object shape2 as shape2 with;
+      autocenter=.t.
+  add object shape3 as shape3 with;
+      autocenter=.t.
+  ADD OBJECT LBL_REC AS LBL_REC WITH;
+      AUTOCENTER =.T.
+  ADD OBJECT REC_COUNT AS REC_COUNT  with;
+      caption=str(reccount())      
+  ADD OBJECT LBLF01 AS LABEL WITH;
+      LEFT=INT_015*244,;
+      TOP=INT_015*27,;
+      WIDTH=INT_015*50,;
+      CAPTION='幣別代號'
+  ADD OBJECT LBLF04 AS LABEL WITH;      
+      LEFT=INT_015*244,;
+      TOP=INT_015*52,;
+      WIDTH=INT_015*50,;
+      CAPTION='幣別說明'
+  ADD OBJECT LBLF02 AS LABEL WITH;
+      LEFT=INT_015*244,;
+      TOP=INT_015*77,;
+      WIDTH=INT_015*50,;
+      CAPTION='匯        率'            
+  ADD OBJECT LBLF021 AS LABEL WITH;
+      LEFT=INT_015*380,;
+      TOP=INT_015*77,;
+      AUTOSIZE=.T.,;
+      CAPTION=''                         
+  ADD OBJECT LBLF03 AS LABEL WITH;
+      LEFT=INT_015*244,;
+      TOP=INT_015*102,;
+      WIDTH=INT_015*50,;
+      CAPTION='安全資料'
+  ADD OBJECT LBLF031 AS LABEL WITH;
+      LEFT=INT_015*295,;
+      TOP=INT_015*102,;
+      AUTOSIZE=.T.    
+  
+  ADD OBJECT TXTF01 AS TEXTBOX WITH;      
+      LEFT=INT_015*295,;
+      TOP=INT_015*23,;
+      WIDTH=INT_015*49,;
+      MAXLENGTH=5,;
+      NAME='TXTF01'  
+  ADD OBJECT TXTF04 AS TEXTBOX WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*295,;
+      TOP=INT_015*48,;
+      WIDTH=INT_015*74,;
+      MAXLENGTH=20,;
+      NAME='TXTF04'                 
+  ADD OBJECT TXTF02 AS TEXTBOX WITH;
+      LEFT=INT_015*295,;
+      TOP=INT_015*73,;
+      WIDTH=INT_015*74,;
+      HEIGHT=INT_015*25,;
+      INPUTMASK='9999.999999',;
+      NAME='TXTF02'                         
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      columncount=2,;            
+      RECORDSOURCE='D00',;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      AUTOSIZE=.T.              
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+      AUTOSIZE=.T.
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*455,;
+      LEFT=INT_015*558          
+  ADD OBJECT ANS_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*15,;
+      HEIGHT=INT_015*25,;
+      FONTSIZE=INT_015*9,;
+      WIDTH=INT_015*68,;
+      CAPTION='\<A.預設匯率',;
+      TOOLTIPTEXT='查看匯率紀錄'
+      NAME='ANS_BOTT'                        
+  PROC INIT
+       THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)   &&判斷有無新增的權限
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  &&判斷有無修改的權限
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   &&判斷有無刪除的權限
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.PNT_BOTT.VISIBLE=.F.
+       THISFORM.SHRGROUP.VISIBLE=.F.
+       THISFORM.SHRGROUP.ENABLED=.F.
+       THISFORM.SETALL('HEIGHT',INT_015*25,'TEXTBOX')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'TEXTBOX')
+       THISFORM.SETALL('HEIGHT',INT_015*17,'LABEL')       
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+       THISFORM.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       thisform.setall('FONTSIZE',INT_015*9,'HEADER')       
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*49
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*149
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='幣別代號'
+	   THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='幣別說明'
+	   THISFORM.GRID1.COLUMN1.CONTROLSOURCE='D00.F01'
+	   THISFORM.GRID1.COLUMN2.CONTROLSOURCE='D00.F04'
+       THISFORM.GRID1.READONLY=.T.       
+       THISFORM.GRID1.SETFOCUS    
+       JK='幣別代號'
+  ENDPROC     
+  PROC KEY_LIST.INIT 
+       with this 
+           .additem('依幣別代號排列')
+       endwith      
+  ENDPROC 
+  PROC GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex
+       THISFORM.TXTF01.VALUE=F01       
+       THISFORM.TXTF04.VALUE=F04
+       IF THISFORM.TXTF01.VALUE=INT_011
+          THISFORM.TXTF02.VALUE=F02
+          THISFORM.LBLF021.CAPTION=''                   
+       ELSE
+          THISFORM.TXTF02.VALUE=IIF(SEEK(F01+LEFT(DTOS(DATE()),6)+NOUME(RIGHT(DTOS(DATE()),2)),'CRY'),CRY.F03,D00.F02)       
+          THISFORM.LBLF021.CAPTION=IIF(SEEK(F01+LEFT(DTOS(DATE()),6)+NOUME(RIGHT(DTOS(DATE()),2)),'CRY'),'本旬已設定','本旬未設定')
+          IF THISFORM.LBLF021.CAPTION='本旬已設定' AND D00.F02<>THISFORM.TXTF02.VALUE
+             REPLACE F02 WITH THISFORM.TXTF02.VALUE
+          ENDIF
+       ENDIF
+       THISFORM.LBLF031.CAPTION=F03    
+       THISFORM.ANS_BOTT.ENABLED=(F01<>INT_011)
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       CHK=''
+       thisform.refresh
+  ENDPROC       
+  PROCEDURE ORPGROUP.NEW_BOTT.CLICK   
+       THISFORM.SETALL('READONLY',.F.,'TEXTBOX')    
+       THISFORM.TXTF01.VALUE=''
+       THISFORM.TXTF02.VALUE=0
+       THISFORM.TXTF04.VALUE=''
+       THISFORM.LBLF021.CAPTION=''
+       THISFORM.LBLF031.CAPTION=''
+       THISFORM.TXTF01.SETFOCUS()
+       THISFORM.GRID1.ENABLED=.F.
+       FLG='1'
+  ENDPROC  
+  PROCEDURE ORPGROUP.EDIT_BOTT.CLICK
+     THISFORM.TXTF01.READONLY=.T.
+     THISFORM.GRID1.ENABLED=.F.
+     THISFORM.TXTF04.SETFOCUS
+     LOCK()
+     IF !RLOCK()
+        DO file_impact
+        return
+     endif
+  endproc 
+  PROCEDURE ORPGROUP.DEL_BOTT.CLICK
+     if messagebox('是否確定要刪除此筆資料',4+32+256,'請確認') = 6	      
+        SELE D00
+        LOCK()
+        IF RLOCK()        
+           SELE D00
+           DELE
+           unlock
+           SKIP -1
+           IF BOF()
+              GO TOP
+           ENDIF   
+           THISFORM.GRID1.SETFOCUS
+           IF THISFORM.GRID1.ACTIVEROW=0
+              THISFORM.SETALL('VALUE','','TEXTBOX')
+              THISFORM.CMDGROUP.ENABLED=.F.
+              THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+              THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+              THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+           ELSE
+              THISFORM.CMDGROUP.ENABLED=.T.
+              THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  &&判斷有無修改的權限
+              THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   &&判斷有無刪除的權限
+              THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限              
+           ENDIF
+        ELSE
+          DO file_impact    
+        ENDIF
+     ENDIF        
+  ENDPROC
+  PROCEDURE SHRGROUP.SHURE1_BOTT.CLICK
+    if empty(THISFORM.TXTf01.VALUE)
+       =messagebox('幣別代號不得空白!',0+64,'提示視窗')
+       thisform.txtf01.setfocus
+       return
+    endif   
+    SELE D00
+    SET ORDER TO 1
+    IF SEEK(THISFORM.TXTF01.VALUE,'D00')=.T.
+       =MESSAGEBOX('此幣別代號已經建立!',0+64,'請注意')
+       THISFORM.TXTF01.VALUE=''
+       THISFORM.TXTF01.SETFOCUS  
+       RETURN
+    ENDIF
+    APPEND BLANK
+    LOCK()
+    IF RLOCK()
+       IF THISFORM.TXTF01.VALUE<>INT_011
+          SELECT CRY
+          SEEK THISFORM.TXTF01.VALUE+LEFT(DTOS(DATE()),6)+NOUME(RIGHT(DTOS(DATE()),2))
+          IF FOUND()
+             REPLACE F03 WITH THISFORM.TXTF02.VALUE
+          ELSE
+             APPEND BLANK
+             REPLACE F01 WITH THISFORM.TXTF01.VALUE
+             REPLACE F02 WITH CTOD(LEFT(DTCX(DATE()),7-INT_012)+'/'+NOUME(RIGHT(DTOS(DATE()),2)))
+             REPLACE F03 WITH THISFORM.TXTF02.VALUE
+          ENDIF    
+       ENDIF             
+       SELECT D00    
+       REPLACE F01 WITH THISFORM.TXTF01.VALUE
+       REPLACE F02 WITH THISFORM.TXTF02.VALUE
+       REPLACE F04 WITH THISFORM.TXTF04.VALUE
+       REPLACE F03 WITH IIF(INT_012=1,PADL(ALLTRIM(STR(YEAR(DATE())-1911)),3,' ')+RIGHT(DTOC(DATE()),6),dtoc(DATE())+' ')+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+    ENDIF
+    UNLOCK
+    THISFORM.REC_COUNT.CAPTION=STR(RECCOUNT())
+    THISFORM.GRID1.ENABLED=.T.
+    THISFORM.REFRESH
+    THISFORM.GRID1.SETFOCUS    
+    THISFORM.ORPGROUP.NEW_BOTT.CLICK            
+  ENDPROC
+  PROCEDURE SHRGROUP.SHURE2_BOTT.CLICK    
+    SELE D00
+    IF RLOCK()
+       IF THISFORM.TXTF01.VALUE<>INT_011
+          SELECT CRY
+          SEEK THISFORM.TXTF01.VALUE+LEFT(DTOS(DATE()),6)+NOUME(RIGHT(DTOS(DATE()),2))
+          IF FOUND()
+             REPLACE F03 WITH THISFORM.TXTF02.VALUE
+          ELSE
+             APPEND BLANK
+             REPLACE F01 WITH THISFORM.TXTF01.VALUE
+             REPLACE F02 WITH CTOD(LEFT(DTCX(DATE()),7-INT_012)+'/'+NOUME(RIGHT(DTOS(DATE()),2)))
+             REPLACE F03 WITH THISFORM.TXTF02.VALUE
+          ENDIF    
+       ENDIF             
+       SELECT D00
+       REPLACE F02 WITH THISFORM.TXTF02.VALUE
+       REPLACE F04 WITH THISFORM.TXTF04.VALUE    
+       REPLACE F03 WITH IIF(INT_012=1,PADL(ALLTRIM(STR(YEAR(DATE())-1911)),3,' ')+RIGHT(DTOC(DATE()),6),dtoc(DATE())+' ')+IIF(SEEK(sys_oper,'A01'),A01.F03,'')          
+    ELSE
+      DO file_impact
+      return   
+    ENDIF   
+    THISFORM.SHRGROUP.ABANDON_BOTT.CLICK    
+  ENDPROC   
+  procedure SHRGROUP.ABANDON_BOTT.CLICK
+      THISFORM.SHRGROUP.ENABLED=.F.
+      THISFORM.SHRGROUP.VISIBLE=.F.      
+      THISFORM.ORPGROUP.ENABLED=.T.
+      THISFORM.ORPGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.CMDGROUP.ENABLED=.T.
+      THISFORM.CMDGROUP.SETALL('ENABLED',.T.,'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.KEY_LIST.ENABLED=.T.      
+      THISFORM.SETALL('READONLY',.T.,'TEXTBOX')   
+      UNLOCK ALL
+      SELE D00
+      THISFORM.GRID1.ENABLED=.T.
+      THISFORM.GRID1.SETFOCUS          
+  ENDPROC
+  PROCEDURE SHRGROUP.FINISH_BOTT.CLICK   
+       THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+  ENDPROC     
+  PROCEDURE ANS_BOTT.CLICK
+         CRTP=D00.F01
+         CRDP=D00.F04
+         *SELECT F02,F03 FROM CRY WHERE F01=D00.F01 ORDER BY F02 DESC INTO CURSOR CRY NOWAIT
+         SELECT CRY
+         SET FILTER TO F01=CRTP
+         SEEK CRTP
+         CRYRT_SEEK=CREATEOBJECT("CRYRT_SEEK")  
+         CRYRT_SEEK.SHOW                  
+         SELECT CRY
+         SET FILTER TO 
+         AREA1='D00'
+         SELECT D00
+         THISFORM.GRID1.SETFOCUS
+  ENDPROC    
+enddefine    
+**************************************************刪除資料前檢查是否仍有關聯資料在其他資料表格中
+procedure dele_shure 
+
+        
+     SELE D00
+
+     LOCK()
+     IF RLOCK()        
+        SELECT CRY
+        DELETE FROM CRY WHERE F01=D00.F01     
+        SELE D00
+        DELE
+        unlock
+        SKIP -1
+        IF BOF()
+           GO TOP
+        ENDIF   
+     ELSE
+       DO file_impact    
+     ENDIF      
+ENDPROC     
+************************************************

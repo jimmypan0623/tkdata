@@ -1,0 +1,180 @@
+close all
+clear 
+FLG='0'
+FCH=''
+AREA1='F01'
+AREA2='F03'
+UKEF=''
+R=0
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE 
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK sys_oper+'F02'   
+IF !USED('A01')
+   SELE 0
+   USE A01 INDE A01
+ELSE 
+   SELE A01
+ENDIF
+SET ORDER TO 1    
+IF !USED('E00')
+   SELE 0
+   USE E00
+ELSE
+   SELE E00
+ENDIF
+SET ORDER TO 1
+IF !USED('F03')
+   SELE 0
+   USE F03
+ELSE
+   SELE F03
+ENDIF
+SET ORDER TO F031
+SET RELATION TO F08 INTO E00
+IF !USED('F01')
+   SELE 0
+   USE F01 INDE F01
+ELSE
+   SELE F01
+ENDIF
+SET ORDER TO F011
+SET FILTER TO F05=.T.
+F02form=createobject("tkF02")
+F02form.show  
+define class tkF02 as form
+  caption='F02 各階組成表'
+*!*	  autocenter=.t.
+  controlbox=.F.
+  BORDERSTYLE=1  
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  controlcount=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  showtips=.t.
+  showwindow=1
+  WIDTH=INT_015*789
+  windowtype=1
+  NAME='TKF02'
+  add object shape1 as shape1 with;
+      autocenter=.t.
+  add object shape2 as shape2 with;
+      autocenter=.t.
+  add object shape3 as shape3 with;
+      autocenter=.t.
+  ADD OBJECT LBL_REC AS LBL_REC WITH;
+      AUTOCENTER =.T.
+  ADD OBJECT REC_COUNT AS REC_COUNT  with;
+      caption=str(reccount())          
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      columncount=2,;            
+      RECORDSOURCE='F01',;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'
+  ADD OBJECT GRID2 AS GRID2 WITH;
+      TOP=INT_015*5,;
+      HEIGHT=INT_015*500,;
+      columncount=4,;            
+      RECORDSOURCE='F03',;      
+      LINKMASTER='F01',;
+      RELATIONALEXPR='F01+F02',;
+      CHILDORDER='F031',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4'                  
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      AUTOSIZE=.T.              
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+      AUTOSIZE=.T.
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*173,;
+      LEFT=INT_015*558          
+  PROC INIT
+       THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.NEW_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.EDIT_BOTT.VISIBLE=.F.       
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+       THISFORM.ORPGROUP.DEL_BOTT.VISIBLE=.F.       
+       THISFORM.SHRGROUP.VISIBLE=.F.
+       THISFORM.SHRGROUP.ENABLED=.F.       
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限      
+       thisform.setall('FONTSIZE',INT_015*9,'COLUMN')
+       thisform.setall('FONTSIZE',INT_015*9,'HEADER')       
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID2.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*149
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*60
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='組成品號'
+	   THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='版次'
+	   THISFORM.GRID1.COLUMN1.CONTROLSOURCE='F01.F01'
+	   THISFORM.GRID1.COLUMN2.CONTROLSOURCE='F01.F02'
+       THISFORM.GRID1.READONLY=.T.       
+       THISFORM.GRID1.SETFOCUS
+       THISFORM.GRID2.COLUMN1.WIDTH=INT_015*320      
+       THISFORM.GRID2.COLUMN1.CONTROLSOURCE='RTRIM(F03.F03)+F03.F04'
+       THISFORM.GRID2.COLUMN2.HEADER1.CAPTION='該階用量'                           
+       THISFORM.GRID2.COLUMN2.WIDTH=INT_015*60       
+       THISFORM.GRID2.COLUMN2.CONTROLSOURCE='F03.F06'       
+       THISFORM.GRID2.COLUMN3.HEADER1.CAPTION='展開用量'                    
+       THISFORM.GRID2.COLUMN3.WIDTH=INT_015*60       
+       THISFORM.GRID2.COLUMN3.CONTROLSOURCE='F03.F07'       
+       THISFORM.GRID2.COLUMN4.HEADER1.CAPTION='投入製程'             
+       THISFORM.GRID2.COLUMN4.WIDTH=INT_015*60       
+       THISFORM.GRID2.COLUMN4.CONTROLSOURCE="E00.F04"       
+       JK='組成品號'
+           UKEF=SPACE(1)
+           FOR I=1 TO 25
+               UKEF=UKEF+SPACE(3)+PADL(ALLTRIM(STR(I)),2,'0')
+           ENDFOR       
+       THISFORM.GRID2.COLUMN1.HEADER1.CAPTION='階次'+UKEF
+  ENDPROC     
+
+  PROC KEY_LIST.INIT 
+       with this 
+           .additem('依組成品號排列')
+       endwith      
+  ENDPROC 
+  PROC GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","","COLUMN")
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       CHK=''
+       thisform.refresh
+  ENDPROC       
+  PROC GRID2.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex  
+         R=RECNO('&AREA1')
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN") 
+       THISFORM.GRID1.ENABLED=.F.        
+       FCH=THISFORM.ACTIVECONTROL.NAME                  
+  ENDPROC       
+  PROC GRID1.MOUSEENTER
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord
+
+             THISFORM.GRID1.ENABLED=.T. 
+ 
+ ENDPROC      
+enddefine    
+************************************************************************
+PROC PNT_PRC
+     Y=''
+     PO_NO=F01.F01+F01.F02
+     FOR I=1 TO 25
+         Y=Y+SPACE(4)+PADL(I,2,'0')
+     ENDFOR
+     SELE * FROM F03 WHERE F03.F01+F03.F02=PO_NO NOWAIT
+     IF _TALLY>0
+        REPORT FORM ALLTRIM(INT_116)+'F02' PREVIEW
+     ENDIF
+ENDPROC

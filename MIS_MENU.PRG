@@ -1,0 +1,411 @@
+close all
+clear 
+FLG='0'
+TIMCNT=0
+AREA1='A02'
+AREA2=''
+CHK=''
+PJMFORM=CREATEOBJECT("TKPJM")
+PJMFORM.SHOW  
+DEFINE CLASS TKPJM AS FORM
+  I=0 
+  CAPTION='  主  畫  面  選  單'
+  CONTROLBOX=.F.
+  BORDERSTYLE=1
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  CONTROLCOUNT=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WIDTH=INT_015*794
+  WINDOWTYPE=1
+  NAME='TKPJM'   
+  ADD OBJECT TIMER1 AS TIMER WITH;
+      INTERVAL=200
+  ADD OBJECT CMDA AS COMMANDBUTTON WITH;
+      LEFT=INT_015*10,;
+      TOP=INT_015*20,;
+      CAPTION='\<A.系統管理'
+  ADD OBJECT CMDB AS COMMANDBUTTON WITH;      
+      LEFT=INT_015*10,;
+      TOP=INT_015*80,;
+      CAPTION='\<B.庫存管理'
+  ADD OBJECT CMDC AS COMMANDBUTTON WITH;
+      LEFT=INT_015*10,;
+      TOP=INT_015*140,;
+      CAPTION='\<C.業務管理'            
+  ADD OBJECT CMDD AS COMMANDBUTTON WITH;
+      LEFT=INT_015*10,;
+      TOP=INT_015*200,;
+      CAPTION='\<D.採購管理'
+  ADD OBJECT CMDP AS COMMANDBUTTON WITH;
+      LEFT=INT_015*558,;
+      TOP=INT_015*20,;
+      CAPTION='\<P.外購管理'            
+  ADD OBJECT CMDE AS COMMANDBUTTON WITH;
+      LEFT=INT_015*10,;
+      TOP=INT_015*260,;
+      CAPTION='\<E.生產管理'      
+  ADD OBJECT CMDF AS COMMANDBUTTON WITH;
+      LEFT=INT_015*10,;
+      TOP=INT_015*320,;
+      CAPTION='\<F.料表管理'            
+  ADD OBJECT CMDG AS COMMANDBUTTON WITH;
+      LEFT=INT_015*10,;
+      TOP=INT_015*380,;
+      CAPTION='\<G.成本計算'                  
+  ADD OBJECT CMDH AS COMMANDBUTTON WITH;
+      LEFT=INT_015*200,;
+      TOP=INT_015*20,;
+      CAPTION='\<H.品質管理'                        
+  ADD OBJECT CMDK AS COMMANDBUTTON WITH;
+      LEFT=INT_015*200,;
+      TOP=INT_015*80,;
+      CAPTION='\<K.財務管理'             
+  ADD OBJECT CMDL AS COMMANDBUTTON WITH;
+      LEFT=INT_015*200,;
+      TOP=INT_015*140,;
+      CAPTION='\<L.固定資產'                   
+  ADD OBJECT CMDS AS COMMANDBUTTON WITH;
+      LEFT=INT_015*200,;
+      TOP=INT_015*200,;
+      CAPTION='\<S.人事出勤'               
+  ADD OBJECT CMDQ AS COMMANDBUTTON WITH;
+      LEFT=INT_015*558,;
+      TOP=INT_015*80,;
+      CAPTION='\<Q.統計品管'                        
+  ADD OBJECT CMDOUT AS COMMANDBUTTON WITH;
+      LEFT=INT_015*558,;
+      TOP=INT_015*140,;
+      CAPTION='\<I.重新登入  '                     
+  ADD OBJECT CMDQT AS COMMANDBUTTON WITH;
+      LEFT=INT_015*558,;
+      TOP=INT_015*200,;
+      CAPTION='\<R.離開系統'      
+  ADD OBJECT CMDBK4 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*558,;
+      TOP=INT_015*380,;
+      CAPTION='單據編號暫存檔'                        
+  ADD OBJECT CMDBK5 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*558,;
+      TOP=INT_015*440,;
+      CAPTION='訂單表身檔'                  
+  PROC INIT       
+       THISFORM.SETALL('FONTSIZE',INT_015*14,'COMMANDBUTTON')
+       THISFORM.SETALL('AUTOSIZE',.T.,'COMMANDBUTTON')
+       THISFORM.SETALL('MOUSEPOINTER',99,'COMMANDBUTTON')
+       THISFORM.SETALL('MOUSEICON','BMPS\harrow.cur','COMMANDBUTTON')           
+       IF INT_015=1
+           THISFORM.PICTURE='BMPS\XP800600.JPG'     
+       ELSE    
+           THISFORM.PICTURE='BMPS\XP1024768.JPG' 
+       ENDIF             
+  ENDPROC     
+  PROC CMDA.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDA.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDA.TOP=INT_015*21
+          THISFORM.CMDA.LEFT=INT_015*11
+  ENDPROC     
+  PROC CMDA.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDA.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDA.TOP=INT_015*20
+           THISFORM.CMDA.LEFT=INT_015*10                  
+  ENDPROC  
+  PROC CMDB.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDB.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDB.TOP=INT_015*81
+          THISFORM.CMDB.LEFT=INT_015*11
+  ENDPROC     
+  PROC CMDB.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDB.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDB.TOP=INT_015*80
+           THISFORM.CMDB.LEFT=INT_015*10                  
+  ENDPROC     
+  PROC CMDC.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDC.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDC.TOP=INT_015*141
+          THISFORM.CMDC.LEFT=INT_015*11
+  ENDPROC     
+  PROC CMDC.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDC.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDC.TOP=INT_015*140
+           THISFORM.CMDC.LEFT=INT_015*10                  
+  ENDPROC      
+  PROC CMDD.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDD.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDD.TOP=INT_015*201
+          THISFORM.CMDD.LEFT=INT_015*11
+  ENDPROC     
+  PROC CMDD.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDD.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDD.TOP=INT_015*200
+           THISFORM.CMDD.LEFT=INT_015*10                  
+  ENDPROC  
+  PROC CMDE.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDE.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDE.TOP=INT_015*261
+          THISFORM.CMDE.LEFT=INT_015*11
+  ENDPROC     
+  PROC CMDE.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDE.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDE.TOP=INT_015*260
+           THISFORM.CMDE.LEFT=INT_015*10                  
+  ENDPROC  
+  PROC CMDF.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDF.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDF.TOP=INT_015*321
+          THISFORM.CMDF.LEFT=INT_015*11
+  ENDPROC     
+  PROC CMDF.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDF.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDF.TOP=INT_015*320
+           THISFORM.CMDF.LEFT=INT_015*10                  
+  ENDPROC  
+  PROC CMDG.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDG.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDG.TOP=INT_015*381
+          THISFORM.CMDG.LEFT=INT_015*11
+  ENDPROC     
+  PROC CMDG.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDG.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDG.TOP=INT_015*380
+           THISFORM.CMDG.LEFT=INT_015*10                  
+  ENDPROC          
+  PROC CMDH.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDH.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDH.TOP=INT_015*21
+          THISFORM.CMDH.LEFT=INT_015*201
+  ENDPROC     
+  PROC CMDH.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDH.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDH.TOP=INT_015*20
+           THISFORM.CMDH.LEFT=INT_015*200                  
+  ENDPROC  
+  PROC CMDK.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDK.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDK.TOP=INT_015*81
+          THISFORM.CMDK.LEFT=INT_015*201
+  ENDPROC     
+  PROC CMDK.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDK.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDK.TOP=INT_015*80
+           THISFORM.CMDK.LEFT=INT_015*200                  
+  ENDPROC  
+  PROC CMDL.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDL.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDL.TOP=INT_015*141
+          THISFORM.CMDL.LEFT=INT_015*201
+  ENDPROC     
+  PROC CMDL.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDL.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDL.TOP=INT_015*140
+           THISFORM.CMDL.LEFT=INT_015*200                  
+  ENDPROC  
+  PROC CMDS.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDS.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDS.TOP=INT_015*201
+          THISFORM.CMDS.LEFT=INT_015*201
+  ENDPROC     
+  PROC CMDS.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDS.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDS.TOP=INT_015*200
+           THISFORM.CMDS.LEFT=INT_015*200                  
+  ENDPROC   
+  PROC CMDP.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDP.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDP.TOP=INT_015*21
+          THISFORM.CMDP.LEFT=INT_015*559
+  ENDPROC     
+  PROC CMDP.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDP.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDP.TOP=INT_015*20
+           THISFORM.CMDP.LEFT=INT_015*558                  
+  ENDPROC  
+  PROC CMDQ.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDQ.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDQ.TOP=INT_015*81
+          THISFORM.CMDQ.LEFT=INT_015*559
+  ENDPROC     
+  PROC CMDQ.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDQ.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDQ.TOP=INT_015*80
+           THISFORM.CMDQ.LEFT=INT_015*558                  
+  ENDPROC  
+  PROC CMDBK4.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDBK4.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDBK4.TOP=INT_015*381
+          THISFORM.CMDBK4.LEFT=INT_015*559
+  ENDPROC     
+  PROC CMDBK4.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDBK4.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDBK4.TOP=INT_015*380
+           THISFORM.CMDBK4.LEFT=INT_015*558                  
+  ENDPROC  
+  PROC CMDBK5.MOUSEENTER      
+     LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+          THISFORM.CMDBK5.FORECOLOR=RGB(255,0,0)
+          THISFORM.CMDBK5.TOP=INT_015*439
+          THISFORM.CMDBK5.LEFT=INT_015*559
+  ENDPROC     
+  PROC CMDBK5.MOUSELEAVE      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDBK5.FORECOLOR=RGB(0,0,0)  
+           THISFORM.CMDBK5.TOP=INT_015*440
+           THISFORM.CMDBK5.LEFT=INT_015*558                  
+  ENDPROC      
+  PROC CMDOUT.MOUSEENTER      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDOUT.FORECOLOR=RGB(255,0,0)
+           THISFORM.CMDOUT.TOP=INT_015*141
+           THISFORM.CMDOUT.LEFT=INT_015*559
+  ENDPROC     
+  PROC CMDOUT.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+            THISFORM.CMDOUT.FORECOLOR=RGB(0,0,0)  
+            THISFORM.CMDOUT.TOP=INT_015*140
+            THISFORM.CMDOUT.LEFT=INT_015*558                  
+  ENDPROC     
+  PROC CMDQT.MOUSEENTER      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THISFORM.CMDQT.FORECOLOR=RGB(255,0,0)
+           THISFORM.CMDQT.TOP=INT_015*201
+           THISFORM.CMDQT.LEFT=INT_015*559
+  ENDPROC     
+  PROC CMDQT.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+            THISFORM.CMDQT.FORECOLOR=RGB(0,0,0)  
+            THISFORM.CMDQT.TOP=INT_015*200
+            THISFORM.CMDQT.LEFT=INT_015*558                  
+  ENDPROC  
+  PROC CMDA.CLICK
+       BK='A'
+       DO CHOICE       
+  ENDPROC
+  PROC CMDB.CLICK
+       BK='B'
+       DO CHOICE
+  ENDPROC
+  PROC CMDC.CLICK
+       BK='C'
+       DO CHOICE
+  ENDPROC
+  PROC CMDD.CLICK
+       BK='D'
+       DO CHOICE
+  ENDPROC  
+  PROC CMDE.CLICK
+       BK='E'
+       DO CHOICE
+  ENDPROC   
+  PROC CMDF.CLICK
+       BK='F'
+       DO CHOICE
+  ENDPROC   
+  PROC CMDG.CLICK
+       BK='G'
+       DO CHOICE
+  ENDPROC     
+  PROC CMDH.CLICK
+       BK='H'
+       DO CHOICE
+  ENDPROC   
+  PROC CMDK.CLICK
+       BK='K'
+       DO CHOICE
+  ENDPROC     
+  PROC CMDL.CLICK
+       BK='L'
+       DO CHOICE
+  ENDPROC     
+  PROC CMDP.CLICK
+       BK='P'
+       DO CHOICE
+  ENDPROC        
+  PROC CMDQ.CLICK
+       BK='Q'
+       DO CHOICE
+  ENDPROC           
+  PROC CMDS.CLICK
+       BK='S'
+       DO CHOICE
+  ENDPROC   
+  PROC CMDBK4.CLICK
+      DO BK4    
+  ENDPROC    
+  PROC CMDBK5.CLICK
+      DO BK5    
+  ENDPROC       
+  PROC CMDOUT.CLICK
+     IF MESSAGEBOX('您是否確定要重新登入系統?',4+48+256,'請確認') = 6 
+          IF !USED('A04')
+              SELECT  0
+              USE A04
+          ELSE 
+              SELECT  A04
+          ENDIF 
+          SET ORDER TO A041
+          SEEK sys_oper
+          IF FOUND()
+              REPLACE F01 WITH 'zzzzz'
+              REPLACE F04 WITH ''
+              REPLACE F06 WITH ''
+          ENDIF   
+          ON KEY
+          CLOSE TABLE ALL 
+          THISFORM.RELEASE
+      ENDIF   
+  ENDPROC                  
+  PROC CMDQT.CLICK
+     IF MESSAGEBOX('您是否確定要離開系統?',4+48+256,'請確認') = 6 
+          IF !USED('A04')
+              SELECT  0
+              USE A04
+          ELSE 
+              SELECT  A04
+          ENDIF 
+          SET ORDER TO A041
+          SEEK sys_oper
+          IF FOUND()
+              REPLACE F01 WITH 'zzzzz'
+              REPLACE F04 WITH ''
+              REPLACE F06 WITH ''
+          ENDIF   
+          ON KEY
+          CLOSE TABLE ALL
+          CLEAR EVENTS       
+          THISFORM.RELEASE
+      ENDIF   
+  ENDPROC       
+ENDDEFINE           

@@ -1,0 +1,166 @@
+CLEAR 
+CLOSE ALL
+SET DELETED ON
+SET EXCLUSIVE OFF
+
+IF !USED('C01')
+   USE C01
+ELSE
+   SELECT C01
+ENDIF
+SET ORDER TO 1
+IF !USED('B01')
+   SELECT 0
+   USE B01
+ELSE
+   SELECT B01
+ENDIF      
+SET ORDER TO 1
+IF !USED('C20')
+   SELECT 0
+   USE C20
+ELSE
+   SELECT C20   
+ENDIF   
+SET ORDER TO 1
+SELECT 0
+USE A01
+SET ORDER TO 1
+SELECT 0
+CREATE CURSOR B04GB (F01 C(5),F02 C(50),F03 C(30),F04 C(43),F05 C(20),F06 C(30),F07 C(4),F08 N(14,6),F09 N(16),F10 C(5),F11 C(8),F12 C(5),F13 C(8))
+INDEX ON F01+F04 TAG B04GB
+SET ORDER TO 1
+
+
+FOR I=1 TO 7
+    B04='B042013'+PADL(ALLTRIM(STR(I)),2,'0')
+
+    IF !USED('&B04')
+       SELE 0
+       USE (B04) ALIA B04
+    ELSE
+       SELE B04
+    ENDIF        
+    SET ORDER TO 1
+    GO TOP
+    DO WHILE !EOF()
+       IF AT('JST',IIF(SEEK(B04.F03,'B01'),B01.F02,''))>0
+          SELECT B04GB      
+          SEEK B04.F06+B04.F03
+          IF !FOUND() 
+              APPEND BLANK
+              REPLACE F01 WITH B04.F06
+              REPLACE F02 WITH IIF(SEEK(B04.F06,'C01'),C01.F05,'')
+              *REPLACE F03 WITH IIF(SEEK(B04.F03,'C20'),C20.F04,'')
+              *IF EMPTY(ALLTRIM(F03))
+                 REPLACE F03 WITH IIF(SEEK(B04.F03,'B01'),;&&B01.F49,'')
+                 ICASE(B01.F49='J ','JAPAN',B01.F49='B ','BELGIUM',B01.F49='C ','U.S.A.',B01.F49='F ','FRANCE',B01.F49='G ','CHINA',B01.F49='Q ','KOREA',B01.F49='W ','INDONESIA',B01.F49='Z ','JAPAN',B01.F49='D ','MALAYSIA',''),'')
+              *ENDIF
+              REPLACE F04 WITH B04.F03
+              REPLACE F05 WITH IIF(SEEK(B04.F03,'B01'),B01.F02,'')
+              REPLACE F06 WITH IIF(SEEK(B04.F06,'C01'),C01.F31,'')
+              REPLACE F10 WITH IIF(SEEK(B04.F06,'C01'),C01.F33,'')
+              REPLACE F11 WITH IIF(SEEK(F10,'A01'),A01.F03,'')
+              REPLACE F12 WITH IIF(SEEK(B04.F06,'C01'),C01.F23,'')
+              REPLACE F13 WITH IIF(SEEK(F12,'A01'),A01.F03,'')
+              
+          ENDIF
+          REPLACE F07 WITH B04.F14
+          REPLACE F08 WITH B04.F15
+          REPLACE F09 WITH F09+B04.F04
+       ENDIF   
+ 
+       SELECT B04
+       SKIP
+    ENDDO
+    SELECT B04
+    USE
+ENDFOR
+SELECT B04GB
+GO TOP
+SELECT F01 客戶代號,F02 公司名稱,F03 產地,F04 料號,F05 品名規格,F06 運貨方式,F07 幣別,F08 單價,F09 累計數量,F11 業務人員,F13 業務助理 FROM B04GB ORDER BY F01,F04 NOWAIT
+IF _TALLY>0
+                     FILENAME='JWASKGBAI'
+		              GCDELIMFILE=PUTFILE('儲存路徑',FILENAME,'XLS')
+		              IF !EMPTY(GCDELIMFILE) 
+		                   
+		                    COPY TO (GCDELIMFILE) TYPE XL5     
+		                    =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗') 
+		              ENDIF   	
+ENDIF
+SELECT B04GB
+USE
+IF !USED('E03')
+   SELECT 0
+   USE E03
+ELSE 
+   SELECT E03
+ENDIF
+SET ORDER TO 1            
+SELECT 0
+
+CREATE CURSOR E14GB (F01 C(5),F02 C(50),F03 C(30),F04 C(43),F05 C(20),F06 C(30),F07 C(4),F08 N(14,6),F09 N(16),F10 C(5),F11 C(8),F12 C(5),F13 C(8))
+INDEX ON F01+F04 TAG E14GB
+SET ORDER TO 1
+
+FOR I=1 TO 7
+    E14='E142013'+PADL(ALLTRIM(STR(I)),2,'0')
+
+    IF !USED('&E14')
+       SELE 0
+       USE (E14) ALIA E14
+    ELSE
+       SELE E14
+    ENDIF        
+    SET ORDER TO 1
+    SET RELATION TO F01 INTO E03
+    GO TOP
+    DO WHILE !EOF()
+       IF AT('JST',IIF(SEEK(E14.F02,'B01'),B01.F02,''))>0 AND E14.F08<>.T.
+          SELECT E14GB      
+          SEEK E03.F08+E14.F02
+          IF !FOUND() 
+              APPEND BLANK
+              REPLACE F01 WITH E03.F08
+              REPLACE F02 WITH IIF(SEEK(E03.F08,'C01'),C01.F05,'')
+              *REPLACE F03 WITH IIF(SEEK(E14.F02,'C20'),C20.F04,'')
+              *IF EMPTY(ALLTRIM(F03))
+                 REPLACE F03 WITH IIF(SEEK(E14.F02,'B01'),;&&B01.F49,'')
+                 ICASE(B01.F49='J ','JAPAN',B01.F49='B ','BELGIUM',B01.F49='C ','U.S.A.',B01.F49='F ','FRANCE',B01.F49='G ','CHINA',B01.F49='Q ','KOREA',B01.F49='W ','INDONESIA',B01.F49='Z ','JAPAN',B01.F49='D ','MALAYSIA',''),'')
+              *ENDIF
+              REPLACE F04 WITH E14.F02
+              REPLACE F05 WITH IIF(SEEK(E14.F02,'B01'),B01.F02,'')
+              REPLACE F06 WITH '線材加工'    
+              REPLACE F10 WITH IIF(SEEK(E03.F08,'C01'),C01.F33,'')
+              REPLACE F11 WITH IIF(SEEK(F10,'A01'),A01.F03,'')
+              REPLACE F12 WITH IIF(SEEK(E03.F08,'C01'),C01.F23,'')
+              REPLACE F13 WITH IIF(SEEK(F12,'A01'),A01.F03,'')
+          ENDIF
+          
+          REPLACE F09 WITH F09+E14.F05
+       ENDIF   
+ 
+       SELECT E14
+       SKIP
+    ENDDO
+    SELECT E14
+    SET RELATION OFF INTO E03
+    USE
+ENDFOR
+SELECT E14GB
+GO TOP
+SELECT F01 客戶代號,F02 公司名稱,F03 產地,F04 料號,F05 品名規格,F06 運貨方式,F07 幣別,F08 單價,F09 累計數量,F11 業務人員,F13 業務助理 FROM E14GB ORDER BY F01,F04 NOWAIT
+IF _TALLY>0
+                     FILENAME='線材加工用料'
+		              GCDELIMFILE=PUTFILE('儲存路徑',FILENAME,'XLS')
+		              IF !EMPTY(GCDELIMFILE) 
+		                   
+		                    COPY TO (GCDELIMFILE) TYPE XL5     
+		                    =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗') 
+		              ENDIF   	
+ENDIF
+SELECT E14GB
+USE
+
+
+      

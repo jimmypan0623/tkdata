@@ -1,0 +1,87 @@
+CLEAR ALL
+CLOSE ALL
+SET EXCLUSIVE OFF
+
+SELECT 0
+USE P03
+SET ORDER TO 1
+SELECT 0
+USE P12200705 ALIAS P12
+SET ORDER TO 1
+SELECT 0
+USE K25200705 ALIAS K25
+SET ORDER TO 1
+SET FILTER TO LEFT(F15,2)='PB'
+GO TOP
+SELECT 0
+USE P17200705 ALIAS P17
+SET ORDER TO 1
+SELECT 0
+USE P19200705 EXCLUSIVE ALIAS P19
+ZAP
+SELECT P12
+GO TOP 
+DO WHILE !EOF()
+                               
+                               SELE P19         &&鷹付帳款明細
+
+                            APPEND BLANK
+                            REPL F01 WITH CTOD('2007/05/'+P12.F02)
+                            REPL F02 WITH P12.F01
+                            REPL F03 WITH P12.F07
+                            REPL F04 WITH P12.F09
+                            REPL F05 WITH P12.F03
+                            REPL F06 WITH P12.F04+P12.F15
+                            REPL F07 WITH (P12.F04*P12.F17)/(P12.F04+P12.F15)
+                            REPL F08 WITH ROUND(IIF(P12.F18=1,P12.F04*P12.F17,P12.F04*P12.F17*P12.F18),0)
+                            REPL F09 WITH '1'
+*                            REPL F12 WITH dtoc(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+                            REPL F13 WITH P12.F16
+                            REPL F14 WITH P12.F18
+                            REPL F17 WITH IIF(!EMPTY(P12.F21),'備註:'+P12.F21,'')+IIF(!EMPTY(P12.F20),'發票:'+P12.F20,'')
+                            REPL F19 WITH IIF(P12.F22='22' .AND. P12.F23='1','02','00')     &&若為進項二聯式應稅,則特別註明                                                 
+                            REPL F20 WITH P12.F05
+                            REPL F22 WITH DATE()
+   SELECT P12                            
+   SKIP
+ENDDO
+SELECT P17
+GO TOP
+DO WHILE !EOF()
+   SELECT P19
+   APPEND BLANK
+   REPLACE F01 WITH CTOD('2007/05/31')
+   REPLACE F02 WITH P17.F10
+   REPLACE F03 WITH IIF(SEEK(P17.F11,'P03'),P03.F03,'')
+   REPLACE F04 WITH P17.F11
+   REPLACE F05 WITH P17.F05
+   REPLACE F06 WITH 1
+   REPLACE F07 WITH P17.F09
+   REPLACE F08 WITH P17.F09
+   REPLACE F09 WITH '1'
+   REPLACE F13 WITH 'NT'
+   REPLACE F14 WITH 1
+   REPLACE F17 WITH '運費轉入'
+   SELECT P17
+   SKIP
+ENDDO   
+SELECT K25
+GO TOP
+DO WHILE !EOF()
+   SELECT P19
+   APPEND BLANK
+   REPLACE F01 WITH CTOD('2007/05/'+K25.F02)
+   REPLACE F02 WITH 'PB'
+   REPLACE F03 WITH K25.F03
+   REPLACE F04 WITH '稅額'
+   REPLACE F05 WITH '發票:'+K25.F07
+   REPLACE F06 WITH 1
+   REPLACE F07 WITH K25.F10
+   REPLACE F08 WITH K25.F10
+   REPLACE F09 WITH '1'
+   REPLACE F13 WITH 'NT'
+   REPLACE F14 WITH 1
+   SELECT K25
+   SKIP
+ENDDO
+CLOSE ALL

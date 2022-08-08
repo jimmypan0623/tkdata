@@ -1,0 +1,1092 @@
+***E03製程標準工時與工資
+close all
+clear 
+FLG='0'
+FCH=''
+CHK=''
+R=0
+AREA1='F01'
+AREA2='E05'
+IF !USED('E00')
+   SELE 0
+   USE E00
+ELSE
+   SELE E00
+ENDIF
+SET ORDER TO 1
+IF ! USED('A01')
+   SELE 0
+   USE A01 INDE A01
+ELSE
+   SELE A01
+ENDIF      
+SET ORDER TO A01
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK sys_oper+'E03'
+IF !USED('A14')
+    SELECT 0
+    USE A14
+ELSE
+    SELECT A14
+ENDIF
+SET ORDER TO 1        
+IF !USED('B01')
+   SELE 0
+   USE B01 INDE B01
+ELSE
+   SELE B01
+ENDIF
+SET ORDER TO 1
+IF !USED('F01')
+   SELE 0
+   USE F01 INDE F01
+ELSE
+   SELE F01
+ENDIF
+SET ORDER TO F011
+IF !USED('F02')
+   SELE 0
+   USE F02 
+ELSE
+   SELE F02
+ENDIF
+SET ORDER TO F021
+SET RELATION TO F01 INTO B01
+if !used('E05')
+   SELE 0
+   USE E05
+ELSE
+   SELE E05
+ENDIF
+SET ORDER TO E051      
+SET RELATION TO F07 INTO E00 
+SET RELATION TO  F08 INTO A14 ADDI
+E03form=createobject("tkE03")
+E03form.show  
+define class tkE03 as form
+  caption='E03.製程標準工時與工資'
+  controlbox=.F.
+  BORDERSTYLE=3  
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  controlcount=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  showtips=.t.
+  showwindow=1
+  WIDTH=INT_015*789
+  windowtype=1
+  NAME='TKE03'
+  add object shape1 as shape1 with;
+        autocenter=.t.
+  ADD OBJECT LBL_REC AS LBL_REC WITH;
+      AUTOCENTER =.T.
+  ADD OBJECT REC_COUNT AS REC_COUNT  with;
+      caption=str(reccount())        
+  add object shape2 as shape2 with;
+      autocenter=.t.
+  add object shape3 as shape3 with;
+      autocenter=.t.
+  ADD OBJECT PAGEFRAME1 AS PAGEFRAME WITH;
+      LEFT=INT_015*236,;
+      WIDTH=INT_015*540,;
+      HEIGHT=INT_015*200,;
+      FONTSIZE=INT_015*9,;
+      PAGECOUNT=2,;
+      TABSTRETCH=1,;
+      ACTIVEPAGE=1,;
+      VISIBLE=.T.,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;                     
+      PAGE1.NAME='PAGE1',;
+      PAGE1.VISIBLE=.T.,;
+      PAGE1.CAPTION='表頭資料',;
+      PAGE2.NAME='PAGE2',;
+      PAGE2.VISIBLE=.T.,;
+      PAGE2.CAPTION='表身詳細資料內容'   
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT grid1 AS grid1 WITH;
+      columncount=2,;            
+      RECORDSOURCE='F01',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'      
+  ADD OBJECT grid2 AS grid2 WITH;
+      columncount=10,;            
+      RECORDSOURCE='E05',;
+      LINKMASTER='F01',;
+      RELATIONALEXPR='F01+F02',;
+      CHILDORDER='E051',;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5',;
+      COLUMN6.NAME='COLUMN6',;
+      COLUMN7.NAME='COLUMN7',;
+      COLUMN8.NAME='COLUMN8',;
+      COLUMN9.NAME='COLUMN9',;
+      COLUMN10.NAME='COLUMN10'      
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      AUTOSIZE=.T.              
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+      AUTOSIZE=.T.              
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*173,;
+      LEFT=INT_015*558          
+  ADD OBJECT ISB_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*98,;
+      HEIGHT=INT_015*25,;
+      FONTSIZE=INT_015*9,;
+      WIDTH=INT_015*65,;      
+      CAPTION='\<B.投產材料',;
+      NAME='ISB_BOTT'                               
+  PROCEDURE PAGEFRAME1.PAGE1.INIT     
+     THIS.ADDOBJECT('LBLF01','LABEL')
+     WITH THIS.LBLF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*27
+          .WIDTH=INT_015*50
+          .CAPTION='完成品號'          
+     ENDWITH
+     THIS.AddObject('LBLF012','LABEL')
+     WITH THIS.LBLF012
+                 .VISIBLE=.T.
+                 .LEFT=INT_015*14
+                 .TOP=INT_015*52
+                 .WIDTH=INT_015*50
+                 .CAPTION='品名規格'
+     ENDWITH
+     THIS.ADDOBJECT('LBLF011','LABEL')     
+     WITH THIS.LBLF011
+          .VISIBLE=.T.
+          .LEFT=INT_015*65
+          .TOP=INT_015*52
+          .AUTOSIZE=.T.  
+     ENDWITH            
+     THIS.AddObject('LBLF02','LABEL')
+     WITH THIS.LBLF02
+              .VISIBLE=.T.
+              .LEFT=INT_015*14
+              .WIDTH=INT_015*50
+              .TOP=INT_015*77
+              .CAPTION='版        本'
+      ENDWITH        
+     THIS.AddObject('LBLLTL1','LABEL')
+     WITH THIS.LBLLTL1
+              .VISIBLE=.T.
+              .LEFT=INT_015*14
+              .WIDTH=INT_015*50
+              .TOP=INT_015*152
+              .CAPTION='合計工時'
+      ENDWITH              
+     THIS.AddObject('LBLLTL11','LABEL')
+     WITH THIS.LBLLTL11
+              .VISIBLE=.T.
+              .LEFT=INT_015*65
+              .TOP=INT_015*152
+              .AUTOSIZE=.T.
+              .CAPTION=''
+      ENDWITH                    
+     THIS.AddObject('LBLLTL12','LABEL')
+     WITH THIS.LBLLTL12
+              .VISIBLE=.T.
+              .LEFT=INT_015*125
+              .TOP=INT_015*152
+              .AUTOSIZE=.T.
+              .CAPTION=IIF(INT_030='1','秒',IIF(INT_030='2','分','時'))
+      ENDWITH                          
+     THIS.AddObject('LBLLTL2','LABEL')
+     WITH THIS.LBLLTL2
+              .VISIBLE=.T.
+              .LEFT=INT_015*189
+              .WIDTH=INT_015*75
+              .TOP=INT_015*152
+              .CAPTION='整組發包金額'
+      ENDWITH              
+     THIS.AddObject('LBLLTL21','LABEL')
+     WITH THIS.LBLLTL21
+              .VISIBLE=.T.
+              .LEFT=INT_015*270
+              .TOP=INT_015*152
+              .AUTOSIZE=.T.
+              .CAPTION=''
+      ENDWITH                    
+     THIS.AddObject('LBLLTL3','LABEL')
+     WITH THIS.LBLLTL3
+              .VISIBLE=.T.
+              .LEFT=INT_015*364
+              .WIDTH=INT_015*75
+              .TOP=INT_015*152
+              .CAPTION='整組購置金額'
+      ENDWITH              
+     THIS.AddObject('LBLLTL31','LABEL')
+     WITH THIS.LBLLTL31
+              .VISIBLE=.T.
+              .LEFT=INT_015*445
+              .TOP=INT_015*152
+              .AUTOSIZE=.T.
+              .CAPTION=''
+      ENDWITH                          
+     THIS.ADDOBJECT('TXTF01','TEXTBOX')     
+     WITH THIS.TXTF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*23
+          .WIDTH=INT_015*216
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=43
+     ENDWITH        
+     THIS.ADDOBJECT('TXTF02','TEXTBOX')          
+     WITH THIS.TXTF02
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*73
+          .WIDTH=INT_015*25
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=3
+     ENDWITH             
+  ENDPROC   
+  PROCEDURE PAGEFRAME1.PAGE2.INIT
+	THIS.ADDOBJECT('LBLF06','LABEL')
+	WITH THIS.LBLF06  
+                 .VISIBLE=.T.
+                 .LEFT=INT_015*14
+                 .TOP=INT_015*14
+	         .WIDTH=INT_015*50
+                 .CAPTION='製程順序'
+    ENDWITH  
+    THIS.ADDOBJECT('LBLF07','LABEL')
+    WITH THIS.LBLF07
+         .VISIBLE=.T.
+	     .LEFT=INT_015*248
+	     .TOP=INT_015*14
+	     .WIDTH=INT_015*50
+	     .CAPTION='製程代號'
+	ENDWITH     
+    THIS.ADDOBJECT('LBLF071','Label')
+    WITH THIS.LBLF071
+         .VISIBLE=.T.
+         .LEFT=INT_015*354
+         .TOP=INT_015*14
+         .AUTOSIZE=.T.
+    ENDWITH     
+    THIS.ADDOBJECT('LBLF08','LABEL')
+    WITH THIS.LBLF08
+         .VISIBLE=.T.
+	     .LEFT=INT_015*248
+	     .TOP=INT_015*39
+	     .WIDTH=INT_015*50
+	     .CAPTION='加工部門'
+	ENDWITH     
+    THIS.ADDOBJECT('LBLF081','Label')
+    WITH THIS.LBLF081
+         .VISIBLE=.T.
+         .LEFT=INT_015*354
+         .TOP=INT_015*39
+         .AUTOSIZE=.T.
+    ENDWITH         
+    THIS.ADDOBJECT('LBLF05','LABEL')
+    WITH THIS.LBLF05
+         .VISIBLE=.T.    
+         .LEFT=INT_015*14
+         .TOP=INT_015*39
+         .WIDTH=INT_015*50
+         .CAPTION='重覆型式'       
+    ENDWITH         
+    THIS.ADDOBJECT('LBLF051','LABEL')
+    WITH THIS.LBLF051
+         .VISIBLE=.T.    
+         .LEFT=INT_015*87
+         .TOP=INT_015*39
+         .AUTOSIZE=.T.
+         .CAPTION=''       
+    ENDWITH             
+    THIS.ADDOBJECT('LBLF99','LABEL')
+    WITH THIS.LBLF99
+         .VISIBLE=.T.    
+         .LEFT=INT_015*14
+         .TOP=INT_015*64
+         .WIDTH=INT_015*50
+         .CAPTION='重覆次數'       
+    ENDWITH     
+    THIS.ADDOBJECT('LBLF991','LABEL')
+    WITH THIS.LBLF991
+         .VISIBLE=.T.    
+         .LEFT=INT_015*65
+         .TOP=INT_015*64
+         .AUTOSIZE=.T.
+         .CAPTION='1/'       
+    ENDWITH     
+    THIS.ADDOBJECT('LBLF09','LABEL')      
+    WITH THIS.LBLF09
+         .VISIBLE=.T.       
+         .LEFT=INT_015*14
+         .TOP=INT_015*89
+         .WIDTH=INT_015*50
+         .CAPTION='標準工時'
+    ENDWITH         
+    THIS.ADDOBJECT('LBLF091','LABEL')      
+    WITH THIS.LBLF091
+         .VISIBLE=.T.       
+         .LEFT=INT_015*148
+         .TOP=INT_015*89
+         .AUTOSIZE=.T.
+         .CAPTION=IIF(INT_030='1','秒',IIF(INT_030='2','分','時'))                                
+    ENDWITH             
+    THIS.ADDOBJECT('LBLF10','LABEL')      
+    WITH THIS.LBLF10
+         .VISIBLE=.T.       
+         .LEFT=INT_015*14
+         .TOP=INT_015*114
+         .WIDTH=INT_015*50
+         .CAPTION='前置工時'
+    ENDWITH     
+    THIS.ADDOBJECT('LBLF101','LABEL')      
+    WITH THIS.LBLF101
+         .VISIBLE=.T.       
+         .LEFT=INT_015*148
+         .TOP=INT_015*114
+         .AUTOSIZE=.T.
+         .CAPTION=IIF(INT_030='1','秒',IIF(INT_030='2','分','時'))                                
+    ENDWITH                 
+    THIS.ADDOBJECT('LBLTTL1','LABEL')      
+    WITH THIS.LBLTTL1
+         .VISIBLE=.T.       
+         .LEFT=INT_015*14
+         .TOP=INT_015*139
+         .WIDTH=INT_015*50
+         .CAPTION='工時小計'
+    ENDWITH     
+    THIS.ADDOBJECT('LBLTTL11','LABEL')      
+    WITH THIS.LBLTTL11
+         .VISIBLE=.T.       
+         .LEFT=INT_015*65
+         .TOP=INT_015*139
+         .AUTOSIZE=.T.
+         .CAPTION=''
+    ENDWITH     
+    THIS.ADDOBJECT('LBLTTL111','LABEL')      
+    WITH THIS.LBLTTL111
+         .VISIBLE=.T.       
+         .LEFT=INT_015*148
+         .TOP=INT_015*139
+         .AUTOSIZE=.T.
+         .CAPTION=IIF(INT_030='1','秒',IIF(INT_030='2','分','時'))                                
+    ENDWITH                     
+    THIS.ADDOBJECT('LBLF11','LABEL')
+    WITH THIS.LBLF11
+         .VISIBLE=.T.           
+         .LEFT=INT_015*248
+         .TOP=INT_015*64
+         .WIDTH=INT_015*50
+         .CAPTION='發包單價'
+    ENDWITH     
+    THIS.ADDOBJECT('LBLTTL2','LABEL')
+    WITH THIS.LBLTTL2
+         .VISIBLE=.T.           
+         .LEFT=INT_015*400
+         .TOP=INT_015*64
+         .WIDTH=INT_015*25
+         .CAPTION='小計'
+    ENDWITH         
+    THIS.ADDOBJECT('LBLTTL21','LABEL')
+    WITH THIS.LBLTTL21
+         .VISIBLE=.T.           
+         .LEFT=INT_015*426
+         .TOP=INT_015*64
+         .AUTOSIZE=.T.
+         .CAPTION=''
+    ENDWITH             
+    THIS.ADDOBJECT('LBLF12','LABEL')
+    WITH THIS.LBLF12
+         .VISIBLE=.T.           
+         .LEFT=INT_015*248
+         .TOP=INT_015*89
+         .WIDTH=INT_015*50
+         .CAPTION='購置單價'
+    ENDWITH     
+    THIS.ADDOBJECT('LBLTTL3','LABEL')
+    WITH THIS.LBLTTL3
+         .VISIBLE=.T.           
+         .LEFT=INT_015*400
+         .TOP=INT_015*89
+         .WIDTH=INT_015*25
+         .CAPTION='小計'
+    ENDWITH                 
+    THIS.ADDOBJECT('LBLTTL31','LABEL')
+    WITH THIS.LBLTTL31
+         .VISIBLE=.T.           
+         .LEFT=INT_015*426
+         .TOP=INT_015*89
+         .AUTOSIZE=.T.
+         .CAPTION=''
+    ENDWITH             
+    THIS.ADDOBJECT('LBLF13','LABEL')
+    WITH THIS.LBLF13
+         .VISIBLE=.T.           
+         .LEFT=INT_015*248
+         .TOP=INT_015*114
+         .WIDTH=INT_015*50
+         .CAPTION='備註說明'          
+    ENDWITH                 
+    THIS.ADDOBJECT('LBLF04','LABEL')
+    WITH THIS.LBLF04
+         .VISIBLE=.T.           
+         .LEFT=INT_015*248
+         .TOP=INT_015*139
+         .WIDTH=INT_015*50
+         .CAPTION='安全資料'          
+    ENDWITH     
+    THIS.ADDOBJECT('LBLF041','LABEL')
+    WITH THIS.LBLF041
+         .VISIBLE=.T.           
+         .LEFT=INT_015*313
+         .TOP=INT_015*139
+         .AUTOSIZE=.T.          
+    ENDWITH     
+	THIS.ADDOBJECT('TXTF06','TEXTBOX')  
+	WITH THIS.TXTF06
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*65
+	     .TOP=INT_015*10
+	     .WIDTH=INT_015*30
+	     .HEIGHT=INT_015*25
+	     .MAXLENGTH=3
+	     .NAME='TXTF06'  
+	ENDWITH     
+	THIS.ADDOBJECT('TXTF07','TEXTBOX')
+	WITH THIS.TXTF07
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*299
+	     .TOP=INT_015*10
+	     .WIDTH=INT_015*40
+	     .HEIGHT=INT_015*25
+	     .MAXLENGTH=4
+	     .NAME='TXTF07'	    
+	ENDWITH     
+	THIS.ADDOBJECT('TXTF08','TXTDPT')
+	WITH THIS.TXTF08
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*299
+	     .TOP=INT_015*35
+	     .WIDTH=INT_015*45
+	     .HEIGHT=INT_015*25
+	     .MAXLENGTH=5
+	     .NAME='TXTF08'	    
+	ENDWITH     	
+	THIS.ADDOBJECT('TXTF05','TEXTBOX')
+	WITH THIS.TXTF05
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*65
+	     .TOP=INT_015*35
+	     .WIDTH=INT_015*20
+	     .HEIGHT=INT_015*25
+	     .MAXLENGTH=1
+	     .NAME='TXTF05'	    
+	ENDWITH     	
+	THIS.AddObject('FQCY_TYPE','FQCY_TYPE')
+    THIS.ADDOBJECT('TXTF99','TEXTBOX')
+    WITH THIS.TXTF99
+         .VISIBLE=.T.           
+         .LEFT=INT_015*65
+         .TOP=INT_015*60
+         .WIDTH=INT_015*60
+         .INPUTMASK='9999999'
+         .NAME='TXTF99'
+    ENDWITH     
+    THIS.ADDOBJECT('TXTF09','TEXTBOX')
+    WITH THIS.TXTF09
+         .VISIBLE=.T.           
+         .LEFT=INT_015*65
+         .TOP=INT_015*85
+         .WIDTH=INT_015*80
+         .HEIGHT=INT_015*25
+         .INPUTMASK='999999999.999'
+         .ALIGNMENT=1
+         .NAME='TXTF09'                            
+    ENDWITH         
+    THIS.ADDOBJECT('TXTF10','TEXTBOX')
+    WITH THIS.TXTF10
+         .VISIBLE=.T.           
+         .LEFT=INT_015*65
+         .TOP=INT_015*110
+         .WIDTH=INT_015*80
+         .HEIGHT=INT_015*25
+         .INPUTMASK='999999999.999'
+         .ALIGNMENT=1         
+         .NAME='TXTF10'                            
+    ENDWITH     
+    THIS.ADDOBJECT('TXTF11','TEXTBOX')
+    WITH THIS.TXTF11    
+         .VISIBLE=.T.           
+         .LEFT=INT_015*299
+         .TOP=INT_015*60
+         .WIDTH=INT_015*85
+         .INPUTMASK='9999999.999999'
+         .ALIGNMENT=1
+         .NAME='TXTF11'
+    ENDWITH     
+    THIS.ADDOBJECT('TXTF12','TEXTBOX')
+    WITH THIS.TXTF12
+         .VISIBLE=.T.           
+         .LEFT=INT_015*299
+         .TOP=INT_015*85
+         .WIDTH=INT_015*85
+         .INPUTMASK='9999999.999999'
+         .ALIGNMENT=1         
+         .NAME='TXTF12'                 
+    ENDWITH     
+    THIS.ADDOBJECT('TXTF13','TEXTBOX')
+    WITH THIS.TXTF13
+         .VISIBLE=.T.           
+         .LEFT=INT_015*299
+         .TOP=INT_015*110
+         .WIDTH=INT_015*223
+         .MAXLENGTH=30
+         .NAME='TXTF13'                 
+    ENDWITH         
+  ENDPROC       
+  PROCEDURE PAGEFRAME1.PAGE1.activate
+     R=0    
+     SELE F01   
+     SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE     
+     THISFORM.GRID1.ENABLED=.T.          
+     THISFORM.GRID1.SETFOCUS     
+        THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(F01.F05=.F.,RGB(255,0,0),'')","COLUMN")                        
+     IF THISFORM.GRID1.ACTIVEROW=0
+
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF011.CAPTION=''
+     ELSE
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+     ENDIF   
+     THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+     THISFORM.ISB_BOTT.ENABLED=.F.
+     THISFORM.KEY_LIST.ENABLED=.T.
+  ENDPROC
+  PROCEDURE PAGEFRAME1.PAGE2.activate
+       SELE E05 
+     IF THISFORM.SHRGROUP.ENABLED=.F.
+         THISFORM.GRID2.READONLY=.T.    
+         THISFORM.GRID2.SETFOCUS    
+     ENDIF 
+     IF THISFORM.GRID2.ACTIVEROW=0 .and. thisform.SHRGROUP.ENABLED=.F.
+         THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+         THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+         THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+         THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+         THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+         THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+         THISFORM.ISB_BOTT.ENABLED=.F.         
+         THISFORM.PAGEFRAME1.PAGE2.SETALL('VALUE','','TEXTBOX')
+         THISFORM.PAGEFRAME1.PAGE2.TXTF01.VALUE=''
+         THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=''
+         THISFORM.PAGEFRAME1.PAGE2.LBLF011.CAPTION=''
+         THISFORM.PAGEFRAME1.PAGE2.LBLF031.CAPTION=''
+     ELSE
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  .AND. F01.F05 &&判斷有無修改的權限
+        THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限  
+        THISFORM.ISB_BOTT.ENABLED=.T.
+     ENDIF   
+     R=RECNO('&AREA1')
+     THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+     THISFORM.GRID1.ENABLED=.F.     
+     THISFORM.KEY_LIST.ENABLED=.F.     
+  ENDPROC   
+
+  PROC INIT              
+       THISFORM.PAGEFRAME1.PAGE1.FONTSIZE=INT_015*9
+       THISFORM.PAGEFRAME1.PAGE2.FONTSIZE=INT_015*9    
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限 
+       THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.        
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.                   
+       THISFORM.ORPGROUP.NEW_BOTT.VISIBLE=.F.        
+       THISFORM.ORPGROUP.DEL_BOTT.VISIBLE=.F.                
+       thisform.setall('height',INT_015*25,'textbox')
+       thisform.setall('height',INT_015*17,'label')
+       thisform.setall('FONTSIZE',INT_015*9,'textbox')
+       thisform.setall('FONTSIZE',INT_015*9,'label')       
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+       THISFORM.SHRGROUP.VISIBLE=.F.
+       THISFORM.SHRGROUP.ENABLED=.F.
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID2.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*149
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*30
+       thisform.GRID1.setall('FONTSIZE',INT_015*9,'COLUMN')
+       thisform.GRID1.setall('FONTSIZE',INT_015*9,'HEADER')         
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='製品料號'
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='版本'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='F01.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='F01.F02'
+       THISFORM.grid2.COLUMN1.HEADER1.CAPTION='順序'
+       THISFORM.grid2.COLUMN2.HEADER1.CAPTION='製程代號'
+	   THISFORM.GRID2.COLUMN3.HEADER1.CAPTION='製程名稱'
+	   THISFORM.GRID2.COLUMN4.HEADER1.CAPTION='加工部門'	   
+	   THISFORM.GRID2.COLUMN5.HEADER1.CAPTION='次數'
+	   THISFORM.GRID2.COLUMN6.HEADER1.CAPTION='標準工時'
+	   THISFORM.grid2.COLUMN7.HEADER1.CAPTION='前置工時'
+	   THISFORM.grid2.COLUMN8.HEADER1.CAPTION=' 發包單價'
+	   THISFORM.grid2.COLUMN9.HEADER1.CAPTION='購置單價'
+	   THISFORM.grid2.COLUMN10.HEADER1.CAPTION='安全資料'	   
+       thisform.GRID2.setall('FONTSIZE',INT_015*9,'COLUMN')
+       thisform.GRID2.setall('FONTSIZE',INT_015*9,'HEADER')	        	   
+	   THISFORM.grid2.COLUMN1.CONTROLSOURCE='E05.F06'
+	   THISFORM.grid2.COLUMN2.CONTROLSOURCE='E05.F07'
+	   THISFORM.grid2.COLUMN3.CONTROLSOURCE='E00.F04'
+	   THISFORM.grid2.COLUMN4.CONTROLSOURCE='A14.F02'	   
+	   THISFORM.grid2.COLUMN5.CONTROLSOURCE="IIF(E00.F05='4','1/','')+ALLTRIM(STR(E05.F99))"
+	   THISFORM.grid2.COLUMN6.CONTROLSOURCE='E05.F09'
+	   THISFORM.grid2.COLUMN7.CONTROLSOURCE='E05.F10'
+	   THISFORM.grid2.COLUMN8.CONTROLSOURCE='E05.F11'
+	   THISFORM.grid2.COLUMN9.CONTROLSOURCE='E05.F12'
+	   THISFORM.grid2.COLUMN10.CONTROLSOURCE='E05.F04'
+	   THISFORM.grid2.COLUMN1.WIDTH=INT_015*20
+	   THISFORM.GRID2.COLUMN2.WIDTH=INT_015*50
+           THISFORM.GRID2.COLUMN3.WIDTH=INT_015*80           
+           THISFORM.GRID2.COLUMN4.WIDTH=INT_015*50
+           THISFORM.GRID2.COLUMN5.WIDTH=INT_015*40           
+           THISFORM.GRID2.COLUMN6.WIDTH=INT_015*60      
+           THISFORM.GRID2.COLUMN7.WIDTH=INT_015*60
+           THISFORM.GRID2.COLUMN8.WIDTH=INT_015*60
+           THISFORM.GRID2.COLUMN9.WIDTH=INT_015*60
+           THISFORM.GRID2.COLUMN10.WIDTH=INT_015*80
+       THISFORM.grid1.READONLY=.T.  
+       THISFORM.GRID2.READONLY=.T.     
+       THISFORM.grid1.SETFOCUS
+       IF THISFORM.GRID1.ACTIVEROW=0
+          THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.      
+       ENDIF          
+       THISFORM.KEY_LIST.DISPLAYVALUE='依製品料號排列'       
+       JK='製品料號'
+       SELE F01
+       GO TOP
+       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=F01.F01
+       THISFORM.PAGEFRAME1.PAGE1.LBLF011.CAPTION=B01.F02
+  ENDPROC     
+  PROC KEY_LIST.INIT 
+       with this 
+           .additem('依製品料號排列')
+       endwith      
+  ENDPROC 
+  PROC grid1.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex
+          THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=F01.F01
+          THISFORM.PAGEFRAME1.PAGE1.LBLF011.CAPTION=B01.F02
+          THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE=F01.F02
+          THISFORM.PAGEFRAME1.PAGE1.LBLLTL11.CAPTION=TRANSFORM(OTL1(F01.F01,F01.F02),'@R 999999999.999')
+          THISFORM.PAGEFRAME1.PAGE1.LBLLTL21.CAPTION=TRANSFORM(OTL2(F01.F01,F01.F02),'@R 999999999.999')
+          THISFORM.PAGEFRAME1.PAGE1.LBLLTL31.CAPTION=TRANSFORM(OTL3(F01.F01,F01.F02),'@R 999999999.999')                    
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       JK=THIS.COLUMN1.HEADER1.CAPTION  
+       IF THIS.ACTIVEROW=0
+          THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+       ENDIF   
+       CHK=''     
+       thisform.refresh
+  ENDPROC     
+  PROC grid2.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex
+       THISFORM.PAGEFRAME1.PAGE2.TXTF06.VALUE=E05.F06
+       THISFORM.PAGEFRAME1.PAGE2.TXTF07.VALUE=E05.F07
+       THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=E05.F08
+       THISFORM.PAGEFRAME1.PAGE2.LBLF071.CAPTION=E00.F04
+       THISFORM.PAGEFRAME1.PAGE2.TXTF99.LEFT=INT_015*65+IIF(E00.F05='4',20,0)
+       THISFORM.PAGEFRAME1.PAGE2.LBLF081.CAPTION=A14.F02       
+       THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE=E05.F05
+       THISFORM.PAGEFRAME1.PAGE2.LBLF051.CAPTION=IIF(F05='1','僅有一次或不定',IIF(F05='2','依投產材料項數',IIF(F05='3','依耗用材料數量','依批次加工生產')))
+       THISFORM.PAGEFRAME1.PAGE2.TXTF99.VALUE=E05.F99
+       THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=E05.F09
+       THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=E05.F10
+       THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=E05.F11
+       THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=E05.F12
+       THISFORM.PAGEFRAME1.PAGE2.TXTF13.VALUE=E05.F13
+       THISFORM.PAGEFRAME1.PAGE2.LBLF041.CAPTION=E05.F04
+       THISFORM.PAGEFRAME1.PAGE2.LBLTTL11.CAPTION=TRANSFORM(E05.F09*E05.F99^IIF(E05.F05='4',-1,1)+E05.F10,'@R 999999999.999')
+       THISFORM.PAGEFRAME1.PAGE2.LBLTTL21.CAPTION=TRANSFORM(E05.F11*E05.F99^IIF(E05.F05='4',-1,1),'@R 999999999.999')       
+       THISFORM.PAGEFRAME1.PAGE2.LBLTTL31.CAPTION=TRANSFORM(E05.F12*E05.F99^IIF(E05.F05='4',-1,1),'@R 999999999.999')              
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       JK=THIS.COLUMN1.HEADER1.CAPTION
+       CHK=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+       if thisform.pageframe1.activepage=1
+          thisform. CMDGROUP.SEEK_BOTT.ENABLED=.F.
+       ENDIF   
+  ENDPROC 
+  PROCEDURE ORPGROUP.NEW_BOTT.CLICK    
+        THISFORM.SETALL('READONLY',.F.,'TEXTBOX')       
+        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+        THISFORM.GRID2.ENABLED=.F. 
+        THISFORM.PAGEFRAME1.PAGE2.TXTF06.READONLY=.F.    
+        THISFORM.PAGEFRAME1.PAGE2.TXTF07.SETFOCUS     
+        THISFORM.PAGEFRAME1.PAGE2.TXTF07.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=''        
+        THISFORM.PAGEFRAME1.PAGE2.TXTF99.VALUE=0
+        THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=0        
+        THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE=0
+        THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=0
+        THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=0
+        THISFORM.PAGEFRAME1.PAGE2.LBLF041.CAPTION=''
+  ENDPROC  
+  PROCEDURE ORPGROUP.EDIT_BOTT.CLICK
+        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+        THISFORM.ISB_BOTT.ENABLED=.F.        
+        THISFORM.GRID2.ENABLED=.F.
+        THISFORM.PAGEFRAME1.PAGE2.TXTF06.READONLY=.T.
+        THISFORM.PAGEFRAME1.PAGE2.TXTF07.READONLY=.T.        
+        THISFORM.PAGEFRAME1.PAGE2.TXTF08.READONLY=.F.
+        THISFORM.PAGEFRAME1.PAGE2.FQCY_TYPE.VISIBLE=.T.
+        THISFORM.PAGEFRAME1.PAGE2.FQCY_TYPE.ENABLED=.T.
+        THISFORM.PAGEFRAME1.PAGE2.FQCY_TYPE.VALUE=VAL(E05.F05)
+        THISFORM.PAGEFRAME1.PAGE2.FQCY_TYPE.SETFOCUS             
+        LOCK()
+        IF !RLOCK()
+            DO file_impact
+            return
+        endif
+  endproc 
+  PROCEDURE SHRGROUP.SHURE2_BOTT.CLICK
+     IF THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE<>E05.F08   
+     ENDIF
+    SELE E05
+    IF RLOCK()
+       REPLACE F04 WITH IIF(INT_012=1,PADL(ALLTRIM(STR(YEAR(DATE())-1911)),3,' ')+RIGHT(DTOC(DATE()),6),dtoc(DATE())+' ')+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+       REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE
+       REPLACE F08 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE       
+       REPLACE F09 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE       
+       REPLACE F10 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF10.VALUE
+       REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE
+       REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE
+       REPLACE F13 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF13.VALUE       
+       REPLACE F99 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF99.VALUE       
+    ELSE
+      DO file_impact
+      return   
+    ENDIF   
+    THISFORM.SHRGROUP.ABANDON_BOTT.CLICK    
+  ENDPROC   
+  procedure SHRGROUP.ABANDON_BOTT.CLICK
+      THISFORM.SHRGROUP.ENABLED=.F.
+      THISFORM.SHRGROUP.VISIBLE=.F.      
+      THISFORM.ORPGROUP.ENABLED=.T.
+      THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  .AND. F01.F05 &&判斷有無修改的權限
+      THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限
+      THISFORM.ISB_BOTT.ENABLED=.T.
+      THISFORM.ORPGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.CMDGROUP.ENABLED=.T.
+      THISFORM.CMDGROUP.SETALL('ENABLED',.T.,'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.SETALL('READONLY',.T.,'TEXTBOX')  
+      THISFORM.PAGEFRAME1.PAGE2.TXTF08.READONLY=.T.      
+      THISFORM.PAGEFRAME1.PAGE2.FQCY_TYPE.VISIBLE=.F.
+      THISFORM.PAGEFRAME1.PAGE2.FQCY_TYPE.ENABLED=.F.
+      THISFORM.ISB_BOTT.ENABLED=.T.      
+      UNLOCK ALL
+      SELE E05
+      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.T.
+      THISFORM.grid2.ENABLED=.T.
+      THISFORM.grid2.SETFOCUS
+      UNLOCK ALL
+  ENDPROC
+  PROCEDURE SHRGROUP.FINISH_BOTT.CLICK
+       SELE E05
+       THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+  ENDPROC     
+  PROCEDURE ISB_BOTT.CLICK
+         SELECT F04,F05,F06,F07,F08,F09 FROM F02 WHERE F01+F02+F03=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF07.VALUE INTO CURSOR TAOZAN ORDER BY F04
+         IF _TALLY>0
+               SUB_SEEK=createobject("SUB_SEEK")  
+               SUB_SEEK.SHOW
+          ELSE
+                =MESSAGEBOX('本製程直接承製前製程之在製品!',0+48,'提示訊息視窗')                
+          ENDIF                     
+               FLG='0'                    
+              AREA1='F01'
+              SELE E05     
+              THISFORM.GRID2.SETFOCUS
+  ENDPROC  
+ENDDEFINE    
+***********************************************列印程序
+PROCEDURE PNT_PRC  
+  IF AREA1='F01'  
+     LK=F01.F01   
+     SELECT E05.F01,;
+            E05.F02,;
+            E05.F03,;          
+            E05.F05,;
+            E05.F06,;
+            E05.F07,;       
+            E05.F08,;
+            E05.F10,;
+            E05.F11,;                       
+            E05.F13,;            
+            B01.F02,;
+            F01.F04;
+     FROM E05,B01,F01;
+     WHERE E05.F01=LK AND B01.F01=E05.F03  AND F01.F01=E05.F01 ORDER BY E05.F03 NOWAIT
+     IF _tally >0
+        REPORT FORM ALLTRIM(INT_116)+'E05A' PREVIEW 
+*         REPORT FORM ALLTRIM(INT_116)+'E05A' TO PRINTER PROMPT 
+     ENDIF
+  ELSE
+     LK=B01.F01   
+     SELECT E05.F01,;
+            E05.F02,;
+            E05.F03,;          
+            E05.F05,;
+            E05.F06,;
+            E05.F07,;       
+            E05.F08,;
+            E05.F10,;
+            E05.F11,;                       
+            E05.F13,;            
+            B01.F02,;
+            F01.F04;
+     FROM E05,B01,F01;     
+     WHERE E05.F03=LK AND B01.F01=E05.F03  AND F01.F01=E05.F01 ORDER BY F01.F01 NOWAIT
+     IF _tally >0
+        REPORT FORM ALLTRIM(INT_116)+'E05B' PREVIEW
+*         report form E05b to printer prompt  
+     ENDIF  
+  ENDIF             
+ENDPROC
+***************************************************特殊欄位------------------加工部門
+DEFINE CLASS TXTDPT AS TEXTBOX
+  READONLY=.T.
+  MAXLENGTH=5 
+  FONTSIZE=INT_015*9
+  PROCEDURE INTERACTIVECHANGE
+    IF AT('?',ALLTRIM(THIS.VALUE))<>0
+       IF AT('?',ALLTRIM(THIS.VALUE))>1             
+          SELECT F01,F02 FROM A14 INTO CURSOR DEPART ORDER BY F01 WHERE LEFT(F01,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1) AND F05='*'
+       ELSE
+          SELECT F01,F02 FROM A14 INTO CURSOR DEPART ORDER BY F01 WHERE  F05='*'
+       ENDIF   
+       IF _TALLY>0
+          DEPART_SEEK=CREATEOBJECT("DEPART_SEEK")  
+          DEPART_SEEK.SHOW    
+          THIS.VALUE=FLG
+          THIS.REFRESH
+          FLG='0'
+       ENDIF   
+    ENDIF   
+       THISFORM.PAGEFRAME1.PAGE2.LBLF081.CAPTION=IIF(SEEK(THIS.VALUE,'A14'),A14.F02,'')  
+  ENDPROC
+ENDDEFINE  
+***************************
+DEFINE CLASS FQCY_TYPE AS COMBOBOX 
+      ENABLED=.F.
+      VISIBLE=.F.
+      LEFT=INT_015*65
+      TOP=INT_015*35
+      HEIGHT=INT_015*25
+      WIDTH=INT_015*110
+      FONTSIZE=INT_015*9
+      BOUNDCOLUMN=1
+      COLUMNCOUNT=1
+      ROWSOURCETYPE=1
+      VALUE=1
+      STYLE=2     
+      NAME='FQCY_TYPE'      
+      PROCEDURE INIT 
+           WITH THIS
+                .ADDITEM('僅有一次或不定')
+                .ADDITEM('依投產材料項數')
+                .ADDITEM('依耗用材料數量')
+                .ADDITEM('依批次加工生產')                        
+           ENDWITH
+      ENDPROC             
+      PROCEDURE INTERACTIVECHANGE
+                  THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE=ALLTRIM(STR(THIS.VALUE))
+                  
+                    THISFORM.PAGEFRAME1.PAGE2.TXTF99.LEFT=INT_015*65+IIF(THIS.VALUE=4,20,0)
+                 
+     ENDPROC
+ENDDEFINE      
+*********************************************************************投產料號搜尋畫面
+define class SUB_SEEK as form
+  autocenter=.t.
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*280
+  WIDTH=INT_015*786
+  FONTSIZE=INT_015*9
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  showwindow=1
+  windowtype=1
+  name='SUB_SEEK'
+   CAPTION=F01.F01+SPACE(5)+F01.F02+SPACE(5)+B01.F02+SPACE(5)
+  ADD OBJECT SHAPE2 AS SHAPE2 WITH;    
+      LEFT=INT_015*3,;
+      TOP=INT_015*2,;
+      WIDTH=INT_015*781,;
+      HEIGHT=INT_015*275
+  add object cmdgroup as cmdgroup with;      
+      TOP=INT_015*244,;
+      LEFT=INT_015*252
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      VISIBLE=.F.    
+  add object GRID1 as GRID with;          
+      AUTOCENTER=.T.,;
+      LEFT=INT_015*10,;
+      TOP=INT_015*6,;
+      WIDTH=INT_015*769,;      
+      HEIGHT=INT_015*240,;      
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;      
+      deletemark=.f.,;
+      READONLY=.T.,;
+      recordsourcetype=1,;
+      columncount=7,;            
+      NAME='GRID1',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5',;
+      COLUMN6.NAME='COLUMN6',;
+      COLUMN7.NAME='COLUMN7'      
+  add object cmnd2 as commandbutton with;
+         LEFT=INT_015*443,;
+         TOP=INT_015*249,;
+         HEIGHT=INT_015*25,;
+         WIDTH=INT_015*40,;
+         FONTSIZE=INT_015*9,;
+         caption='\<X.離開',;
+        TOOLTIPTEXT='取消此作業畫面!快速鍵->ALT+X'
+        name='cmnd2'
+  procedure init     
+         AREA1='TAOZAN' 
+          SELE TAOZAN
+         SET RELA TO F04 INTO B01        
+         THISFORM.GRID1.READONLY=.T. 
+         thisform.grid1.recordsource='TAOZAN'
+         THISFORM.CMDGROUP.SEEK_BOTT.VISIBLE=.F.
+          THISFORM.caption=THISFORM.CAPTION+E05.F07+E00.F04+'投產材料一覽表'
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')         
+         THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='投產材料編號'
+         THISFORM.GRID1.COLUMN1.WIDTH=INT_015*198
+         THISFORM.GRID1.COLUMN1.CONTROLSOURCE='F04'         
+         THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='品名規格'
+         THISFORM.GRID1.COLUMN2.CONTROLSOURCE='B01.F02'                           
+         THISFORM.GRID1.COLUMN2.WIDTH=INT_015*170	        
+         THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='版本'
+         THISFORM.GRID1.COLUMN3.CONTROLSOURCE='F05'
+         THISFORM.GRID1.COLUMN3.WIDTH=INT_015*25
+         THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='耗用數量'         
+         THISFORM.GRID1.COLUMN4.CONTROLSOURCE="TRANSFORM(F07,IIF(B01.F39='C','@R 1/9999999','@R 999999.9999'))"
+         THISFORM.GRID1.COLUMN4.ALIGNMENT=2   
+         THISFORM.GRID1.COLUMN4.WIDTH=INT_015*80               
+         THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='使用廠牌'
+         THISFORM.GRID1.COLUMN5.CONTROLSOURCE='F09'
+         THISFORM.GRID1.COLUMN5.WIDTH=INT_015*100        
+         THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='供料方式'
+         THISFORM.GRID1.COLUMN6.CONTROLSOURCE="IIF(F06='1','廠內發料',IIF(F06='2','廠商自備','客戶提供'))"
+         THISFORM.GRID1.COLUMN6.WIDTH=INT_015*55                          
+         THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='備註說明'
+         THISFORM.GRID1.COLUMN7.CONTROLSOURCE='F08'
+         THISFORM.GRID1.COLUMN7.WIDTH=INT_015*149                 
+         THISFORM.GRID1.SETFOCUS
+         FCH='GRID1'
+
+            THISFORM.CMND2.ENABLED=.T.                     
+      ENDPROC
+      PROC GRID1.AFTERROWCOLCHANGE
+             LPARAMETERS XColIndex     
+             FCH=THISFORM.ACTIVECONTROL.NAME 
+             IF THIS.ACTIVEROW=0
+                 THISFORM.CMDGROUP.ENABLED=.F.
+
+             ELSE
+                 THISFORM.CMDGROUP.ENABLED=.T.         
+         
+             ENDIF                     
+
+      ENDPROC 
+      procedure cmnd2.click
+         SELE TAOZAN
+         SET RELA OFF INTO B01
+         SET FILTER TO
+         USE
+         thisform.release         
+      endproc    
+ 
+enddefine            
+************************************************計算合計工時
+FUNC OTL1
+     PARA STK_NO,VRS_NO
+     QT_OD=0
+     SELECT E05
+     SEEK STK_NO+VRS_NO
+     IF FOUND()
+        DO WHILE F01+F02=STK_NO +VRS_NO
+              QT_OD=QT_OD+(F09*F99^IIF(F05='4',-1,1)+F10)
+           SKIP
+        ENDDO
+     ELSE
+       QT_OD=0
+     ENDIF
+     SELE F01
+     RETURN QT_OD
+************************************************計算整組發包金額
+FUNC OTL2
+     PARA STK_NO,VRS_NO
+     QT_OD=0
+     SELECT E05
+     SEEK STK_NO+VRS_NO
+     IF FOUND()
+        DO WHILE F01+F02=STK_NO +VRS_NO
+              QT_OD=QT_OD+(F11*F99^IIF(F05='4',-1,1))
+           SKIP
+        ENDDO
+     ELSE
+       QT_OD=0
+     ENDIF
+     SELE F01
+     RETURN QT_OD     
+************************************************計算整組購置金額
+FUNC OTL3
+     PARA STK_NO,VRS_NO
+     QT_OD=0
+     SELECT E05
+     SEEK STK_NO+VRS_NO
+     IF FOUND()
+        DO WHILE F01+F02=STK_NO +VRS_NO
+              QT_OD=QT_OD+(F12*F99^IIF(F05='4',-1,1))
+           SKIP
+        ENDDO
+     ELSE
+       QT_OD=0
+     ENDIF
+     SELE F01
+     RETURN QT_OD          

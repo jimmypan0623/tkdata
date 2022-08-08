@@ -1,0 +1,19 @@
+FILENAME=[\\192.168.10.200\mis\mis\TKDATA\GRACE.TXT] 
+ 
+
+STR=[<tr><td>無上甚深微妙法<td> ]+TTOC(DATETIME())+CHR(13)+CHR(10) 
+
+STRTOFILE(STR,FILENAME,1) 
+
+ 
+
+STR=[<tr><td>百千萬劫難遭遇<td> ]+TTOC(DATETIME())+CHR(13)+CHR(10) 
+
+STRTOFILE(STR,FILENAME,1)
+STR=[<tr><td>我今見聞得受持<td> ]+TTOC(DATETIME())+CHR(13)+CHR(10) 
+
+STRTOFILE(STR,FILENAME,1)
+STR=[<tr><td>願解如來真實義<td> ]+TTOC(DATETIME())+CHR(13)+CHR(10) 
+
+STRTOFILE(STR,FILENAME,1)
+

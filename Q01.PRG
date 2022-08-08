@@ -1,0 +1,270 @@
+close all
+clear 
+FLG='0'
+FCH=''
+AREA1='Q01'
+CHK=''
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE 
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK sys_oper+'Q01'   
+IF !USED('A01')
+   SELE 0
+   USE A01 INDE A01
+ELSE 
+   SELE A01
+ENDIF
+SET ORDER TO A01
+IF !USED('Q01')
+   SELE 0
+   USE Q01 INDE Q01
+ELSE
+   SELE Q01
+ENDIF
+SET ORDER TO Q01  
+Q01form=createobject("tkQ01")
+Q01form.show  
+define class tkQ01 as form
+  caption='不良原因登錄'
+  autocenter=.t.
+  controlbox=.F.
+  BORDERSTYLE=3  
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  controlcount=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  showtips=.t.
+  showwindow=1
+  WIDTH=INT_015*789
+  windowtype=1
+  NAME='TKQ01'
+  add object shape1 as shape1 with;
+      autocenter=.t.
+  add object shape2 as shape2 with;
+      autocenter=.t.
+  add object shape3 as shape3 with;
+      autocenter=.t.
+  ADD OBJECT LBL_REC AS LBL_REC WITH;
+      AUTOCENTER =.T.
+  ADD OBJECT REC_COUNT AS REC_COUNT  with;
+      caption=str(reccount())      
+  ADD OBJECT LBLF01 AS LABEL WITH;
+      LEFT=INT_015*244,;
+      TOP=INT_015*27,;
+      WIDTH=INT_015*50,;
+      CAPTION='不良編號'
+  ADD OBJECT LBLF02 AS LABEL WITH;      
+      LEFT=INT_015*244,;
+      TOP=INT_015*52,;
+      WIDTH=INT_015*50,;
+      CAPTION='不良簡述'
+  ADD OBJECT LBLF03 AS LABEL WITH;
+      LEFT=INT_015*244,;
+      TOP=INT_015*77,;
+      WIDTH=INT_015*50,;
+      CAPTION='詳細說明'            
+  ADD OBJECT LBLF04 AS LABEL WITH;
+      LEFT=INT_015*244,;
+      TOP=INT_015*102,;
+      WIDTH=INT_015*50,;
+      CAPTION='安全資料'
+  ADD OBJECT LBLF041 AS LABEL WITH;
+      LEFT=INT_015*295,;
+      TOP=INT_015*102,;
+      AUTOSIZE=.T.    
+  
+  ADD OBJECT TXTF01 AS TEXTBOX WITH;      
+      LEFT=INT_015*295,;
+      TOP=INT_015*23,;
+      WIDTH=INT_015*49,;
+      MAXLENGTH=5,;
+      NAME='TXTF01'  
+  ADD OBJECT TXTF02 AS TEXTBOX WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*295,;
+      TOP=INT_015*48,;
+      WIDTH=INT_015*149,;
+      MAXLENGTH=20,;
+      NAME='TXTF02'                 
+  ADD OBJECT TXTF03 AS TEXTBOX WITH;
+      LEFT=INT_015*295,;
+      TOP=INT_015*73,;
+      WIDTH=INT_015*298,;
+      HEIGHT=INT_015*25,;
+      MAXLENGTH=40,;
+      NAME='TXTF03'                         
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      columncount=2,;            
+      RECORDSOURCE='Q01',;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      TOP=INT_015*415,;
+      LEFT=INT_015*10,;
+      ENABLED=.T.,;
+      VISIBLE=.T.                    
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+      TOP=INT_015*455,;
+      LEFT=INT_015*10
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*455,;
+      LEFT=INT_015*558          
+  PROC INIT       
+       THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)   &&判斷有無新增的權限
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  &&判斷有無修改的權限
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   &&判斷有無刪除的權限
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限
+       THISFORM.SHRGROUP.VISIBLE=.F.
+       THISFORM.SHRGROUP.ENABLED=.F.
+       thisform.setall('height',INT_015*25,'textbox')
+       thisform.setall('height',INT_015*17,'label')
+       thisform.setall('FONTSIZE',INT_015*9,'textbox')
+       thisform.setall('FONTSIZE',INT_015*9,'label')       
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+       thisform.GRID1.setall('FONTSIZE',INT_015*9,'COLUMN')
+       thisform.GRID1.setall('FONTSIZE',INT_015*9,'HEADER')         
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*49
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*149
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='不良編號'
+	   THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='不良簡述'
+	   THISFORM.GRID1.COLUMN1.CONTROLSOURCE='Q01.F01'
+	   THISFORM.GRID1.COLUMN2.CONTROLSOURCE='Q01.F02'
+       THISFORM.GRID1.READONLY=.T.       
+       THISFORM.GRID1.SETFOCUS
+	IF THISFORM.GRID1.ACTIVEROW<>0
+	   THISFORM.GRID1.AFTERROWCOLCHANGE  
+	ENDIF         
+       JK='不良編號'
+  ENDPROC     
+
+  PROC KEY_LIST.INIT 
+       with this 
+           .additem('依不良編號排列')
+       endwith      
+  ENDPROC 
+  PROC GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex
+       THISFORM.TXTF01.VALUE=F01
+       THISFORM.TXTF02.VALUE=F02
+       THISFORM.TXTF03.VALUE=F03
+       THISFORM.LBLF041.CAPTION=F04    
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       CHK=''
+       thisform.refresh
+  ENDPROC       
+  PROCEDURE ORPGROUP.NEW_BOTT.CLICK    
+  THISFORM.GRID1.ALLOWCELLSELECTION=.T.
+       THISFORM.SETALL('READONLY',.F.,'TEXTBOX')    
+       THISFORM.TXTF01.VALUE=''
+       THISFORM.TXTF02.VALUE=''
+       THISFORM.TXTF03.VALUE=''
+       THISFORM.LBLF041.CAPTION=''
+       THISFORM.TXTF01.SETFOCUS()
+       THISFORM.GRID1.ENABLED=.F.
+       FLG='1'
+  ENDPROC  
+  PROCEDURE ORPGROUP.EDIT_BOTT.CLICK
+  THISFORM.GRID1.ALLOWCELLSELECTION=.T.
+     THISFORM.TXTF01.READONLY=.T.
+     THISFORM.GRID1.ENABLED=.F.
+     THISFORM.TXTF02.SETFOCUS
+     LOCK()
+     IF !RLOCK()
+        DO file_impact
+        return
+     endif
+  endproc 
+  PROCEDURE SHRGROUP.SHURE1_BOTT.CLICK
+    if empty(THISFORM.TXTf01.VALUE)
+       =messagebox('不良編號不得空白!',0+64,'提示視窗')
+       thisform.txtf01.setfocus
+       return
+    endif   
+    SELE Q01
+    SET ORDER TO Q01
+    IF SEEK(THISFORM.TXTF01.VALUE,'Q01')=.T.
+       =MESSAGEBOX('此不良編號已經建立!',0+64,'請注意')
+       THISFORM.TXTF01.VALUE=''
+       THISFORM.TXTF01.SETFOCUS  
+       RETURN
+    ENDIF
+    APPEND BLANK
+    LOCK()
+    IF RLOCK()
+       REPLACE F01 WITH THISFORM.TXTF01.VALUE
+       REPLACE F02 WITH THISFORM.TXTF02.VALUE
+       REPLACE F03 WITH THISFORM.TXTF03.VALUE
+       REPLACE F04 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+    ENDIF
+    UNLOCK
+    THISFORM.REC_COUNT.CAPTION=STR(RECCOUNT())
+    THISFORM.GRID1.ENABLED=.T.
+    THISFORM.REFRESH
+    THISFORM.GRID1.SETFOCUS    
+    THISFORM.ORPGROUP.NEW_BOTT.CLICK            
+  ENDPROC
+  PROCEDURE SHRGROUP.SHURE2_BOTT.CLICK    
+    SELE Q01
+    IF RLOCK()
+       REPLACE F02 WITH THISFORM.TXTF02.VALUE
+       REPLACE F03 WITH THISFORM.TXTF03.VALUE    
+       REPLACE F04 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')          
+    ELSE
+      DO file_impact
+      return   
+    ENDIF   
+    THISFORM.SHRGROUP.ABANDON_BOTT.CLICK    
+  ENDPROC   
+  procedure SHRGROUP.ABANDON_BOTT.CLICK
+      THISFORM.SHRGROUP.ENABLED=.F.
+      THISFORM.SHRGROUP.VISIBLE=.F.      
+      THISFORM.ORPGROUP.ENABLED=.T.
+      THISFORM.ORPGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.CMDGROUP.ENABLED=.T.
+      THISFORM.CMDGROUP.SETALL('ENABLED',.T.,'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.KEY_LIST.ENABLED=.T.      
+      THISFORM.SETALL('READONLY',.T.,'TEXTBOX')   
+      UNLOCK ALL
+      SELE Q01
+      THISFORM.GRID1.ENABLED=.T.
+      THISFORM.GRID1.ALLOWCELLSELECTION=.F.
+      THISFORM.GRID1.SETFOCUS   
+	IF THISFORM.GRID1.ACTIVEROW<>0
+	   THISFORM.GRID1.AFTERROWCOLCHANGE  
+	ENDIF          
+  ENDPROC
+  PROCEDURE SHRGROUP.FINISH_BOTT.CLICK   
+       THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+  ENDPROC     
+enddefine    
+**************************************************刪除資料前檢查是否仍有關聯資料在其他資料表格中
+procedure dele_shure 
+
+        
+     SELE Q01
+
+     LOCK()
+     IF RLOCK()        
+        SELE Q01
+        DELE
+        unlock
+        SKIP -1
+        IF BOF()
+           GO TOP
+        ENDIF   
+     ELSE
+       DO file_impact    
+     ENDIF      
+ENDPROC     
+************************************************

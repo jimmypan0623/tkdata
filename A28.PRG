@@ -1,0 +1,123 @@
+***************A28.資料重整****************
+CLOSE ALL
+CLEAR 
+*************************建立表單*************************    
+A28FORM=CREATEOBJECT("TKA28")
+A28FORM.SHOW  
+DEFINE CLASS TKA28 AS FORM
+  CAPTION='A28.資料重整'
+  AUTOCENTER=.T.
+  CONTROLBOX=.F.
+  BORDERSTYLE=3  
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  CONTROLCOUNT=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*180
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WIDTH=INT_015*300
+  WINDOWTYPE=1
+  NAME='TKA28'
+*********************************
+ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*34,;
+      TOP=INT_015*130,;
+      HEIGHT=INT_015*30,;
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*10,;
+      CAPTION='\<R.資料重整',;
+      TOOLTIPTEXT='產生新月份檔!快速鍵->ALT+R',;
+      NAME='CMND1'
+ ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*190,;
+      TOP=INT_015*130,;
+      HEIGHT=INT_015*30,;
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*10,;
+      CAPTION='\<X.離開',;
+      TOOLTIPTEXT='離開此查詢尋畫面!快速鍵->ALT+X'
+      NAME='CMND2'     
+ ADD OBJECT SHAPE1 AS SHAPE WITH;    
+       LEFT=INT_015*50,;
+      TOP=INT_015*25,;
+      WIDTH=INT_015*200,;
+      HEIGHT=INT_015*85,;
+      BACKSTYLE=0,;
+      SPECIALEFFECT=0
+  ADD OBJECT LABEL1 AS LABEL WITH;
+      LEFT=INT_015*70,;
+      TOP=INT_015*45,;
+      WIDTH=INT_015*40,;
+      CAPTION='檔   名'
+   ADD OBJECT TXTF01 AS TEXTBOX WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*112,;
+      TOP=INT_015*40,;
+      NAME='TXTF01'          
+  ADD OBJECT LABEL2 AS LABEL WITH;      
+      LEFT=INT_015*70,;
+      TOP=INT_015*75,;
+      WIDTH=INT_015*40,;
+      CAPTION='索引檔'
+   ADD OBJECT TXTF02 AS TEXTBOX WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*112,;
+      TOP=INT_015*70,;
+      NAME='TXTF02'          
+ *********************               
+  PROC INIT
+       THISFORM.SETALL('HEIGHT',25*INT_015,'TEXTBOX')
+       THISFORM.SETALL('HEIGHT',17*INT_015,'LABEL')
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+       THISFORM.SETALL('FONTSIZE',INT_015*10,'TEXTBOX')         
+       THISFORM.SETALL('FONTSIZE',INT_015*10,'LABEL')             
+  ENDPROC     
+ ******************資料重整
+ PROCEDURE CMND1.CLICK
+ THISFORM.CMND1.ENABLED=.F. 
+THISFORM.CMND2.ENABLED=.F. 
+      SET DELE ON
+CLOSE ALL
+OPEN DATA TKDB
+SET SAFE OFF
+BK=ADIR(DBK,'*.DBF')
+FOR I=1 TO BK
+    B=DBK(I,1)
+    H=LEFT(B,AT('.DBF',B,1)-1)
+     THISFORM.TXTF01.VALUE=B
+     THISFORM.TXTF02.VALUE=H
+     THISFORM.TXTF01.REFRESH
+	 THISFORM.TXTF02.REFRESH    
+     IF INDBC('&H','TABLE')	 
+*     IF LEFT(B,3)<>'FOX' 
+       * IF LEFT(B,3)<>'A04' 
+           SELE 0   
+           ON ERROR DO FILE_IMPACT
+           USE &B  EXCL  
+           ON ERROR   
+           ON ERROR DO FILE_IMPACT   
+           PACK              
+           ON ERROR   
+           ON ERROR DO FILE_IMPACT   
+           REINDEX
+           ON ERROR   
+        *ENDIF   
+	ENDIF
+ENDFOR	
+=MESSAGEBOX('資料已重整完畢!',0+64,'提示訊息視窗')
+THISFORM.CMND1.ENABLED=.T. 
+THISFORM.CMND2.ENABLED=.T.
+THISFORM.TXTF01.VALUE=''
+THISFORM.TXTF02.VALUE=''
+ ENDPROC 
+ ******************* 離開          
+ PROCEDURE CMND2.CLICK       
+           CLOSE TABLE ALL
+           THISFORM.RELEASE 
+           RETURN  
+ ENDPROC      
+ENDDEFINE
+*******************

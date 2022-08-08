@@ -1,0 +1,106 @@
+CLEAR ALL
+CLOSE ALL
+SET EXCLUSIVE OFF
+SET DELETED ON
+SELECT 0
+USE A23
+SET ORDER TO 1
+GO TOP
+DO WHILE !EOF()
+   H=LEFT(DTOS(A23.F01),6)
+   K='B06'+H
+   IF FILE(K+'.DBF')
+      SELECT 0
+      USE &K EXCL ALIAS B06
+      IF EMPTY(FIELD('F06'))
+         ALTER TABLE B06 ADD COLUMN F06 C(5)
+      ENDIF
+      SELECT B06
+      USE      
+   ENDIF  
+   K='B09'+H
+   IF FILE(K+'.DBF')
+      SELECT 0
+      USE &K EXCL ALIAS B09
+      IF EMPTY(FIELD('F06'))
+         ALTER TABLE B09 ADD COLUMN F06 C(5)
+      ENDIF
+      SELECT B09
+      USE      
+   ENDIF  
+   K='B10'+H
+   IF FILE(K+'.DBF')
+      SELECT 0
+      USE &K EXCL ALIAS B10
+      IF EMPTY(FIELD('F06'))
+         ALTER TABLE B10 ADD COLUMN F06 C(5)
+      ENDIF
+      SELECT B10
+      USE      
+   ENDIF     
+   K='B61'+H
+   IF FILE(K+'.DBF')
+      SELECT 0
+      USE &K EXCL ALIAS B61
+      IF EMPTY(FIELD('F06'))
+         ALTER TABLE B61 ADD COLUMN F06 C(5)
+      ENDIF
+      SELECT B61
+      USE      
+   ENDIF       
+   K='B62'+H
+   IF FILE(K+'.DBF')
+      SELECT 0
+      USE &K EXCL ALIAS B62
+      IF EMPTY(FIELD('F06'))
+         ALTER TABLE B62 ADD COLUMN F06 C(5)
+      ENDIF
+      SELECT B62
+      USE      
+   ENDIF       
+   K='B63'+H
+   IF FILE(K+'.DBF')
+      SELECT 0
+      USE &K EXCL ALIAS B63
+      IF EMPTY(FIELD('F06'))
+         ALTER TABLE B63 ADD COLUMN F06 C(5)
+      ENDIF
+      SELECT B63
+      USE      
+   ENDIF       
+   K='B64'+H
+   IF FILE(K+'.DBF')
+      SELECT 0
+      USE &K EXCL ALIAS B64
+      IF EMPTY(FIELD('F06'))
+         ALTER TABLE B64 ADD COLUMN F06 C(5)
+      ENDIF
+      SELECT B64
+      USE      
+   ENDIF       
+   K='B12'+H
+   IF FILE(K+'.DBF')
+      SELECT 0
+      USE &K EXCL ALIAS B12
+      IF EMPTY(FIELD('F10'))
+         ALTER TABLE B12 ADD COLUMN F10 C(17)
+      ENDIF
+      IF EMPTY(FIELD('F11'))
+         ALTER TABLE B12 ADD COLUMN F11 C(40)
+      ENDIF      
+      IF EMPTY(FIELD('F13'))
+         ALTER TABLE B12 ADD COLUMN F13 C(40)
+      ENDIF            
+      IF EMPTY(FIELD('F90'))
+         ALTER TABLE B12 ADD COLUMN F90 C(17)
+      ENDIF                  
+      ALTER TABLE B12 ALTER COLUMN F07 C(5)
+      ALTER TABLE B12 ALTER COLUMN F08 C(5)      
+      SELECT B12
+      USE      
+   ENDIF          
+   SELECT A23
+   SKIP
+ENDDO 
+CLOSE ALL
+CLEAR ALL

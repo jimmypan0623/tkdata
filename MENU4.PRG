@@ -1,0 +1,248 @@
+CLEAR 
+CLOSE ALL
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='A' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE AA ORDER BY A02.F03
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='B' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE BB ORDER BY A02.F03
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='C' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE CC ORDER BY A02.F03
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='D' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE DD ORDER BY A02.F03
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='E' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE EE  ORDER BY A02.F03
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='F' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE FF  ORDER BY A02.F03
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='G' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE GG  ORDER BY A02.F03
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='K' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE KK  ORDER BY A02.F03
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='L' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE LL  ORDER BY A02.F03
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='P' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE PP  ORDER BY A02.F03
+SELECT A02.F03,A03.F02 FROM A02,A03 WHERE LEFT(A02.F03,1)='S' AND A02.F01=sys_oper AND A03.F01=A02.F03 INTO TABLE SS  ORDER BY A02.F03
+
+SET STATUS BAR ON
+
+DEFINE MENU mymenu;
+     FONT"新細明體",INT_015*9;
+     STYLE  'BN'
+DEFINE PAD mypadA OF mymenu PROMPT "\<A.系統" COLOR SCHEME 3 KEY ALT+A,"" 
+DEFINE PAD mypadB OF mymenu PROMPT "\<B.庫存" COLOR SCHEME 3 KEY ALT+B,"" 
+DEFINE PAD mypadC OF mymenu PROMPT "\<C.業務" COLOR SCHEME 3 KEY ALT+C,"" 
+DEFINE PAD mypadD OF mymenu PROMPT "\<D.內購" COLOR SCHEME 3 KEY ALT+D,"" 
+DEFINE PAD mypadE OF mymenu PROMPT "\<E.生產" COLOR SCHEME 3 KEY ALT+E,"" 
+DEFINE PAD mypadF OF mymenu PROMPT "\<F.料表" COLOR SCHEME 3 KEY ALT+F,"" 
+DEFINE PAD mypadG OF mymenu PROMPT "\<G.成本" COLOR SCHEME 3 KEY ALT+G,"" 
+DEFINE PAD mypadK OF mymenu PROMPT "\<K.帳款" COLOR SCHEME 3 KEY ALT+K,"" 
+DEFINE PAD mypadL OF mymenu PROMPT "\<L.資產" COLOR SCHEME 3 KEY ALT+L,"" 
+DEFINE PAD mypadP OF mymenu PROMPT "\<P.外購" COLOR SCHEME 3 KEY ALT+P,"" 
+DEFINE PAD mypadS OF mymenu PROMPT "\<S.人事" COLOR SCHEME 3 KEY ALT+S,"" 
+DEFINE PAD mypadX OF mymenu PROMPT "\<X.結束" COLOR SCHEME 3 KEY ALT+X,"" 
+
+ON  SELECTION PAD mypadA OF mymenu ACTIVATE POPUP AA1
+
+ON  SELECTION PAD mypadB OF mymenu ACTIVATE POPUP BB1
+
+ON  SELECTION PAD mypadC OF mymenu ACTIVATE POPUP CC1
+
+ON  SELECTION PAD mypadD OF mymenu ACTIVATE POPUP DD1
+
+ON  SELECTION PAD mypadE OF mymenu ACTIVATE POPUP EE1
+
+ON  SELECTION PAD mypadF OF mymenu ACTIVATE POPUP FF1
+
+ON  SELECTION PAD mypadG OF mymenu ACTIVATE POPUP GG1
+
+ON  SELECTION PAD mypadK OF mymenu ACTIVATE POPUP KK1
+
+ON  SELECTION PAD mypadL OF mymenu ACTIVATE POPUP LL1
+
+ON  SELECTION PAD mypadP OF mymenu ACTIVATE POPUP PP1
+
+ON  SELECTION PAD mypadS OF mymenu ACTIVATE POPUP SS1
+
+ON  SELECTION PAD mypadX OF mymenu  DO leave
+
+DEFINE POPUP AA1 FONT "新細明體",INT_015*10 STYLE 'BN' FROM 1,0 PROMPT FIELD AA.F03+'  '+AA.F02 SCROLL 
+
+ON SELECTION POPUP AA1 DO browit  WITH PROMPT(),POPUP()
+
+DEFINE POPUP BB1  FONT "新細明體",INT_015*10 STYLE 'BN'  FROM 1,INT_015*8   PROMPT FIELD BB.F03+'  '+BB.F02 SCROLL 
+
+ON SELECTION POPUP BB1 DO  browit WITH PROMPT(),POPUP()
+
+DEFINE POPUP CC1   FONT "新細明體",INT_015*10 STYLE 'BN'  FROM 1,INT_015*16 PROMPT FIELD CC.F03+'  '+CC.F02 SCROLL
+
+ON SELECTION POPUP CC1 DO browit WITH PROMPT(),POPUP()
+
+DEFINE POPUP DD1   FONT "新細明體",INT_015*10 STYLE 'BN'  FROM 1,INT_015*24 PROMPT FIELD DD.F03+'  '+DD.F02 SCROLL 
+
+ON SELECTION POPUP DD1 DO browit WITH PROMPT(),POPUP()
+
+DEFINE POPUP EE1   FONT "新細明體",INT_015*10 STYLE 'BN'  FROM 1,INT_015*32 PROMPT FIELD EE.F03+'  '+EE.F02 SCROLL
+
+ON SELECTION POPUP EE1 DO browit WITH PROMPT(),POPUP()
+
+DEFINE POPUP FF1   FONT "新細明體",INT_015*10 STYLE 'BN'  FROM 1,INT_015*40 PROMPT FIELD FF.F03+'  '+FF.F02 SCROLL
+
+ON SELECTION POPUP FF1 DO browit WITH PROMPT(),POPUP()
+
+DEFINE POPUP GG1   FONT "新細明體",INT_015*10 STYLE 'BN'  FROM 1,INT_015*48  PROMPT FIELD GG.F03+'  '+GG.F02 SCROLL
+
+ON SELECTION POPUP GG1 DO browit WITH PROMPT(),POPUP()
+
+DEFINE POPUP KK1   FONT "新細明體",INT_015*10 STYLE 'BN'  FROM 1,INT_015*56 PROMPT FIELD KK.F03+'  '+KK.F02 SCROLL
+
+ON SELECTION POPUP KK1 DO browit WITH PROMPT(),POPUP()
+
+DEFINE POPUP LL1  FONT "新細明體",INT_015*10 STYLE 'BN'  FROM 1,INT_015*64 PROMPT FIELD LL.F03+'  '+LL.F02 SCROLL
+
+ON SELECTION POPUP LL1 DO browit WITH PROMPT(),POPUP()
+
+DEFINE POPUP PP1   FONT "新細明體",INT_015*10 STYLE 'BN'  FROM 1,INT_015*72 PROMPT FIELD PP.F03+'  '+PP.F02 SCROLL
+
+ON SELECTION POPUP PP1 DO browit WITH PROMPT(),POPUP()
+
+DEFINE POPUP SS1   FONT "新細明體",INT_015*10 STYLE 'BN'  FROM 1,INT_015*80 PROMPT FIELD SS.F03+'  '+SS.F02 SCROLL
+
+ON SELECTION POPUP SS1 DO browit WITH PROMPT(),POPUP()
+
+
+	mPad=""
+		DO WHILE mPad==""                     
+	       ACTIVATE MENU mymenu
+	               mPad=PAD()
+		ENDDO
+RELEASE MENUS mymenu EXTEND
+SET SYSMENU TO DEFAULT
+PROCEDURE leave
+     IF MESSAGEBOX('您是否確定要離開系統?',4+48+256,'請確認') = 6 
+          IF !USED('A04')
+              SELECT  0
+              USE A04
+          ELSE 
+              SELECT  A04
+          ENDIF 
+          SET ORDER TO A041
+          SEEK sys_oper
+          IF FOUND()
+              REPLACE F01 WITH 'zzzzz'
+              REPLACE F04 WITH ''
+              REPLACE F06 WITH ''
+          ENDIF   
+          ON KEY
+          CLOSE TABLE ALL
+          DEACTIVATE MENU mymenu
+      ENDIF           
+
+       
+RETURN
+
+
+
+PROCEDURE browit
+PARAMETERS mprompt,mpopup
+OPX=LEFT(mprompt,3)
+       HIDE POPUPS (mpopup)
+  
+************************************************
+               IF !USED('A05')
+                   SELECT  0
+                   USE A05 
+               ELSE
+                   SELECT  A05
+               ENDIF
+               SET ORDER TO A051
+               SELECT A05
+               
+               SEEK SYS_OPER+OPX
+               IF !FOUND()
+
+                   APPEND BLANK
+                   REPLACE F01 WITH SYS_OPER
+                   REPLACE F02 WITH OPX
+                   REPLACE F03 WITH SUBSTR(mprompt,6,30)
+                   REPLACE F04 WITH DTCX(DATE())+' '+TIME()  
+                   PRG_NO=OPX
+                   IF !USED('A04')
+                      SELECT 0
+                      USE A04
+                   ELSE 
+                      SELECT A04
+                   ENDIF
+                   SET ORDER TO 1
+                   SEEK sys_oper
+                   IF !FOUND()
+                      SEEK 'zzzzz'
+                      IF FOUND()
+                         REPLACE F01 WITH sys_oper
+                         REPLACE F04 WITH DTCX(DATE())+' '+TIME()  
+                      ELSE
+                         =MESSAGEBOX('使用人數已超過',0+64,'請稍後登錄')
+                         RETURN
+                      ENDIF    
+                   ENDIF       
+                   DO (OPX)   
+               ENDIF              
+************************************************       
+          
+       IF !USED('AA')
+          SELECT 0
+          USE AA ALIAS AA
+       ELSE
+          SELECT AA
+       ENDIF      
+       IF !USED('BB')
+          SELECT 0
+          USE BB ALIAS BB
+       ELSE
+          SELECT BB
+       ENDIF      
+       IF !USED('CC')
+          SELECT 0
+          USE CC ALIAS CC
+       ELSE
+          SELECT CC
+       ENDIF      
+       IF !USED('DD')
+          SELECT 0
+          USE DD ALIAS DD
+       ELSE
+          SELECT DD
+       ENDIF      
+       IF !USED('EE')
+          SELECT 0
+          USE EE ALIAS EE
+       ELSE
+          SELECT EE
+       ENDIF      
+       IF !USED('FF')
+          SELECT 0
+          USE FF ALIAS FF
+       ELSE
+          SELECT FF
+       ENDIF           
+       IF !USED('GG')
+          SELECT 0
+          USE GG ALIAS GG
+       ELSE
+          SELECT GG
+       ENDIF      
+       IF !USED('LL')
+          SELECT 0
+          USE LL ALIAS LL
+       ELSE
+          SELECT LL
+       ENDIF      
+       IF !USED('KK')
+          SELECT 0
+          USE KK ALIAS KK
+       ELSE
+          SELECT KK
+       ENDIF           
+       IF !USED('PP')
+          SELECT 0
+          USE PP ALIAS PP
+       ELSE
+          SELECT PP
+       ENDIF      
+       IF !USED('SS')
+          SELECT 0
+          USE SS ALIAS SS
+       ELSE
+          SELECT SS
+       ENDIF      
+ RETURN 
+ ******************
+

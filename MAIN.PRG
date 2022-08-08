@@ -1,0 +1,4371 @@
+CLEAR ALL
+CLOS DATA ALL
+CLOS TABL ALL
+SET TALK OFF
+SET EXCL OFF
+SET DELE ON
+SET CENT OFF
+SET SAFE OFF
+SET DECIMALS TO 6
+SET ENGINEBEHAVIOR 70 
+SET REPORTBEHAVIOR 80
+SET REPROCESS TO 1
+_SCREEN.CAPTION=''
+_SCREEN.CONTROLBOX=.F.
+ZOOM WINDOW  SCREEN MAX
+HIDE WINDOW SCREEN
+DEACTIVATE WIND SCREEN
+SET SYSMENU OFF
+SET STATUS BAR OFF
+SET MULTILOCKS ON
+DECLARE _FPRESET IN msvcrt20.dll 
+CAPSLOCK(.T.)
+****************
+*!*	if file('fjsme.ini')
+*!*		rest from fjsme.ini addi
+*!*	endi
+*!*	if type('def_dir') = 'U'
+*!*		def_dir = curdir()
+*!*	endi
+*!*	SET DEFA TO &def_dir
+****************
+*!*	OPEN DATABAS tkdb SHARE
+SELE 0
+USE A26
+X_CHK = .F.
+DO WHIL ! EOF()
+    X_CHECK = TRIM(F08)
+    X_OK = &X_CHECK
+    REPL F03 WITH IIF(X_OK,'  ','※')
+    IF ! X_OK
+      X_CHK = .T.
+    ENDI
+    X_NAME = TRIM(F01)
+    DO CASE
+      CASE F04 = 'C'
+        X_VAL = LEFT(F06,MAX(F05,1))
+      CASE F04 = 'N'
+        X_VAL = VAL(F06)
+      CASE F04 = 'L'
+        X_VAL = ( F06='Y' )
+    ENDC 
+    PUBLIC &X_NAME
+    &X_NAME = X_VAL
+    IF X_NAME = 'INT_000'
+    	&X_NAME = ALLTRIM(&X_NAME)
+    ENDI
+    SKIP
+ENDD
+*
+DO CASE
+    CASE X_CHK            && FJMIS 進入系統時有錯誤
+	       	ERROR("系統參數錯誤，請以ＦＪＤＩＡＧ重新設定後執行作業 ! ")
+	    CLOS DATA
+    	QUIT
+    CASE X_CHK            && FJDIAG 進入系統時有錯誤
+	        ERROR("系統參數錯誤，請重新設定才可執行ＦＪＭＩＳ ! ")
+	    CLOS DATA
+ 	    RETU
+    OTHE
+ENDC
+
+SELE A26
+USE
+********************
+YE=IIF(INT_012=1,'TAIWAN','YMD')
+SET DATE TO (YE)
+PUBLIC PRG_NO,FLG,JK,FCH,CHK,CHK_STR,FTR_STR,RK,PO_NO,AREA1,AREA2,QTY,TQTY,sys_oper,UKEF
+PRG_NO=SPACE(3)
+&& PRG_NO:使用程式編號
+&& AREA1:每一畫面基本主檔或表頭資料表格的代號
+&& AREA2:每一畫面表身資料表格檔代號
+&& PO_NO:單據之單號紀錄
+&& FLG:搜尋畫面之結果判斷值或欲帶回值
+&& FCH:紀錄目前之作用GRID名稱
+&& QTY:進/出貨計劃->增修刪計劃量計算用
+&& TQTY:進/出貨計劃->增修刪計劃量計算用
+&& JK:紀錄表頭之鍵值與表身之次鍵值合併使用供表身查詢用,若無表身之畫面則設定值為空字串
+&& sys_oper:紀錄目前登錄系統者代號
+&& CHK:若有表頭表身檔案,紀錄表頭檔案之主鍵值以便於表身操作時加上表身次鍵值做搜尋用
+
+*!*	IF ADIR(BKTRUSE,'MNTR.TXT')>0
+*!*	   CREATE CURSOR MNTR(F01 N(5,2))
+*!*	   APPEND FROM MNTR.TXT TYPE DELI
+*!*	   GO TOP
+*!*	   INT_015=MNTR.F01
+*!*	   USE
+*!*	ENDIF   
+sys_oper = spac(5)
+v_scrx=SYSMETRIC(1)
+v_scry=SYSMETRIC(2)
+DO CASE
+   CASE  v_scrx=640 .and. v_scry=480 
+              =MESSAGEBOX("本系統適用於解析度800*600及1024*768環境中!!",0+48,"螢幕解析度設定")
+              INT_015=1
+              DO FORM tokutsu
+   CASE  v_scrx=800 .and. v_scry=600 
+          INT_015=1              
+           IF ATC('通',INT_000)>0 
+              DO FORM TOKUTSU
+           ELSE
+               DO FORM ZYA
+           ENDIF    
+              
+   CASE  v_scrx=1024 .and. v_scry=768
+  	       INT_015=1.28
+  	       IF ATC('通',INT_000)>0 
+              DO FORM TOKUTSU2     
+           ELSE
+               DO FORM ZYA2
+           ENDIF    
+     CASE  v_scrx>=1280 .and. v_scry>=960
+  	       INT_015=1.6
+  	     
+              DO FORM TOKUTSU3     
+        
+                            
+   OTHERWISE
+             =MESSAGEBOX("本系統適用於解析度800*600或1024*768或1280*960環境中!!",0+48,"螢幕解析度設定")	
+     	     INT_015=1.28
+            IF ATC('通',INT_000)>0 
+              DO FORM TOKUTSU2     
+            ELSE
+               DO FORM ZYA2
+           ENDIF    
+ENDCASE      
+CLOS DATA ALL
+CLOS TABL ALL
+CLEAR ALL
+*******************
+PROCEDURE FILE_IMPACT
+	=MESSAGEBOX("請通知其他人員離開此資料庫,或稍後再執行此筆異動",0+16+0,"資料檔案使用權衝突")	
+       UNLOCK ALL
+RETURN  
+*******************
+DEFINE CLASS SHAPE1 AS SHAPE 
+       HEIGHT=INT_015*520
+       WIDTH=INT_015*540
+       LEFT=INT_015*236
+       TOP=0
+       SPECIALEFFECT=0
+       TOOLTIPTEXT='編輯區'     
+       NAME='SHAPE1'
+ENDDEFINE       
+DEFINE CLASS SHAPE2 AS SHAPE 
+       HEIGHT=INT_015*450
+       WIDTH=INT_015*225
+       LEFT=5
+       TOP=0
+       SPECIALEFFECT=0
+       TOOLTIPTEXT='瀏覽區'  
+       NAME='SHAPE2'
+ENDDEFINE       
+DEFINE CLASS SHAPE3 AS SHAPE 
+       HEIGHT=INT_015*65
+       WIDTH=INT_015*225
+       LEFT=5
+       TOP=INT_015*455       
+       SPECIALEFFECT=0
+       TOOLTIPTEXT='操作按鈕'     
+       NAME='SHAPE3'
+ENDDEFINE       
+DEFINE CLASS LBL_REC AS LABEL 
+      AUTOSIZE =.T.
+      LEFT=INT_015*650
+      TOP=INT_015*27  
+      FONTSIZE=INT_015*9     
+      CAPTION='資料筆數'        
+ENDDEFINE      
+DEFINE CLASS REC_COUNT AS LABEL 
+      AUTOSIZE=.T.
+      LEFT=INT_015*710
+      TOP=INT_015*27
+      FONTSIZE=INT_015*9           
+ENDDEFINE   
+DEFINE CLASS KEY_LIST AS COMBOBOX 
+      TOP=INT_015*5
+      LEFT=10
+      FONTSIZE=INT_015*9
+      HEIGHT=INT_015*25      
+      WIDTH=INT_015*214
+      DISPLAYCOUNT=-1
+      ROWSOURCETYPE=1
+      SPECIALEFFECT=0      
+      STYLE=2
+      VALUE=1
+      NAME='KEY_LIST'
+      TOOLTIPTEXT='目前資料排序'       
+ENDDEFINE      
+DEFINE CLASS MTH_LIST AS COMBOBOX 
+      TOP=INT_015*5
+      LEFT=INT_015*140
+      HEIGHT=INT_015*25
+      WIDTH=INT_015*84
+      FONTSIZE=INT_015*9
+      ROWSOURCETYPE=1
+      SPECIALEFFECT=0
+      STYLE=2
+      NAME='MTH_LIST'
+      TOOLTIPTEXT='目前資料月份'       
+      PROCEDURE INIT  
+           WITH THIS
+               SELE A23
+               GO TOP
+               K=0
+               S=0
+               DO WHILE !EOF()                
+                  K=K+1
+                  IF INT_012=1
+                     SHDT=PADL(ALLTRIM(STR(VAL(LEFT(DTOS(A23.F01),4))-1911)),4,'0')+'/'+SUBSTR(DTOS(A23.F01),5,2)
+                  ELSE
+                     SHDT=LEFT(DTOS(A23.F01),4)+'/'+SUBSTR(DTOS(A23.F01),5,2)
+                  ENDIF    
+                  .ADDITEM(SHDT) &&               
+                  IF LEFT(DTOS(DATE()),6)=LEFT(DTOS(A23.F01),6)
+                     S=K
+                  ENDIF       
+                  SKIP
+               ENDDO   
+              .VALUE=S
+              SEEK DTOS(CTOD(THIS.DISPLAYVALUE+'/01'))
+          ENDWITH                     
+      ENDPROC
+ENDDEFINE      
+DEFINE CLASS GRID1 AS GRID 
+      TOP=INT_015*30
+      LEFT=10
+      HEIGHT=INT_015*385
+      WIDTH=INT_015*214
+      HEADERHEIGHT=INT_015*19
+      ROWHEIGHT=INT_015*18   
+      DELETEMARK=.F.
+      READONLY=.T.
+      FONTBOLD=.T.  
+*!*	      SPLITBAR=.F.
+      ALLOWCELLSELECTION=.T.
+      HIGHLIGHTROWLINEWIDTH=4
+      ALLOWROWSIZING=.F.
+      RECORDSOURCETYPE=1      
+      NAME='GRID1'
+      PROCEDURE INIT 
+           ON KEY LABEL RIGHTMOUSE  DO remouse 
+           THISFORM.SETALL('MOVABLE',.F.,'COLUMN')
+*!*	            THISFORM.GRID1.BACKCOLOR=RGB(58,186,152)
+      ENDPROC             
+ENDDEFINE  
+DEFINE CLASS GRID2 AS GRID 
+      TOP=INT_015*202
+      LEFT=INT_015*236
+      HEIGHT=INT_015*318
+      WIDTH=INT_015*540
+      HEADERHEIGHT=INT_015*19
+      ROWHEIGHT=INT_015*18      
+      DELETEMARK=.F.
+      READONLY=.T.
+*!*	      SPLITBAR=.T.
+      ALLOWCELLSELECTION=.T.
+      HIGHLIGHTROWLINEWIDTH=4
+      ALLOWROWSIZING=.F.
+      RECORDSOURCETYPE=1
+      NAME='GRID2'
+    PROCEDURE INIT 
+    THISFORM.SETALL('MOVABLE',.F.,'COLUMN')
+*!*	            THISFORM.GRID2.BACKCOLOR=RGB(58,186,152)
+    ENDPROC                   
+ENDDEFINE  
+*******************       
+DEFINE CLASS CMDGROUP AS COMMANDGROUP
+  AUTOSIZE=.F.
+  BUTTONCOUNT=5  
+  BACKSTYLE=0
+  BORDERSTYLE=0
+  VALUE=1       
+  LEFT=10
+  TOP=INT_015*415
+  LEFT=INT_015*10
+  WIDTH=INT_015*218
+  HEIGHT=INT_015*30 
+  NAME='CMDGROUP'  
+  COMMAND1.AUTOSIZE=.F.
+  COMMAND1.TOP=INT_015*5
+  COMMAND1.LEFT=INT_015*5    
+  COMMAND1.HEIGHT=INT_015*25
+  COMMAND1.WIDTH=INT_015*40
+  COMMAND1.FONTSIZE=INT_015*9
+  COMMAND1.CAPTION='第一筆'
+  COMMAND1.TOOLTIPTEXT='移至第一筆記錄'
+  COMMAND1.NAME='TOP_BOTT' 
+  COMMAND2.AUTOSIZE=.F.
+  COMMAND2.TOP=INT_015*5
+  COMMAND2.LEFT=INT_015*47
+  COMMAND2.HEIGHT=INT_015*25
+  COMMAND2.WIDTH=INT_015*40
+  COMMAND2.FONTSIZE=INT_015*9  
+  COMMAND2.CAPTION='上一筆'
+  COMMAND2.TOOLTIPTEXT='移至上一筆記錄'
+  COMMAND2.NAME='UP_BOTT'
+  COMMAND3.AUTOSIZE=.F.
+  COMMAND3.TOP=INT_015*5
+  COMMAND3.LEFT=INT_015*89
+  COMMAND3.HEIGHT=INT_015*25
+  COMMAND3.WIDTH=INT_015*40
+  COMMAND3.FONTSIZE=INT_015*9  
+  COMMAND3.CAPTION='下一筆'
+  COMMAND3.TOOLTIPTEXT='移至下一筆記錄'
+  COMMAND3.NAME='NEXT_BOTT'
+  COMMAND4.AUTOSIZE=.F.
+  COMMAND4.TOP=INT_015*5
+  COMMAND4.LEFT=INT_015*131    
+  COMMAND4.HEIGHT=INT_015*25
+  COMMAND4.WIDTH=INT_015*40
+  COMMAND4.FONTSIZE=INT_015*9  
+  COMMAND4.CAPTION='最尾筆'
+  COMMAND4.TOOLTIPTEXT='移至最後一筆記錄'
+  COMMAND4.NAME='END_BOTT'
+  COMMAND5.AUTOSIZE=.F.
+  COMMAND5.TOP=INT_015*5
+  COMMAND5.LEFT=INT_015*173
+  COMMAND5.HEIGHT=INT_015*25
+  COMMAND5.WIDTH=INT_015*40
+  COMMAND5.FONTSIZE=INT_015*9 
+  COMMAND5.CAPTION='\<F.搜尋'
+  COMMAND5.TOOLTIPTEXT='快速搜尋單筆資料!快速鍵->ALT+F'
+  COMMAND5.NAME='SEEK_BOTT'
+  PROCEDURE INIT
+       WITH THIS
+                  .SETALL('MOUSEPOINTER',99,'COMMANDBUTTON')
+                  .SETALL('MOUSEICON','BMPS\HAND.CUR','COMMANDBUTTON')                            
+       ENDWITH
+  ENDPROC    
+  PROCEDURE INTERACTIVECHANGE
+       IF ALLTRIM(FCH)='GRID2'
+            SELECT  &AREA2
+       ELSE 
+            SELECT  &AREA1
+       ENDIF           
+       DO CASE
+              CASE THIS.VALUE=1
+                         GO TOP
+                         IF ALLTRIM(FCH)='GRID2'
+                             THISFORM.GRID2.SETFOCUS() 
+                         ELSE
+                             THISFORM.GRID1.SETFOCUS()    
+                         ENDIF
+              CASE THIS.VALUE=2
+	                 IF BOF()
+	                     GO TOP
+	                 ELSE
+	                     SKIP-1                  
+	                 ENDIF
+	                 IF ALLTRIM(FCH)='GRID2'
+	                     THISFORM.GRID2.SETFOCUS() 
+	                 ELSE
+	                     THISFORM.GRID1.SETFOCUS()    
+	                 ENDIF            
+              CASE THIS.VALUE=3
+                         IF EOF()
+	                     GO BOTT
+	                 ELSE
+	                     SKIP   
+	                 ENDIF
+	                 IF ALLTRIM(FCH)='GRID2'
+	                     THISFORM.GRID2.SETFOCUS() 
+	                 ELSE
+	                     THISFORM.GRID1.SETFOCUS()    
+	                 ENDIF               
+              CASE THIS.VALUE=4
+                         GO BOTTOM
+                         IF ALLTRIM(FCH)='GRID2'
+	                     THISFORM.GRID2.SETFOCUS() 
+	                 ELSE
+	                     THISFORM.GRID1.SETFOCUS()    
+	                 ENDIF               
+              CASE THIS.VALUE=5 
+	                HEAD_SEEK=CREATEOBJECT("HEAD_SEEK")  
+	                HEAD_SEEK.SHOW    
+	                IF FLG='0'
+	                    =MESSAGEBOX('找不到您指定的鍵值',0+48,'警示')      
+	                ENDIF   
+	                FLG='0'
+	                CHK=''
+      ENDCASE                
+      IF ALLTRIM(FCH)='GRID2'
+          THISFORM.GRID2.SETFOCUS()      
+      ELSE
+          THISFORM.GRID1.SETFOCUS()
+      ENDIF                   
+*	      _VFP.ACTIVEFORM.REFRESH
+  ENDPROC     
+ENDDEFINE  
+****************************************搜尋畫面
+DEFINE CLASS HEAD_SEEK AS FORM
+  AUTOCENTER=.T.
+  CAPTION='搜尋畫面'
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*190
+  WIDTH=INT_015*475
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='HEAD_SEEK'
+  ADD OBJECT LABEL1 AS LABEL WITH;
+      AUTOSIZE=.T.,;
+      HEIGHT=INT_015*25,;
+      LEFT=INT_015*30,;
+      TOP=INT_015*75,;
+      FONTSIZE=INT_015*9,;
+      NAME='LABEL1'
+ ADD OBJECT TEXT1 AS TEXTBOX WITH;
+      AUTOSIZE=.T.,;
+      TOP=INT_015*70,;
+      WIDTH=INT_015*269,;
+      LEFT=INT_015*120,;
+      HEIGHT=INT_015*25,; 
+      FONTSIZE=INT_015*9,;
+      NAME='TEXT1'
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*100,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*144,;  
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;      
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;              
+      CAPTION='\<Y.執行',;
+      TOOLTIPTEXT='確認搜尋所輸入的鍵值!快速鍵->ALT+Y',;
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*240,;
+      TOP=INT_015*144,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消搜尋作業!快速鍵->ALT+C',;
+      NAME='CMND2'
+  PROCEDURE INIT 
+      THISFORM.LABEL1.CAPTION=JK
+      THISFORM.TEXT1.READONLY=.F.
+      IF SUBSTR(KEY(),5,4)='DTOS' AND ALLTRIM(FCH)='GRID2'  OR SUBSTR(KEY(),1,4)='DTOS'
+         THISFORM.TEXT1.VALUE=DATE()
+      ELSE   
+         THISFORM.TEXT1.VALUE=''
+      ENDIF   
+  ENDPROC    
+   PROCEDURE TEXT1.INTERACTIVECHANGE     
+        IF SUBSTR(KEY(),5,4)='DTOS' AND ALLTRIM(FCH)='GRID2'  OR SUBSTR(KEY(),1,4)='DTOS'
+        ELSE
+            IF LEN(ALLTRIM(THIS.VALUE))<0
+                 THISFORM.TEXT1.VALUE=ALLTRIM(THIS.VALUE)
+            ENDIF
+        ENDIF    
+     ENDPROC  
+  PROCEDURE CMND1.CLICK 
+      SET NEAR  ON
+      IF SUBSTR(KEY(),5,4)='DTOS' AND ALLTRIM(FCH)='GRID2'  OR SUBSTR(KEY(),1,4)='DTOS'
+           SEEK CHK+DTOS(THISFORM.TEXT1.VALUE)
+      ELSE   
+           SEEK CHK+ALLTRIM(THISFORM.TEXT1.VALUE)
+      ENDIF  
+      IF FOUND() AND !EMPTY(THISFORM.TEXT1.VALUE)
+           FLG='1'
+      ENDIF 
+      SET NEAR OFF  
+      THISFORM.RELEASE              
+  ENDPROC
+  PROCEDURE CMND2.CLICK
+       FLG='1'   
+       THISFORM.RELEASE
+  ENDPROC      
+ENDDEFINE         
+****************************************操作鍵
+DEFINE CLASS ORPGROUP AS COMMANDGROUP
+    AUTOSIZE=.F.
+    BUTTONCOUNT=5  
+    BACKSTYLE=0
+    BORDERSTYLE=0
+    VALUE=1       
+    TOP=INT_015*455
+    LEFT=INT_015*10    
+    WIDTH=INT_015*218
+    HEIGHT=INT_015*30 
+    ENABLED=.T.
+    VISIBLE=.T.          
+    NAME='ORPGROUP'       
+    COMMAND1.AUTOSIZE=.F.
+    COMMAND1.TOP=INT_015*5
+    COMMAND1.LEFT=INT_015*5    
+    COMMAND1.HEIGHT=INT_015*25
+    COMMAND1.WIDTH=INT_015*40
+    COMMAND1.FONTSIZE=INT_015*9     
+    COMMAND1.CAPTION='\<N.新增'
+    COMMAND1.TOOLTIPTEXT='新增一筆記錄!快速鍵->ALT+N'
+    COMMAND1.NAME='NEW_BOTT' 
+    COMMAND2.AUTOSIZE=.F.
+    COMMAND2.TOP=INT_015*5
+    COMMAND2.LEFT=INT_015*47
+    COMMAND2.HEIGHT=INT_015*25
+    COMMAND2.WIDTH=INT_015*40
+    COMMAND2.FONTSIZE=INT_015*9    
+    COMMAND2.CAPTION='\<E.修改'
+    COMMAND2.TOOLTIPTEXT='修改目前所指紀錄內容!快速鍵->ALT+E'
+    COMMAND2.NAME='EDIT_BOTT'
+    COMMAND3.AUTOSIZE=.F.
+    COMMAND3.TOP=INT_015*5
+    COMMAND3.LEFT=INT_015*89
+    COMMAND3.HEIGHT=INT_015*25
+    COMMAND3.WIDTH=INT_015*40
+    COMMAND3.FONTSIZE=INT_015*9     
+    COMMAND3.CAPTION='\<D.刪除'
+    COMMAND3.TOOLTIPTEXT='刪除目前所指記錄全部!快速鍵->ALT+D'
+    COMMAND3.NAME='DEL_BOTT'
+    COMMAND4.AUTOSIZE=.F.
+    COMMAND4.TOP=INT_015*5
+    COMMAND4.LEFT=INT_015*131    
+    COMMAND4.HEIGHT=INT_015*25
+    COMMAND4.WIDTH=INT_015*40
+    COMMAND4.FONTSIZE=INT_015*9    
+    COMMAND4.CAPTION='\<P.列印'
+    COMMAND4.TOOLTIPTEXT='列印資料內容!快速鍵->ALT+P'
+    COMMAND4.NAME='PNT_BOTT'
+    COMMAND5.AUTOSIZE=.F.
+    COMMAND5.TOP=INT_015*5
+    COMMAND5.LEFT=INT_015*173
+    COMMAND5.HEIGHT=INT_015*25
+    COMMAND5.WIDTH=INT_015*40
+    COMMAND5.FONTSIZE=INT_015*9       
+    COMMAND5.CAPTION='\<X.離開'
+    COMMAND5.TOOLTIPTEXT='離開目前作業!快速鍵->ALT+X'
+    COMMAND5.NAME='ESC_BOTT'   
+ PROCEDURE INIT
+       WITH THIS
+                 .SETALL('MOUSEPOINTER',99,'COMMANDBUTTON')
+                 .SETALL('MOUSEICON','BMPS\HAND.CUR','COMMANDBUTTON')                            
+        ENDWITH
+ ENDPROC  
+ PROCEDURE INTERACTIVECHANGE
+        DO CASE
+              CASE THIS.VALUE=1    &&新增紀錄           
+	               THISFORM.KEY_LIST.ENABLED=.F.                
+	               THISFORM.CMDGROUP.ENABLED=.F.
+	               THISFORM.SHRGROUP.ENABLED=.T.
+	               THISFORM.SHRGROUP.VISIBLE=.T.
+	               THISFORM.SHRGROUP.SHURE2_BOTT.ENABLED=.F.
+	               THISFORM.SHRGROUP.SHURE2_BOTT.VISIBLE=.F.
+	               THISFORM.SHRGROUP.SHURE1_BOTT.ENABLED=.T.
+	               THISFORM.SHRGROUP.SHURE1_BOTT.VISIBLE=.T.
+	               THISFORM.SHRGROUP.ABANDON_BOTT.VISIBLE=.F.
+	               THISFORM.SHRGROUP.FINISH_BOTT.ENABLED=.T.
+	               THISFORM.SHRGROUP.FINISH_BOTT.VISIBLE=.T.                              
+	               THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(128,128,128),'COMMANDBUTTON')
+	               THIS.ENABLED=.F.                    
+	               THIS.SETALL('FORECOLOR',RGB(128,128,128),'COMMANDBUTTON')                            
+	               THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+             CASE THIS.VALUE=2      &&修改目前所指資料
+	               THISFORM.KEY_LIST.ENABLED=.F.
+	               THISFORM.CMDGROUP.ENABLED=.F.
+	               THISFORM.SHRGROUP.ENABLED=.T.
+	               THISFORM.SHRGROUP.VISIBLE=.T.
+	               THISFORM.SHRGROUP.SHURE1_BOTT.ENABLED=.F.
+	               THISFORM.SHRGROUP.SHURE1_BOTT.VISIBLE=.F.
+	               THISFORM.SHRGROUP.SHURE2_BOTT.ENABLED=.T.
+	               THISFORM.SHRGROUP.SHURE2_BOTT.VISIBLE=.T.
+	               THISFORM.SHRGROUP.ABANDON_BOTT.VISIBLE=.T.
+	               THISFORM.SHRGROUP.FINISH_BOTT.ENABLED=.F.
+	               THISFORM.SHRGROUP.FINISH_BOTT.VISIBLE=.F.
+	               THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(128,128,128),'COMMANDBUTTON')               
+	               THIS.ENABLED=.F.               
+	               THIS.SETALL('FORECOLOR',RGB(128,128,128),'COMMANDBUTTON')                            
+	               THISFORM.SETALL('ENABLED',.F.,'GRID')
+	               THISFORM.SETALL('READONLY',.F.,'TEXTBOX')
+            CASE THIS.VALUE=3 &&刪除目前所指表單或資料  
+*!*		               IF MESSAGEBOX('是否確定要刪除此筆資料',4+32+256,'請確認') = 6	      
+*!*		                    DO DELE_SHURE    
+*!*		               ENDIF   
+            CASE THIS.VALUE=4  &&列印  
+	               DO PNT_PRC             
+	               CLEAR
+	               THISFORM.REFRESH   
+            CASE THIS.VALUE=5    &&離開現行作業
+	               IF MESSAGEBOX('您真的要結束此作業嗎',4+48+0,'請確定')=6
+	                    ON KEY
+	                    UNLOCK ALL                  
+	                    CLOSE TABLE ALL	               
+	                    IF !USED('A05')
+	                        SELECT  0
+	                        USE A05  
+	                    ELSE
+	                        SELE A05
+	                    ENDIF   
+	                    SET ORDER TO A051    
+	                    SEEK sys_oper+PRG_NO
+	                    IF FOUND()
+	                       DELETE 
+	                    ENDIF   
+	                    THISFORM.RELEASE 
+	                    RETURN                  
+	               ENDIF
+         ENDCASE               
+         DO CASE 
+               CASE ALLTRIM(FCH)='GRID1'  
+                          THISFORM.GRID1.SETFOCUS()    
+               CASE ALLTRIM(FCH)='GRID2'       
+                          THISFORM.GRID2.SETFOCUS()            
+         ENDCASE      
+*!*	        THISFORM.REFRESH
+*!*	        _VFP.ACTIVEFORM.REFRESH
+  ENDPROC     
+ENDDEFINE
+*****************************確認鍵      
+DEFINE CLASS SHRGROUP AS COMMANDGROUP
+    AUTOSIZE=.F.
+    BUTTONCOUNT=4  
+    BACKSTYLE=0
+    BORDERSTYLE=0
+    VALUE=1       
+    LEFT=INT_015*10
+    TOP=INT_015*325
+    WIDTH=INT_015*218
+    HEIGHT=INT_015*30 
+    NAME='SHRGROUP'       
+  COMMAND1.AUTOSIZE=.F.
+  COMMAND1.TOP=INT_015*5
+  COMMAND1.LEFT=INT_015*5    
+  COMMAND1.HEIGHT=INT_015*25
+  COMMAND1.WIDTH=INT_015*40
+  COMMAND1.FONTSIZE=INT_015*9
+  COMMAND1.CAPTION='\<S.確定'
+  COMMAND1.TOOLTIPTEXT='新增後確認儲存!快速鍵->ALT+S'
+  COMMAND1.NAME='SHURE1_BOTT' 
+  COMMAND2.AUTOSIZE=.F.
+  COMMAND2.TOP=INT_015*5
+  COMMAND2.LEFT=INT_015*5
+  COMMAND2.HEIGHT=INT_015*25
+  COMMAND2.WIDTH=INT_015*40
+  COMMAND2.FONTSIZE=INT_015*9  
+  COMMAND2.CAPTION='\<S.確認'
+  COMMAND2.TOOLTIPTEXT='修改後確認儲存!快速鍵->ALT+S'
+  COMMAND2.NAME='SHURE2_BOTT'
+  COMMAND3.AUTOSIZE=.F.
+  COMMAND3.TOP=INT_015*5
+  COMMAND3.LEFT=INT_015*47
+  COMMAND3.HEIGHT=INT_015*25
+  COMMAND3.WIDTH=INT_015*40
+  COMMAND3.FONTSIZE=INT_015*9  
+  COMMAND3.CAPTION='\<A.放棄'
+  COMMAND3.TOOLTIPTEXT='放棄此筆修改作業!快速鍵->ALT+A'
+  COMMAND3.NAME='ABANDON_BOTT'
+  COMMAND4.AUTOSIZE=.F.
+  COMMAND4.TOP=INT_015*5
+  COMMAND4.LEFT=INT_015*47    
+  COMMAND4.HEIGHT=INT_015*25
+  COMMAND4.WIDTH=INT_015*40
+  COMMAND4.FONTSIZE=INT_015*9  
+  COMMAND4.CAPTION='\<X.結束'
+  COMMAND4.TOOLTIPTEXT='結束或放棄新增作業!快速鍵->ALT+X'
+  COMMAND4.NAME='FINISH_BOTT'
+        PROCEDURE INIT
+                WITH THIS
+                     .SETALL('MOUSEPOINTER',99,'COMMANDBUTTON')
+                     .SETALL('MOUSEICON','BMPS\PAN_GRAB.CUR','COMMANDBUTTON')                            
+                ENDWITH
+        ENDPROC  
+ENDDEFINE      
+********************************人員搜尋畫面
+DEFINE CLASS MAN_SEEK AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='公司人員一覽表'
+  TOP=INT_015*150
+  LEFT=INT_015*300     
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*250
+  WIDTH=INT_015*165
+  FONTSIZE=INT_015*9
+  MAXBUTTON=.F.
+  MINBUTTON=.F.    
+  CLOSABLE=.F.
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='MAN_SEEK'
+  ADD OBJECT GRDA01 AS GRID WITH;          
+      AUTOCENTER=.T.,;
+      TOP=0,;
+      WIDTH=INT_015*165,;      
+      HEIGHT=INT_015*220,;      
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;
+      ALLOWCELLSELECTION=.F.,;
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      RECORDSOURCETYPE=1,;
+      COLUMNCOUNT=2,;            
+      RECORDSOURCE='MAN',;      
+      NAME='GRDA01',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'      
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*15,;    
+      HEIGHT=INT_015*25,;   
+      FONTSIZE=INT_015*9,;
+      TOP=INT_015*223,;  
+      WIDTH=INT_015*80,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;        
+      CAPTION='\<S.選取',;
+      TOOLTIPTEXT='選擇游標所指的紀錄!快速鍵->ALT+S'
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*90,;
+      TOP=INT_015*223,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;      
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;  
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消此搜尋畫面!快速鍵->ALT+C'
+      NAME='CMND2'
+  PROCEDURE INIT 
+         THISFORM.SETALL('MOVABLE',.F.,'COLUMN')
+         THISFORM.GRDA01.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRDA01.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+         THISFORM.GRDA01.COLUMN1.HEADER1.CAPTION='人員編號'
+         THISFORM.GRDA01.COLUMN1.WIDTH=INT_015*55
+         THISFORM.GRDA01.COLUMN1.CONTROLSOURCE='MAN.F01'
+         THISFORM.GRDA01.COLUMN2.HEADER1.CAPTION='人員姓名'
+         THISFORM.GRDA01.COLUMN2.WIDTH=INT_015*75
+         THISFORM.GRDA01.COLUMN2.CONTROLSOURCE='MAN.F03'
+         THISFORM.GRDA01.SETFOCUS
+         IF THISFORM.GRDA01.ACTIVEROW<>0
+              THISFORM.GRDA01.AFTERROWCOLCHANGE 
+         ENDIF     
+  ENDPROC
+  PROCEDURE  GRDA01.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+          FLG=MAN.F01
+  ENDPROC 
+  PROCEDURE CMND1.CLICK                               
+          THISFORM.RELEASE                
+  ENDPROC
+  PROCEDURE CMND2.CLICK
+          FLG=''   
+         THISFORM.RELEASE
+  ENDPROC      
+ENDDEFINE            
+***********************************************部門搜尋畫面
+DEFINE CLASS DEPART_SEEK AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='部門名稱一纜表'
+  TOP=INT_015*150
+  LEFT=INT_015*300     
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*250
+  WIDTH=INT_015*165
+  FONTSIZE=INT_015*9
+  MAXBUTTON=.F.
+  MINBUTTON=.F.    
+  CLOSABLE=.F.
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='DEPART_SEEK'
+  ADD OBJECT GRDA14 AS GRID WITH;          
+      AUTOCENTER=.T.,;
+      TOP=0,;
+      WIDTH=INT_015*165,;      
+      HEIGHT=INT_015*220,;      
+      FONTSIZE=INT_015*9,;
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;
+      ALLOWCELLSELECTION=.F.,;
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      RECORDSOURCETYPE=1,;
+      COLUMNCOUNT=2,;            
+      RECORDSOURCE='DEPART',;      
+      NAME='GRDA14',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'      
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*15,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*223,;  
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;      
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;        
+      CAPTION='\<S.選取',;
+      TOOLTIPTEXT='選擇游標所指的紀錄!快速鍵->ALT+S'
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*90,;
+      TOP=INT_015*223,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;      
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;        
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消此搜尋畫面!快速鍵->ALT+C'
+      NAME='CMND2'
+ PROCEDURE INIT 
+         THISFORM.SETALL('MOVABLE',.F.,'COLUMN')
+         THISFORM.GRDA14.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRDA14.SETALL('FONTSIZE',INT_015*9,'HEADER')         
+         THISFORM.GRDA14.COLUMN1.HEADER1.CAPTION='部門編號'
+         THISFORM.GRDA14.COLUMN1.WIDTH=INT_015*50
+         THISFORM.GRDA14.COLUMN1.CONTROLSOURCE='DEPART.F01'
+         THISFORM.GRDA14.COLUMN2.HEADER1.CAPTION='部門名稱'
+         THISFORM.GRDA14.COLUMN2.WIDTH=INT_015*80
+         THISFORM.GRDA14.COLUMN2.CONTROLSOURCE='DEPART.F02'
+         THISFORM.GRDA14.SETFOCUS
+         IF THISFORM.GRDA14.ACTIVEROW<>0
+              THISFORM.GRDA14.AFTERROWCOLCHANGE 
+         ENDIF   
+  ENDPROC
+  PROCEDURE  GRDA14.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+          FLG=DEPART.F01
+  ENDPROC 
+  PROCEDURE CMND1.CLICK                               
+         THISFORM.RELEASE                
+  ENDPROC
+  PROCEDURE CMND2.CLICK
+         FLG=''   
+         THISFORM.RELEASE
+  ENDPROC      
+ENDDEFINE            
+**********************************************************料號搜尋畫面
+DEFINE CLASS MTR_SEEK AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='料品編號一纜表'
+  TOP=INT_015*140
+  LEFT=INT_015*140       
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*280
+  WIDTH=INT_015*500
+  MAXBUTTON=.F.
+  MINBUTTON=.F.    
+  CLOSABLE=.F.
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='MTR_SEEK'
+  ADD OBJECT GRDB01 AS GRID WITH;          
+      AUTOCENTER=.T.,;
+      TOP=INT_015*0,;
+      WIDTH=INT_015*500,;      
+      HEIGHT=INT_015*250,;  
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;
+      ALLOWCELLSELECTION=.F.,;
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      RECORDSOURCETYPE=1,;
+      COLUMNCOUNT=2,;            
+      RECORDSOURCE='MTR',;      
+      NAME='GRDB01',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'      
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*140,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*253,;  
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;        
+      CAPTION='\<S.選取',;
+      TOOLTIPTEXT='選擇游標所指的紀錄!快速鍵->ALT+S'
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*280,;
+      TOP=INT_015*253,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;     
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;         
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消此搜尋畫面!快速鍵->ALT+C'
+      NAME='CMND2'
+  PROCEDURE INIT 
+         THISFORM.SETALL('MOVABLE',.F.,'COLUMN')
+         THISFORM.GRDB01.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRDB01.SETALL('FONTSIZE',INT_015*9,'HEADER')      
+         THISFORM.GRDB01.COLUMN1.HEADER1.CAPTION='料      號'
+         THISFORM.GRDB01.COLUMN1.WIDTH=INT_015*230
+         THISFORM.GRDB01.COLUMN1.CONTROLSOURCE='MTR.F01'
+         THISFORM.GRDB01.COLUMN2.HEADER1.CAPTION='品名規格'
+         THISFORM.GRDB01.COLUMN2.WIDTH=INT_015*230
+         THISFORM.GRDB01.COLUMN2.CONTROLSOURCE='MTR.F02'
+         THISFORM.GRDB01.SETFOCUS
+         IF THISFORM.GRDB01.ACTIVEROW<>0
+              THISFORM.GRDB01.AFTERROWCOLCHANGE 
+         ENDIF       
+  ENDPROC
+  PROCEDURE  GRDB01.AFTERROWCOLCHANGE
+       LPARAMETERS XCOLINDEX
+  ENDPROC 
+  PROCEDURE CMND1.CLICK      
+       FLG=MTR.F01                           
+       THISFORM.CMND2.CLICK 
+  ENDPROC
+  PROCEDURE CMND2.CLICK
+       SELECT  MTR
+       USE               
+       THISFORM.RELEASE
+  ENDPROC
+ENDDEFINE   
+**************************************廠商&客戶搜尋畫面         
+DEFINE CLASS VDR_SEEK AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='客戶/廠商編號一纜表'
+  TOP=INT_015*150
+  LEFT=INT_015*200      
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*250
+  WIDTH=INT_015*350
+  MAXBUTTON=.F.
+  MINBUTTON=.F.    
+  CLOSABLE=.F.
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='VDR_SEEK'
+  ADD OBJECT GRDD01 AS GRID WITH;          
+      AUTOCENTER=.T.,;
+      TOP=0,;
+      WIDTH=INT_015*350,;      
+      HEIGHT=INT_015*220,;      
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;
+      ALLOWCELLSELECTION=.F.,;
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      RECORDSOURCETYPE=1,;
+      COLUMNCOUNT=3,;            
+      RECORDSOURCE='VDR',;      
+      NAME='GRDD01',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'      
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*75,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*223,;        
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;        
+      CAPTION='\<S.選取',;
+      TOOLTIPTEXT='選擇游標所指的紀錄!快速鍵->ALT+S'
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*200,;
+      TOP=INT_015*223,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;     
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;         
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消此搜尋畫面!快速鍵->ALT+C'
+      NAME='CMND2'
+ PROCEDURE INIT 
+         THISFORM.SETALL('MOVABLE',.F.,'COLUMN')
+         THISFORM.GRDD01.SETALL('FONTSIZE',INT_015*9,'COLUMN') 
+         THISFORM.GRDD01.SETALL('FONTSIZE',INT_015*9,'HEADER')          
+         THISFORM.GRDD01.COLUMN1.HEADER1.CAPTION='索引簡碼'
+         THISFORM.GRDD01.COLUMN1.WIDTH=INT_015*50
+         THISFORM.GRDD01.COLUMN1.CONTROLSOURCE='VDR.F02'
+         THISFORM.GRDD01.COLUMN2.HEADER1.CAPTION='編        號'
+         THISFORM.GRDD01.COLUMN2.WIDTH=INT_015*50
+         THISFORM.GRDD01.COLUMN2.CONTROLSOURCE='VDR.F01'
+         THISFORM.GRDD01.COLUMN3.HEADER1.CAPTION='名        稱'
+         THISFORM.GRDD01.COLUMN3.WIDTH=INT_015*210
+         THISFORM.GRDD01.COLUMN3.CONTROLSOURCE='VDR.F04'
+         THISFORM.GRDD01.SETFOCUS
+         IF THISFORM.GRDD01.ACTIVEROW<>0
+              THISFORM.GRDD01.AFTERROWCOLCHANGE 
+         ENDIF 
+ ENDPROC
+ PROCEDURE  GRDD01.AFTERROWCOLCHANGE
+     LPARAMETERS NCOLINDEX
+          FLG=VDR.F01
+ ENDPROC 
+ PROCEDURE CMND1.CLICK                               
+          THISFORM.RELEASE      
+          CLEAR EVENT          
+ ENDPROC
+ PROCEDURE CMND2.CLICK
+          FLG=''   
+          THISFORM.RELEASE
+  ENDPROC      
+ENDDEFINE  
+**********************************************************製程搜尋畫面
+DEFINE CLASS RTE_SEEK AS FORM
+  AUTOCENTER=.T.
+  CAPTION='製程代號一纜表'
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*280
+  WIDTH=INT_015*190
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='RTE_SEEK'
+  ADD OBJECT GRDE00 AS GRID WITH;          
+      AUTOCENTER=.T.,;
+      TOP=0,;
+      WIDTH=INT_015*181,;      
+      HEIGHT=INT_015*250,;  
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;
+      ALLOWCELLSELECTION=.F.,;
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      RECORDSOURCETYPE=1,;
+      COLUMNCOUNT=2,;            
+      RECORDSOURCE='RTE',;      
+      NAME='GRDE00',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'      
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*10,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*252,;  
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;        
+      CAPTION='\<S.選取',;
+      TOOLTIPTEXT='選擇游標所指的紀錄!快速鍵->ALT+S'
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*80,;
+      TOP=INT_015*252,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;      
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;        
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消此搜尋畫面!快速鍵->ALT+C'
+      NAME='CMND2'
+ PROCEDURE INIT 
+         THISFORM.SETALL('MOVABLE',.F.,'COLUMN')
+         THISFORM.GRDE00.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRDE00.SETALL('FONTSIZE',INT_015*9,'HEADER')      
+         THISFORM.GRDE00.COLUMN1.HEADER1.CAPTION='製程代號'
+         THISFORM.GRDE00.COLUMN1.WIDTH=INT_015*80
+         THISFORM.GRDE00.COLUMN1.CONTROLSOURCE='RTE.F07'
+         THISFORM.GRDE00.COLUMN2.HEADER1.CAPTION='製程說明'
+         THISFORM.GRDE00.COLUMN2.WIDTH=INT_015*100
+         THISFORM.GRDE00.COLUMN2.CONTROLSOURCE='RTE.F04'
+         THISFORM.GRDE00.SETFOCUS
+         IF THISFORM.GRDE00.ACTIVEROW<>0
+              THISFORM.GRDE00.AFTERROWCOLCHANGE 
+         ENDIF
+ ENDPROC
+ PROCEDURE  GRDE00.AFTERROWCOLCHANGE
+     LPARAMETERS XCOLINDEX
+          FLG=RTE.F07
+ ENDPROC 
+ PROCEDURE CMND1.CLICK                               
+          SELECT  RTE
+          USE     
+          THISFORM.RELEASE                
+ ENDPROC
+ PROCEDURE CMND2.CLICK
+          FLG=''   
+          SELECT  RTE
+          USE               
+          THISFORM.RELEASE
+  ENDPROC 
+ENDDEFINE   
+********************************************************主畫面程式搜尋SQL
+DEFINE CLASS PRG_SEEK  AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION='程式一纜表'
+  TOP=INT_015*150
+  LEFT=INT_015*250     
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*280
+  WIDTH=INT_015*260
+  MAXBUTTON=.F.
+  MINBUTTON=.F.    
+  CLOSABLE=.F.
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='PRG_SEEK'
+  ADD OBJECT GRID1 AS GRID WITH;          
+      AUTOCENTER=.T.,;
+      TOP=0,;
+      WIDTH=INT_015*260,;      
+      HEIGHT=INT_015*250,;      
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;
+      RECORDSOURCETYPE=1,;
+      COLUMNCOUNT=2,;            
+      ALLOWCELLSELECTION=.F.,;
+      RECORDSOURCE='PRGS',;      
+      NAME='GRID1',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'      
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*55,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*253,;  
+      WIDTH=INT_015*40,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;        
+      CAPTION='\<S.選取',;
+      TOOLTIPTEXT='選擇游標所指的紀錄!快速鍵->ALT+S'
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*160,;
+      TOP=INT_015*253,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;        
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消此搜尋畫面!快速鍵->ALT+C'
+      NAME='CMND2'
+ PROCEDURE INIT 
+         AREA1='PRGS' 
+         THISFORM.SETALL('FONTSIZE',INT_015*9,'COMMANDBUTTON')
+         THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')         
+         THISFORM.SETALL('MOVABLE',.F.,'COLUMN')
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')
+         THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='程式編號'
+         THISFORM.GRID1.COLUMN1.WIDTH=INT_015*50
+         THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='程式名稱'
+         THISFORM.GRID1.COLUMN2.WIDTH=INT_015*160
+         THISFORM.GRID1.SETFOCUS  
+         IF THISFORM.GRID1.ACTIVEROW=0
+	      THISFORM.CMND1.ENABLED=.F.    
+         ELSE
+	      THISFORM.CMND1.ENABLED=.T. 
+	      THISFORM.GRID1.AFTERROWCOLCHANGE            
+         ENDIF               
+  ENDPROC
+  PROCEDURE  GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS XCOLINDEX       
+          FCH=THISFORM.ACTIVECONTROL.NAME
+          H=FIELD(1)
+          FLG=PRGS.&H
+  ENDPROC 
+  PROCEDURE CMND1.CLICK  
+          IF FIELD(1)='F03'
+               IF !USED('A05')
+                   SELECT  0
+                   USE A05 
+               ELSE
+                   SELECT  A05
+               ENDIF
+               SET ORDER TO A051
+               SELECT A05
+               
+               SEEK SYS_OPER+FLG
+               IF FOUND()
+                  =MESSAGEBOX('你已經開啟此作業不得重複操作',0+48,'提示訊息視窗')
+                  SELECT A05
+                  USE
+               ELSE
+                   APPEND BLANK
+                   REPLACE F01 WITH SYS_OPER
+                   REPLACE F02 WITH PRGS.F03
+                   REPLACE F03 WITH PRGS.F02
+                   REPLACE F04 WITH DTCX(DATE())+' '+TIME()  
+                   PRG_NO=FLG
+                   IF !USED('A04')
+                      SELECT 0
+                      USE A04
+                   ELSE 
+                      SELECT A04
+                   ENDIF
+                   SET ORDER TO 1
+                   SEEK sys_oper
+                   IF !FOUND()
+                      SEEK 'zzzzz'
+                      IF FOUND()
+                         REPLACE F01 WITH sys_oper
+                         REPLACE F04 WITH DTCX(DATE())+' '+TIME()  
+                      ELSE
+                         =MESSAGEBOX('使用人數已超過',0+64,'請稍後登錄')
+                         RETURN
+                      ENDIF    
+                   ENDIF       
+                   DO &FLG    
+               ENDIF   
+               
+          ENDIF   
+          THISFORM.RELEASE                                            
+ ENDPROC
+ PROCEDURE CMND2.CLICK
+          FLG=''   
+          THISFORM.RELEASE
+ ENDPROC      
+ENDDEFINE            
+********************************電子計算機發票搜尋畫面
+DEFINE CLASS ELC_SEEK AS FORM
+*!*		  AUTOCENTER=.T.
+  CAPTION='可選用發票號碼'
+  TOP=INT_015*150
+  LEFT=INT_015*300     
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*250
+  WIDTH=INT_015*350
+  FONTSIZE=INT_015*9
+  MAXBUTTON=.F.
+  MINBUTTON=.F.    
+  CLOSABLE=.F.
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='ELC_SEEK'
+  ADD OBJECT GRDELC AS GRID WITH;          
+      AUTOCENTER=.T.,;
+      TOP=0,;
+      WIDTH=INT_015*350,;      
+      HEIGHT=INT_015*220,;      
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;
+      ALLOWCELLSELECTION=.F.,;
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      RECORDSOURCETYPE=1,;
+      COLUMNCOUNT=5,;            
+      RECORDSOURCE='ELCINV',;      
+      NAME='GRDELC',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;  
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5'
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*15,;    
+      HEIGHT=INT_015*25,;   
+      FONTSIZE=INT_015*9,;
+      TOP=INT_015*223,;  
+      WIDTH=INT_015*80,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;        
+      CAPTION='\<S.選取',;
+      TOOLTIPTEXT='選擇游標所指的紀錄!快速鍵->ALT+S'
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*90,;
+      TOP=INT_015*223,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;      
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\HARROW.CUR',;  
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消此搜尋畫面!快速鍵->ALT+C'
+      NAME='CMND2'
+  PROCEDURE INIT 
+         THISFORM.SETALL('MOVABLE',.F.,'COLUMN')
+         THISFORM.GRDELC.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRDELC.SETALL('FONTSIZE',INT_015*9,'HEADER') 
+         THISFORM.GRDELC.COLUMN1.HEADER1.CAPTION='類    別'
+         THISFORM.GRDELC.COLUMN1.WIDTH=INT_015*55
+         THISFORM.GRDELC.COLUMN1.CONTROLSOURCE="IIF(ELCINV.F01='31','三聯式','二聯式')"
+         THISFORM.GRDELC.COLUMN2.HEADER1.CAPTION='冊號'
+         THISFORM.GRDELC.COLUMN2.WIDTH=INT_015*45
+         THISFORM.GRDELC.COLUMN2.CONTROLSOURCE='ELCINV.F02'
+         THISFORM.GRDELC.COLUMN3.HEADER1.CAPTION='最後異動'
+         THISFORM.GRDELC.COLUMN3.WIDTH=INT_015*75
+         THISFORM.GRDELC.COLUMN3.CONTROLSOURCE='ELCINV.F03'
+         THISFORM.GRDELC.COLUMN4.HEADER1.CAPTION='可用號碼'
+         THISFORM.GRDELC.COLUMN4.WIDTH=INT_015*75
+         THISFORM.GRDELC.COLUMN4.CONTROLSOURCE='ELCINV.F04'        
+         THISFORM.GRDELC.COLUMN5.HEADER1.CAPTION='剩餘張數'
+         THISFORM.GRDELC.COLUMN5.WIDTH=INT_015*75
+         THISFORM.GRDELC.COLUMN5.CONTROLSOURCE='ELCINV.F05'         
+         THISFORM.GRDELC.SETFOCUS
+         IF THISFORM.GRDELC.ACTIVEROW<>0
+              THISFORM.GRDELC.AFTERROWCOLCHANGE 
+         ENDIF     
+  ENDPROC
+  PROCEDURE  GRDELC.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+          FLG=ELCINV.F04
+          CHK_STR=ELCINV.F01
+          UKEF=ELCINV.F02
+  ENDPROC 
+  PROCEDURE CMND1.CLICK                             
+          FLG=ELCINV.F04
+          CHK_STR=ELCINV.F01
+          UKEF=ELCINV.F02  
+    
+          THISFORM.RELEASE                
+  ENDPROC
+  PROCEDURE CMND2.CLICK
+          FLG=''   
+          CHK_STR=''
+          UKEF=''
+         THISFORM.RELEASE
+  ENDPROC      
+ENDDEFINE            
+************自訂函數MRP週期  
+FUNCTION MRP_PRD
+   PARAMETERS MDAY
+   DO CASE
+         CASE INT_005='1'
+                   MRPDAY=MDAY
+         CASE INT_005='2'
+                   MRPDAY=MDAY-DOW(MDAY)+2
+         CASE INT_005='3'
+                   MRPDAY=MDAY-DAY(MDAY)+1
+   ENDCASE                  
+  RETURN MRPDAY 
+************自訂整理MRP檔程序
+PROC MRP_PRC
+   MRP1=0
+   SELECT  E08
+   SEEK FLG
+   IF FOUND()
+        DO WHILE F02=FLG
+               REPLACE  F20 WITH F05+F08-F11-F14-F17
+               REPLACE  F20 WITH F20+MRP1
+               MRP1=F20
+               SKIP
+         ENDDO   
+   ENDIF   
+   FLG='0' 
+ENDPROC
+****************************************單據自動流水編號程序一
+PROCEDURE ODR_CRT          
+          SELE A24   
+          SEEK HD           
+          IF FOUND() 
+             PO_NO=F08
+             RLOCK()
+             DELETE  
+             UNLOCK
+          ELSE
+             SELE A09
+             SEEK HD            
+             IF !FOUND()                                                  &&如果為本月第一張訂單則重頭開始編號
+			    APPEND BLANK                                                
+			    REPLACE  f01 WITH HD1
+			    REPLACE  f02 WITH SUBSTR(HD,6,4)
+			    REPLACE  F05 WITH HD2+f02
+			    REPLACE  F06 WITH HD3
+			    REPLACE  F08 WITH ALLTRIM(F05)+'0000'
+		    ENDIF
+		    LOCK()
+		    HX=VAL(RIGHT(F08,4))+1
+		    PO_NO=LEFT(F08,6)+PADL(ALLTRIM(STR(HX)),4,'0')
+		    REPLACE  F08 WITH PO_NO                                             &&記錄本訂單號碼,本月份後續的訂單號碼將以此往下編
+		    UNLOCK
+          ENDIF       
+ENDPROC          
+*************************************************不用之單號寫回A24
+PROCEDURE ODR_RJT        
+                  SELECT A24
+                  SEEK HD
+                       IF !FOUND()
+                          
+                          APPEND BLANK
+                          LOCK()
+                          REPL F01 WITH LEFT(HD,5)
+                          REPL F02 WITH SUBSTR(HD,6,4)
+                          REPL F05 WITH HD2+F02
+                          REPL F06 WITH HD3
+                          REPL F08 WITH PO_NO
+                          UNLOCK
+                          
+                       ENDIF   
+ENDPROC                       
+*************************************************單號重複
+PROCEDURE ODR_RPT
+           SELE A24
+           SEEK HD
+           IF FOUND()
+               DO WHILE F01+F02+F08=HD
+                     RLOCK()
+                     DELE
+                     UNLOCK
+                     SKIP
+              ENDDO   
+           ENDIF   		             
+              HX=VAL(RIGHT(GB,4))+1
+		      PO_NO=LEFT(GB,6)+PADL(ALLTRIM(STR(HX)),4,'0')
+              SELE A09
+              SEEK HD1+SUBSTR(GB,3,4)
+              IF FOUND()
+                 RLOCK()		
+		      ELSE
+		         APPEND BLANK
+		         RLOCK()
+		         REPLACE F01 WITH HD1
+		         REPLACE F02 WITH SUBSTR(GB,3,4)
+		         REPLACE F05 WITH LEFT(GB,6)
+		         REPLACE F06 WITH HD3
+	          ENDIF 
+		      REPLACE F08 WITH PO_NO                                              		      
+	          UNLOCK
+ENDPROC 
+****************************************自訂製令展開檔(E04,C04,B56 用 )
+PROCEDURE MANUFACTURE_OD
+    PARAMETERS CUS_NO,STCK_NO,VSN_NO,MAKE_QTY,LST_DATE,DEPART_NO,TP_NO
+         SELE F04,F05,F06,F07,F08 FROM F07 WHERE F01+F02=STCK_NO+VSN_NO AND !EMPTY(ALLTRIM(F05)) ORDER BY F08;
+         INTO CURSOR F07_1
+         IF _TALLY>0
+             LVL=0
+             SELE F07_1
+             N=RECCOUNT()         
+             MO_NO=SUBSTR(CUS_NO,3,8)+PADL(ALLTRIM(STR(C03.F11)),2,'0')+PADL(ALLTRIM(STR((N-LVL))),2,'0')             
+             GO TOP
+             DO WHILE !EOF()                
+                SELE E03   
+                APPEND BLANK
+                RLOCK()
+                IF RLOCK()
+                   REPLACE F03 WITH SUBSTR(CUS_NO,3,8)+PADL(ALLTRIM(STR(C03.F11)),2,'0')+PADL(ALLTRIM(STR((N-LVL))),2,'0')
+                   REPLACE F01 WITH F07_1.F04 
+                   REPLACE F02 WITH F07_1.F05
+                   REPLACE F18 WITH F07_1.F07
+                   REPLACE F04 WITH MAKE_QTY*F18  
+                   REPLACE F06 WITH LST_DATE-F07_1.F06       
+                   REPLACE F07 WITH F06+IIF(SEEK(F01,'B01'),B01.F28,0)
+                   REPLACE F08 WITH C03.F03
+                   REPLACE F09 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')          
+                   REPLACE F12 WITH IIF(SEEK(F07_1.F04+F07_1.F05,'F01'),F01.F06,'')
+                   REPLACE F14 WITH DEPART_NO
+                   REPLACE F16 WITH IIF(F07_1.F08='00',.T.,.F.)
+                   REPLACE F20 WITH TP_NO
+                   IF TP_NO<>' '   &&若不為部品加工才產生生產計劃
+                      SELE E06
+                      APPEND BLANK
+                      REPLACE F01 WITH SUBSTR(CUS_NO,3,8)+PADL(ALLTRIM(STR(C03.F11)),2,'0')+PADL(ALLTRIM(STR((N-LVL))),2,'0')
+                      REPLACE F02 WITH E03.F01
+                      REPLACE F03 WITH E03.F07
+                      REPLACE F04 WITH E03.F04+E03.F15
+                      REPLACE F05 WITH E03.F14
+                      REPLACE F07 WITH E03.F08
+                      REPLACE F08 WITH dtcx(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')      
+                      REPLACE F11 WITH E03.F07    
+                      REPLACE F15 WITH F04        
+                      REPLACE F16 WITH E03.F02     
+                      IF !USED('E08')     &&寫入預期結餘量
+                          SELECT 0
+                          USE E08
+                      ELSE
+                         SELECT E08
+                      ENDIF
+                      SET ORDER TO E083       
+                      SEEK E06.F02
+                      IF FOUND()
+                         REPLACE F20 WITH F20+E06.F04                        
+                      ELSE
+                         APPEND BLANK
+                         REPLACE F01 WITH E06.F03
+                         REPLACE F02 WITH E06.F02
+                         REPLACE F20 WITH E06.F04
+                      ENDIF
+                   ENDIF                    
+                ELSE
+                   DO file_impact  
+                      RETURN                           
+                ENDIF
+                SELE E05
+                SEEK E03.F01+E03.F02
+                IF FOUND()
+                   DO WHILE F01+F02=E03.F01+E03.F02
+                      SELECT  E07
+                      APPEND BLANK
+                      REPLACE F01 WITH SUBSTR(CUS_NO,3,8)+PADL(ALLTRIM(STR(C03.F11)),2,'0')+PADL(ALLTRIM(STR((N-LVL))),2,'0')
+                      REPLACE F02 WITH E03.F01
+                      REPLACE F03 WITH E03.F02
+                      REPLACE F04 WITH dtcx(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')                  
+                      REPLACE F06 WITH E05.F06
+                      REPLACE F07 WITH E05.F07
+                      REPLACE F08 WITH E05.F08
+                      REPLACE F09 WITH CEILING(E03.F04*E05.F99^IIF(E05.F05='4',-1,1))
+                      REPLACE F13 WITH E05.F13
+                      REPLACE F15 WITH F09
+                      REPLACE F99 WITH E05.F99                             
+                      SELECT  E05
+                      SKIP
+                   ENDDO  
+                   SELECT E07 
+                   REPLACE F98 WITH .T.                  
+                   IF  E03.F14<>E07.F08  &&如果完工部門不等於最後製程加工部門
+                       IF E03.F16=.T.   &&且為最終成品
+                          SELECT E07
+                          SEEK E03.F03
+                          IF FOUND()
+                             DO WHILE F01=E03.F03                             
+                                REPLACE F08 WITH E03.F14    &&則將每一製程加工部門改成跟完工部門一致
+                                SELECT E07
+                                SKIP
+                             ENDDO   
+                          ENDIF   
+                       ELSE              &&若非最終成品                          
+                          SELECT E03 
+                          REPLACE F14 WITH E07.F08   &&則將完工部門改為與最後製程加工部門一致
+                          IF TP_NO<>' '
+                             SELECT E06     
+                             REPLACE F05 WITH E07.F08   &&生產計劃中之完工部門也要改   
+                          ENDIF                                       
+                       ENDIF       
+                   ENDIF                    
+                ENDIF
+                SELE F02
+                SEEK F07_1.F04+F07_1.F05
+                IF FOUND()
+                   DO WHILE F01+F02=F07_1.F04+F07_1.F05
+                      SELE E11
+                      APPEND BLANK
+                      RLOCK()
+                        IF RLOCK()
+                            REPLACE F01 WITH SUBSTR(CUS_NO,3,8)+PADL(ALLTRIM(STR(C03.F11)),2,'0')+PADL(ALLTRIM(STR((N-LVL))),2,'0')
+                            REPLACE F04 WITH F02.F04
+                            REPLACE F05 WITH F02.F05
+                            REPLACE F06 WITH F02.F07
+                            REPLACE F20 WITH F02.F12      
+                            REPLACE F11 WITH F02.F03                           
+                            REPLACE F07 WITH IIF(IIF(SEEK(F11,'E00'),E00.F05,'')='3',CEILING(F06*(E03.F04+E03.F15)*(1+F20/100)),IIF(IIF(SEEK(F04,'B01'),B01.F39,'')='C',CEILING((E03.F04+E03.F15)*F06^(-1)),ROUND(F06*(E03.F04+E03.F15)*(1+F20/100),4)))       
+                            *REPLACE F07 WITH ROUND(F06*(E03.F04+E03.F15)*(1+F20/100),IIF(IIF(SEEK(F11,'E00'),E00.F05,'')='3',0,4))              
+                            REPLACE F10 WITH E03.F06-IIF(SEEK(F04,'B01'),B01.F31,0)                            
+                            REPLACE F12 WITH dtcx(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+                            REPLACE F14 WITH F02.F11
+                            REPLACE F15 WITH F02.F09
+                            REPLACE F16 WITH F02.F08
+                            REPLACE F18 WITH ICASE(EMPTY(F02.F06),'1',E03.F20<>'1' AND LEN(ALLTRIM(E03.F14))>4,'2',F02.F06)                            
+*!*	                            REPLACE F18 WITH IIF(EMPTY(F02.F06),'1',F02.F06)
+                         ELSE
+                            DO file_impact
+                         ENDIF
+                         SELE F02
+                         SKIP  
+                      ENDDO   
+                  ENDIF   
+                  SELE F07_1
+                  LVL=LVL+1
+                  SKIP  
+             ENDDO
+          ENDIF         
+          RETURN 
+ENDPROC          
+*************************************************************庫存明細(B01,C05,E16用)  
+DEFINE CLASS INV_SEEK AS FORM
+  CAPTION='       查詢各部門庫存明細'
+  TOP=INT_015*150
+  HEIGHT=INT_015*250
+  WIDTH=INT_015*(650-IIF(INT_028,0,120))
+  AUTOCENTER=.T.
+  FONTSIZE=INT_015*9
+  MOVABLE=.F.
+  MAXBUTTON=.F.
+  MINBUTTON=.F.     
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='INV_SEEK'
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;      
+      TOP=INT_015*220,;
+      LEFT=INT_015*105
+  ADD OBJECT GRID1 AS GRID WITH;          
+      HIGHLIGHTROWLINEWIDTH=4,; 
+      AUTOCENTER=.T.,;
+      TOP=INT_015*0,;
+      WIDTH=INT_015*(650-IIF(INT_028,0,120)),;      
+      HEIGHT=INT_015*220,;  
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*18,;
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      RECORDSOURCETYPE=1,;
+      COLUMNCOUNT=7,;            
+      NAME='GRID1',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;      
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5',;      
+      COLUMN6.NAME='COLUMN6',;
+      COLUMN7.NAME='COLUMN7'
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*278,;
+      TOP=INT_015*225,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;
+      FONTSIZE=INT_015*9,;          
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.cur',;          
+      CAPTION='\<X.離開',;
+      TOOLTIPTEXT='取消此搜尋畫面!快速鍵->ALT+C'
+      NAME='CMND2'
+      PROCEDURE INIT 
+         AREA1='INV' 
+         THISFORM.GRID1.READONLY=.T. 
+         THISFORM.GRID1.RECORDSOURCE='INV'
+         THISFORM.CMDGROUP.SEEK_BOTT.VISIBLE=.F.
+         THISFORM.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.SETALL('FONTSIZE',INT_015*9,'HEADER')
+         THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='部門編號'
+         THISFORM.GRID1.COLUMN1.WIDTH=INT_015*56
+         THISFORM.GRID1.COLUMN1.CONTROLSOURCE='INV.F01'
+         THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='部門名稱'
+         THISFORM.GRID1.COLUMN2.CONTROLSOURCE='INV.F02'
+         THISFORM.GRID1.COLUMN2.WIDTH=INT_015*70
+         THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='庫存數量'
+         THISFORM.GRID1.COLUMN3.CONTROLSOURCE='INV.F04'
+         THISFORM.GRID1.COLUMN3.WIDTH=INT_015*110
+         THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='最後異動'
+         THISFORM.GRID1.COLUMN4.CONTROLSOURCE='INV.F05'
+         THISFORM.GRID1.COLUMN4.WIDTH=INT_015*70    
+         THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='對象編號'
+         THISFORM.GRID1.COLUMN5.CONTROLSOURCE='INV.F08'
+         THISFORM.GRID1.COLUMN5.WIDTH=INT_015*49          
+         THISFORM.GRID1.COLUMN5.VISIBLE=INT_028
+         THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='對象簡稱'
+         THISFORM.GRID1.COLUMN6.CONTROLSOURCE="IIF(SEEK(INV.F08,'C01','C011'),C01.F04,'')"
+         THISFORM.GRID1.COLUMN6.WIDTH=INT_015*60         
+         THISFORM.GRID1.COLUMN6.VISIBLE=INT_028        
+         THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='備        註'
+         THISFORM.GRID1.COLUMN7.CONTROLSOURCE="IIF(SEEK(INV.F01+INV.F03,'B1A'),B1A.F10,'')"
+         THISFORM.GRID1.COLUMN7.WIDTH=INT_015*210                 
+         THISFORM.GRID1.SETFOCUS
+         IF THISFORM.GRID1.ACTIVEROW<>0
+              THISFORM.GRID1.AFTERROWCOLCHANGE 
+         ENDIF         
+      ENDPROC
+      PROC GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS XCOLINDEX     
+         FCH=THISFORM.ACTIVECONTROL.NAME  
+      ENDPROC 
+      PROCEDURE CMND1.CLICK
+          THISFORM.RELEASE
+      ENDPROC      
+ENDDEFINE            
+***************************************週期內料況明細
+DEFINE CLASS IODT_SEEK AS FORM
+*!*   AUTOCENTER=.T.
+  TOP=INT_015*110
+  LEFT=INT_015*85    
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*320
+  WIDTH=INT_015*630
+  FONTSIZE=INT_015*9
+  MOVABLE=.F.
+  MAXBUTTON=.F.
+  MINBUTTON=.F.     
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='IODT_SEEK'
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;      
+      TOP=INT_015*290,;
+      LEFT=INT_015*210
+  ADD OBJECT GRID1 AS GRID WITH;          
+      HIGHLIGHTROWLINEWIDTH=4,; 
+      AUTOCENTER=.T.,;
+      WIDTH=INT_015*630,;      
+      HEIGHT=INT_015*293,;     
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,; 
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      RECORDSOURCETYPE=1,;
+      COLUMNCOUNT=5,;            
+      NAME='GRID1',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;      
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN4.NAME='COLUMN4'      
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      LEFT=INT_015*425,;
+      TOP=INT_015*295,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;
+      FONTSIZE=INT_015*9,;
+      MOUSEPOINTER=99,;
+      MOUSEICON='BMPS\harrow.CUR',;      
+      CAPTION='\<X.離開',;
+      TOOLTIPTEXT='取消此作業畫面!快速鍵->ALT+C'
+      NAME='CMND1'
+      PROCEDURE INIT 
+         THISFORM.CAPTION=STD_NO+SPACE(5)+'預期料況明細'+SPACE(20)+'目前總庫存:'+TRANSFORM(ALTT(LK,'1'),'@R 99999999999.9999')
+         AREA1='IODT'  
+         SELE IODT
+         GO TOP
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')
+         THISFORM.GRID1.READONLY=.T. 
+         THISFORM.GRID1.RECORDSOURCE='IODT'
+         THISFORM.CMDGROUP.SEEK_BOTT.VISIBLE=.F.         
+         THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+         THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(SUBSTR(IODT.F05,17,1)<>SPACE(1),RGB(255,255,0),IIF(IODT.F01=ORD_NO AND IODT.F03=DTE_NO,RGB(236,233,216),''))","COLUMN")                            
+         THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='單據號碼'
+         THISFORM.GRID1.COLUMN1.CONTROLSOURCE='IODT.F01'
+         THISFORM.GRID1.COLUMN1.WIDTH=INT_015*83
+         THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='異動日期'
+         THISFORM.GRID1.COLUMN2.WIDTH=INT_015*60
+         THISFORM.GRID1.COLUMN2.CONTROLSOURCE='IODT.F03'         
+         THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='預期異動數量'  
+         THISFORM.GRID1.COLUMN3.WIDTH=INT_015*110
+         THISFORM.GRID1.COLUMN3.CONTROLSOURCE='IODT.F04'   
+         THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='預期總庫存結餘'  
+         THISFORM.GRID1.COLUMN4.WIDTH=INT_015*110
+         THISFORM.GRID1.COLUMN4.CONTROLSOURCE="ALTT(STD_NO,'1')+MRP_QTY(STD_NO,IODT.F03,IODT.F01)"
+         THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='備註說明'  
+         THISFORM.GRID1.COLUMN5.WIDTH=INT_015*261
+         THISFORM.GRID1.COLUMN5.CONTROLSOURCE='IODT.F05'            
+         THISFORM.GRID1.SETFOCUS 
+      ENDPROC 
+      PROC GRID1.AFTERROWCOLCHANGE
+           LPARAMETERS XCOLINDEX
+           FCH=THISFORM.ACTIVECONTROL.NAME           
+      ENDPROC 
+      PROCEDURE CMND1.CLICK
+          SELE IODT
+          USE
+         THISFORM.RELEASE
+      ENDPROC    
+ENDDEFINE   
+*********************************************************************匯率紀錄及設定
+define class CRYRT_SEEK as form  
+   AUTOCENTER=.T.
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*420
+  WIDTH=INT_015*220
+  FONTSIZE=INT_015*9
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  showwindow=1
+  windowtype=1
+  name='CRYRT_SEEK'    
+  ADD OBJECT SHAPE2 AS SHAPE2 WITH;    
+      LEFT=INT_015*3,;
+      TOP=INT_015*3,;
+      WIDTH=INT_015*214,;
+      HEIGHT=INT_015*379
+  ADD OBJECT SHAPE3 AS SHAPE3 WITH;
+      LEFT=INT_015*3,;
+      TOP=INT_015*384,;
+      WIDTH=INT_015*214,;
+      HEIGHT=INT_015*35    
+  add object cmdgroup as cmdgroup with;      
+      TOP=INT_015*349,;
+      LEFT=INT_015*5
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+      TOP=INT_015*384,;
+      LEFT=INT_015*5      
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      VISIBLE=.F.         
+  ADD OBJECT LBLF02 AS LABEL WITH;
+      TOP=INT_015*13,;
+      LEFT=INT_015*15,;
+      AUTOSIZE=.T.,;
+      CAPTION='日期'
+  ADD OBJECT LBLF03 AS LABEL WITH;
+      TOP=INT_015*43,;
+      LEFT=INT_015*15,;
+      AUTOSIZE=.T.,;
+      CAPTION='匯率'              
+  ADD OBJECT TXTF02 AS TEXTBOX WITH;
+      TOP=INT_015*10,;
+      LEFT=INT_015*46,;
+      WIDTH=INT_015*70,;
+      NAME='TXTF02'
+  ADD OBJECT TXTF03 AS TEXTBOX WITH;
+      TOP=INT_015*35,;
+      LEFT=INT_015*46,;
+      WIDTH=INT_015*75,;
+      INPUTMASK='9999.999999',;
+      NAME='TXTF03'
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*30,;
+      LEFT=INT_015*120                    
+  add object GRID1 as GRID1 with;        
+      AUTOCENTER=.T.,;
+      LEFT=INT_015*10,;
+      TOP=INT_015*65,;
+      WIDTH=INT_015*200,;      
+      HEIGHT=INT_015*283,;      
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;      
+      deletemark=.f.,;
+      READONLY=.T.,;
+      recordsourcetype=1,;
+      columncount=2,;            
+      NAME='GRID1',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2'  
+  add object cmnd2 as commandbutton with;
+      LEFT=INT_015*138,;
+      TOP=INT_015*389,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;
+      FONTSIZE=INT_015*9,;
+      caption='\<X.離開',;
+      TOOLTIPTEXT='離開此作業->ALT+X'
+      name='cmnd2'
+      procedure init          
+         AREA1='CRY' 
+         THISFORM.caption='匯率紀錄'+SPACE(5)+CRTP+SPACE(5)+CRDP         
+         THISFORM.CMDGROUP.SEEK_BOTT.VISIBLE=.F.
+         THISFORM.ORPGROUP.PNT_BOTT.VISIBLE=.F.
+         THISFORM.ORPGROUP.ESC_BOTT.VISIBLE=.F.
+         THISFORM.SHRGROUP.VISIBLE=.F.
+         THISFORM.SHRGROUP.ENABLED=.F.    
+         THISFORM.GRID1.READONLY=.T. 
+         thisform.grid1.recordsource='CRY'
+         THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')
+         THISFORM.SETALL('FONTSIZE',INT_015*9,'TEXTBOX')
+         THISFORM.SETALL('HEIGHT',INT_015*25,'TEXTBOX')
+         THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')         
+         THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='日期'
+         THISFORM.GRID1.COLUMN1.WIDTH=INT_015*75
+         THISFORM.GRID1.COLUMN1.CONTROLSOURCE='F02'
+         THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='匯率'
+         THISFORM.GRID1.COLUMN2.WIDTH=INT_015*100
+         THISFORM.GRID1.COLUMN2.CONTROLSOURCE='F03'         
+         THISFORM.GRID1.SETFOCUS       
+         FCH='GRID1'
+         IF THISFORM.GRID1.ACTIVEROW=0
+            THISFORM.CMDGROUP.ENABLED=.F.
+         ELSE
+            THISFORM.CMDGROUP.ENABLED=.T.         
+         ENDIF                     
+         JK='日期'             
+      ENDPROC
+      PROC GRID1.AFTERROWCOLCHANGE
+         LPARAMETERS XColIndex     
+         THISFORM.TXTF02.VALUE=CRY.F02
+         THISFORM.TXTF03.VALUE=CRY.F03
+         FCH=THISFORM.ACTIVECONTROL.NAME 
+         CHK=''
+         IF THIS.ACTIVEROW=0
+            THISFORM.CMDGROUP.ENABLED=.F.
+         ELSE
+            THISFORM.CMDGROUP.ENABLED=.T.             
+         ENDIF            
+      ENDPROC 
+      procedure cmnd2.click           
+           THISFORM.RELEASE           
+      endproc    
+      PROC ORPGROUP.NEW_BOTT.CLICK
+           THISFORM.CMND2.ENABLED=.F.
+           SELECT CRY          
+           THISFORM.TXTF02.READONLY=.F.
+           THISFORM.TXTF03.READONLY=.F.
+           THISFORM.TXTF02.VALUE=CTOD('')
+           
+           THISFORM.TXTF02.SETFOCUS
+      ENDPROC
+      PROC ORPGROUP.EDIT_BOTT.CLICK
+           THISFORM.CMND2.ENABLED=.F.      
+           SELECT CRY
+           RLOCK()
+           IF !RLOCK()
+              DO file_impact
+              THISFORM.GRID1.SETFOCUS
+              THISFORM.SHRGROUP.ABANDON_BOTT.CLICK 
+           ELSE
+              THISFORM.TXTF02.READONLY=.T.
+              THISFORM.TXTF03.READONLY=.F.
+              THISFORM.TXTF03.SETFOCUS                      
+           ENDIF                 
+      ENDPROC        
+      PROC ORPGROUP.DEL_BOTT.CLICK
+           IF messagebox('是否確定要刪除此筆資料',4+32+256,'請確認') = 6	            
+              SELECT CRY
+              IF RLOCK()                
+                 DELE
+                 UNLOCK             
+                 IF BOF()
+                    GO TOP
+                 ELSE
+                   SKIP -1   
+                 ENDIF
+
+              ELSE
+                 DO file_impact                             
+              ENDIF         
+              THISFORM.GRID1.SETFOCUS
+              IF THISFORM.GRID1.ACTIVEROW=0
+                 THISFORM.CMDGROUP.ENABLED=.F.
+                 THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+                 THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.   
+                 THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.T.            
+                 THISFORM.SETALL('VALUE','','TEXTBOX')             
+              ELSE      
+                 THISFORM.CMDGROUP.ENABLED=.T.
+                 THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.T.
+                 THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.T.
+              ENDIF           
+           ENDIF              
+           thisform.CMND2.enabled=.T.
+      ENDPROC
+      PROC SHRGROUP.SHURE1_BOTT.CLICK
+           IF SEEK(CRTP+DTOS(THISFORM.TXTF02.VALUE),'CRY')=.T.
+              =MESSAGEBOX('匯率設定已重複日期!',0+48,'提示訊息視窗')
+              THISFORM.TXTF02.SETFOCUS
+              RETURN              
+           ENDIF
+           IF EMPTY(THISFORM.TXTF02.VALUE)
+              =MESSAGEBOX('日期不得空白!',0+48,'提示訊息視窗')
+              THISFORM.TXTF02.SETFOCUS
+              RETURN              
+           ENDIF
+           IF USED('C00')
+              B06MTH='B06'+LEFT(DTOS(THISFORM.TXTF02.VALUE),6)
+              B04MTH='B04'+LEFT(DTOS(THISFORM.TXTF02.VALUE),6)
+              IF FILE('&B04MTH'+'.DBF')=.T.
+                 IF !USED('&B04MTH')
+                     SELE 0
+                     USE (B04MTH) ALIA B04MTH
+                 ELSE
+                     SELE B04MTH
+                 ENDIF
+                 SET ORDER TO 1
+                 GO TOP 
+                 DO WHILE !EOF()
+                    IF F14=C00.F01 AND EMPTY(F10) AND NOUME(F02)=RIGHT(DTOS(THISFORM.TXTF02.VALUE),2) AND F16 <> THISFORM.TXTF03.VALUE
+                       IF RLOCK()
+                          REPLACE F16 WITH THISFORM.TXTF03.VALUE
+                          REPLACE F17 WITH ROUND(F04*F15*F16,INT_069)
+                       ENDIF   
+                       UNLOCK 
+                    ENDIF   
+                    SELE B04MTH
+                    SKIP
+                 ENDDO
+                 SELECT B04MTH
+                 USE
+              ENDIF
+              
+              IF FILE('&B06MTH'+'.DBF')=.T.
+                 IF !USED('&B06MTH')
+                     SELE 0
+                     USE (B06MTH) ALIA B06MTH
+                 ELSE
+                     SELE B06MTH
+                 ENDIF
+                 SET ORDER TO 1
+                 GO TOP 
+                 DO WHILE !EOF()
+                    IF F11=C00.F01 AND EMPTY(F07) AND NOUME(F02)=RIGHT(DTOS(THISFORM.TXTF02.VALUE),2) AND F17<>THISFORM.TXTF03.VALUE 
+                       IF RLOCK()
+                          REPLACE F17 WITH THISFORM.TXTF03.VALUE
+                       ENDIF   
+                       UNLOCK 
+                    ENDIF   
+                    SELE B06MTH
+                    SKIP
+                 ENDDO
+                 SELECT B06MTH
+                 USE
+              ENDIF              
+           ELSE
+               *****進項先不處理
+           ENDIF
+ 
+           SELECT CRY
+           APPEND BLANK
+           RLOCK()
+           REPLACE  F01 WITH CRTP
+           REPLACE  F02 WITH THISFORM.TXTF02.VALUE
+           REPLACE  F03 WITH THISFORM.TXTF03.VALUE
+           UNLOCK           
+           THISFORM.SHRGROUP.ABANDON_BOTT.CLICK    
+      ENDPROC         
+      PROC SHRGROUP.SHURE2_BOTT.CLICK
+           IF USED('C00')
+              B06MTH='B06'+LEFT(DTOS(THISFORM.TXTF02.VALUE),6)
+              B04MTH='B04'+LEFT(DTOS(THISFORM.TXTF02.VALUE),6)
+              IF FILE('&B04MTH'+'.DBF')=.T.
+                 IF !USED('&B04MTH')
+                     SELE 0
+                     USE (B04MTH) ALIA B04MTH
+                 ELSE
+                     SELE B04MTH
+                 ENDIF
+                 SET ORDER TO 1
+                 GO TOP 
+                 DO WHILE !EOF()
+                    IF F14=C00.F01 AND EMPTY(F10) AND NOUME(F02)=RIGHT(DTOS(THISFORM.TXTF02.VALUE),2) AND F16 <> THISFORM.TXTF03.VALUE
+                       IF RLOCK()
+                          REPLACE F16 WITH THISFORM.TXTF03.VALUE
+                          REPLACE F17 WITH ROUND(F04*F15*F16,INT_069)
+                       ENDIF   
+                       UNLOCK 
+                    ENDIF   
+                    SELE B04MTH
+                    SKIP
+                 ENDDO
+                 SELECT B04MTH
+                 USE
+              ENDIF
+              
+              IF FILE('&B06MTH'+'.DBF')=.T.
+                 IF !USED('&B06MTH')
+                     SELE 0
+                     USE (B06MTH) ALIA B06MTH
+                 ELSE
+                     SELE B06MTH
+                 ENDIF
+                 SET ORDER TO 1
+                 GO TOP 
+                 DO WHILE !EOF()
+                    IF F11=C00.F01 AND EMPTY(F07) AND NOUME(F02)=RIGHT(DTOS(THISFORM.TXTF02.VALUE),2) AND F17<>THISFORM.TXTF03.VALUE 
+                       IF RLOCK()
+                          REPLACE F17 WITH THISFORM.TXTF03.VALUE
+                       ENDIF   
+                       UNLOCK 
+                    ENDIF   
+                    SELE B06MTH
+                    SKIP
+                 ENDDO
+                 SELECT B06MTH
+                 USE
+              ENDIF              
+           ELSE
+               *****進項先不處理
+           ENDIF
+           SELE CRY
+           
+           REPL F03 WITH THISFORM.TXTF03.VALUE
+           
+           THISFORM.SHRGROUP.ABANDON_BOTT.CLICK    
+      ENDPROC
+      PROC SHRGROUP.ABANDON_BOTT.CLICK
+           THISFORM.SHRGROUP.ENABLED=.F.
+           THISFORM.SHRGROUP.VISIBLE=.F.      
+           THISFORM.ORPGROUP.ENABLED=.T.
+           THISFORM.ORPGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+           THISFORM.CMDGROUP.ENABLED=.T.
+           THISFORM.CMDGROUP.SETALL('ENABLED',.T.,'COMMANDBUTTON')
+           THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+           THISFORM.SETALL('READONLY',.T.,'TEXTBOX') 
+           
+           THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.T.                       
+           THISFORM.CMND2.ENABLED=.T.
+           THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.T.                                                                          
+           THISFORM.GRID1.ENABLED=.T.
+           THISFORM.GRID1.SETFOCUS     
+           UNLOCK ALL      
+      ENDPROC
+      PROC SHRGROUP.FINISH_BOTT.CLICK
+           THISFORM.SHRGROUP.ABANDON_BOTT.CLICK           
+      ENDPROC
+      PROCEDURE TXTF02.VALID
+         LPARAMETERS  NINDEX
+         IF NOUME(RIGHT(DTOS(THIS.VALUE),2))=RIGHT(DTOS(THIS.VALUE),2) OR EMPTY(THIS.VALUE)
+            NINDEX=.T.
+         ELSE
+            =MESSAGEBOX("日期請輸入每旬的第一天",0+48,"提示視窗") 
+  
+               NINDEX=.F.
+  
+         ENDIF
+         RETURN NINDEX
+      ENDPROC             
+      PROCEDURE TXTF03.VALID
+         LPARAMETERS  NINDEX
+         IF THIS.VALUE>0
+            NINDEX=.T.
+         ELSE
+            =MESSAGEBOX("匯率不得等於 0",0+48,"提示視窗") 
+  
+               NINDEX=.F.
+  
+         ENDIF
+         RETURN NINDEX
+      ENDPROC       
+      
+enddefine             
+**********************************************預期結餘函數
+FUNC MRP_QTY
+     PARA BKK_NO,DTE_SE,MN_P
+     QT_OD=0
+     SELE TKE08
+     SEEK BKK_NO
+     IF FOUND()
+          DO WHILE .NOT. EOF() 
+                 IF F02+DTOS(F03)+F01>BKK_NO+DTOS(DTE_SE)+MN_P
+                     EXIT
+                 ENDIF    
+                QT_OD=QT_OD+F04
+                SKIP
+          ENDDO
+     ELSE
+          QT_OD=0
+     ENDIF   
+     RETURN QT_OD 
+
+******************************** 計算總庫存
+FUNC ALTT
+     PARA TL1,TL5    
+     TL2=0
+     SELE B11
+     SEEK TL1
+     IF FOUND()
+          DO WHILE F03=TL1
+                IF AT(F01,INT_190)>0 AND TL5='1'  &&若是計算預期結餘時則不將借出入倉及不良品倉之庫存計入
+                    TL2=TL2+0
+                ELSE   
+                    TL2=TL2+F04
+                ENDIF   
+                SKIP               
+          ENDDO
+     ENDIF
+     SELE &AREA1
+     RETURN TL2      
+*****************************製程顯示自訂函數
+FUNC ROUTE
+     PARA BKK_NO,MAT
+     qt_od=SPACE(0)
+     SELECT  &RTE_TABLE
+     SET ORDER TO 1
+     TMKY=KEY()
+     SEEK BKK_NO+MAT
+     IF FOUND()
+          DO WHILE &TMKY=BKK_NO+MAT
+                 qt_od=qt_od+F06+SPACE(1)+IIF(SEEK(F07,'E00'),ALLTRIM(E00.F04),'')+IIF(SEEK(F08,'A14'),'《'+ALLTRIM(A14.F02)+'》','')+'→'
+                SKIP
+          ENDDO
+          qt_od=LEFT(qt_od,LEN(qt_od)-2)       
+     ELSE
+          qt_od=SPACE(0)
+     ENDIF
+     SELE &AREA1
+     RETURN qt_od         
+************************************客供商統一編號驗證
+Function chk_unit()
+   Lparameters p_unit
+   LOCAL W_CHECK,W_CNT, W_CNT1,ii,W_TMP
+
+   IF LEN(ALLTRIM(p_unit))<>8
+      RETURN .F.
+   ENDIF   
+   Store 0 To W_CNT, W_CNT1
+   ii = 1
+   FOR ii=1 TO 8
+       IF ASC(Substr(p_unit,ii,1))<48 OR ASC(Substr(p_unit,ii,1))>57 &&判斷是否為阿拉伯數字
+          W_CNT1=W_CNT1+1
+       ELSE
+          W_CHECK = ALLTRIM(STR(Val(Substr(p_unit,ii,1))*Val(Substr('12121241',ii,1))))
+          IF ii<8 AND LEN(ALLTRIM(W_CHECK))=2
+             W_TMP=VAL(LEFT(W_CHECK,1))+VAL(RIGHT(W_CHECK,1))
+             W_CHECK=ALLTRIM(STR(W_TMP))
+          ENDIF       
+          W_CNT = W_CNT+Val(W_CHECK)
+       ENDIF   
+   NEXT ii
+   IF W_CNT1>0
+      RETURN .F.
+   ELSE
+      IF W_CNT % 10=0
+         RETURN .T.
+      ELSE
+         IF SUBSTR(p_unit,7,1)='7'
+            W_CNT=W_CNT+1
+            IF W_CNT % 10 =0
+               RETURN .T.
+            ELSE
+               RETURN .F.
+            ENDIF      
+         ELSE
+            RETURN .F.
+         endif
+      ENDIF
+   ENDIF   
+ENDFUNC
+*********************************************電子計算機發票檢驗碼公式
+FUNCTION INVCHK()
+   Lparameters INVNO
+   LOCAL G1,G2,SM_1,SM_2
+   G1=ASC(LEFT(INVNO,1))
+   G2=ASC(SUBSTR(INVNO,2,1))
+   SM_1=PADL(RIGHT(ALLTRIM(STR(VAL(SUBSTR(INVNO,9,2))*G1+VAL(SUBSTR(INVNO,7,2))*G2-VAL(SUBSTR(INVNO,5,2))+VAL(SUBSTR(INVNO,3,2)))),3),3,'0')
+   SM_2=''
+   FOR I=1 TO 3 &&一數坎兮二數坤三震四巽數中分五寄中宮六乾是七兌八艮九離門
+       SM_2=SM_2+ICASE(SUBSTR(SM_1,I,1)='1','2',SUBSTR(SM_1,I,1)='2','0',SUBSTR(SM_1,I,1)='3','4',SUBSTR(SM_1,I,1)='4','3',;
+       SUBSTR(SM_1,I,1)='5',SUBSTR(INVNO,9,1),SUBSTR(SM_1,I,1)='6','7',SUBSTR(SM_1,I,1)='7','6',SUBSTR(SM_1,I,1)='8','1',SUBSTR(SM_1,I,1)='9','5',RIGHT(INVNO,1))
+   ENDFOR
+   RETURN SM_2
+*****
+****數值轉換國字                       
+FUNCTION CHIN_VAL
+PARAMETER VAL1
+PRIVATE STRVAL,RETV
+STRVAL = TRANSFORM(VAL1,'@R ##########.##')
+RETV   = ''
+*!*	FOR I=9-LEN(ALLTRIM(STR(VAL1)))+1 TO 12
+FOR I=10-LEN(ALLTRIM(STR(VAL1)))+1 TO 13
+RETV=RETV+IIF(NB_K(SUBSTR(STRVAL,I,1))='零' AND (I<>9 AND I<>8 AND I<>7 AND I<>5  AND  I<>4 AND I<>3) ,'',NB_K(SUBSTR(STRVAL,I,1)))+IIF(NB_K(SUBSTR(STRVAL,I,1))='零' AND (I<>2 AND I<>6  AND I<>10) ,'',ICASE(I=1,'拾',I=2,'億',I=3,'千',I=4,'佰',I=5,'拾',I=6,'萬',I=7,'仟',I=8,'佰',I=9,'拾',I=10,'元',I=12,'角',I=13,'分',''))          
+*!*	  RETV=RETV+IIF(NB_K(SUBSTR(STRVAL,I,1))='零' AND (I<>8 AND I<>7 AND I<>4 AND I<>6 AND  I<>3 AND I<>2),'',NB_K(SUBSTR(STRVAL,I,1)))+IIF(NB_K(SUBSTR(STRVAL,I,1))='零' AND (I<>5  AND I<>9) ,'',ICASE(I=1,'億',I=2,'千',I=3,'佰',I=4,'拾',I=5,'萬',I=6,'仟',I=7,'佰',I=8,'拾',I=9,'元',I=11,'角',I=12,'分',''))      
+ENDFOR
+    IF ATC('零零',RETV)>0
+    DO WHILE ATC('零零',RETV)>0
+       RETV=STUFF(RETV,ATC('零零',RETV),2,"")
+    ENDDO
+  ENDIF 
+  IF ATC('零萬',RETV)>0
+     IF ATC('零萬',RETV)>0
+         RETV=STUFF(RETV,ATC('零萬',RETV),2,"")
+      ENDIF
+  ENDIF   
+ IF ATC('億萬',RETV)>0
+     RETV=STUFF(RETV,ATC('億萬',RETV)+2,2,"")
+  ENDIF       
+  IF ATC('零元',RETV)>0
+      DO WHILE ATC('零元',RETV)>0
+         RETV=STUFF(RETV,ATC('零元',RETV),2,"") 
+      ENDDO   
+  ENDIF    
+RETURN RETV + IIF(RIGHT(RETV,2)$'角分','','整')
+ENDFUNC
+*******
+FUNCTION NB_K
+PARAMETERS K1
+NBK=''
+DO CASE
+   CASE K1='1'
+        NBK='壹'
+   CASE K1='2'
+        NBK='貳'
+   CASE K1='3'
+        NBK='參'
+   CASE K1='4'
+        NBK='肆'
+   CASE K1='5'
+        NBK='伍'
+   CASE K1='6'
+        NBK='陸'
+   CASE K1='7'
+        NBK='柒'
+   CASE K1='8'
+        NBK='捌'
+   CASE K1='9'
+        NBK='玖'
+   CASE K1='0'
+        NBK='零'
+OTHERWISE
+        NBK=''
+ENDCASE   
+RETURN NBK  
+****************************************
+***********將阿拉伯數字轉成英文**************
+FUNCTION KMP
+PARAMETERS  BK
+GK=RIGHT(TRANSFORM(BK,'@R 9999999999.99'),2)  &&轉成文字字串取小數位
+IF VAL(LEFT(GK,1))>4 &&轉成文字字串取整數位
+    UK=ALLTRIM(STR(VAL(ALLTRIM(STR(BK)))-1))
+ELSE
+    UK=ALLTRIM(STR(BK))
+ENDIF   
+H=LEN(UK)
+LOCAL NUM(9),NUD(9),ENG(H),ENH(2)
+  STORE 'ONE' TO NUM(1)
+  STORE 'TWO' TO NUM(2)
+  STORE 'THREE' TO NUM(3)
+  STORE 'FOUR'  TO NUM(4)
+  STORE 'FIVE' TO NUM(5)
+  STORE 'SIX'  TO NUM(6)
+  STORE 'SEVEN' TO NUM(7)
+  STORE 'EIGHT' TO NUM(8)
+  STORE 'NINE' TO NUM(9)
+  STORE 'TEN' TO NUD(1)
+  STORE 'TWENTY' TO NUD(2)
+  STORE 'THIRTY' TO NUD(3)
+  STORE 'FORTY' TO NUD(4)
+  STORE 'FIFTY'  TO NUD(5)
+  STORE 'SIXTY'  TO NUD(6)
+  STORE 'SEVENTY' TO NUD(7)
+  STORE 'EIGHTY' TO NUD(8)
+  STORE 'NINETY' TO NUD(9)  
+  S11='ELEVEN'
+  S12='TWELVE'
+  S13='THIRTEEN'
+  S14='FOURTEEN'
+  S15='FIFTEEN'
+  S16='SIXTEEN'
+  S17='SEVENTEEN'
+  S18='EIGHTEEN'
+  S19='NINETEEN'
+  OL=''
+*****計算整數  
+  FOR I=H TO 1 STEP -1
+      STORE SUBSTR(UK,H-I+1,1) TO ENG(I)     
+      IF ENG(I)='0' 
+         DO CASE 
+            CASE I=4
+                 IF I+2<=H AND VAL(ENG(I+2)+ENG(I+1))>0
+                    OL=OL+'THOUSAND '
+                 ELSE
+                    IF I+1<=H AND VAL(ENG(I+1))>0
+                       OL=OL+'THOUSAND '
+                    ENDIF                                            
+                 ENDIF                 
+             CASE I=7
+                 IF I+2<=H AND VAL(ENG(I+2)+ENG(I+1))>0
+                    OL=OL+'BILLION '
+                 ELSE
+                    IF I+1<=H AND VAL(ENG(I+1))>0
+                       OL=OL+'BILLION '
+                    ENDIF                                            
+                 ENDIF                                            
+         ENDCASE           
+      ELSE   
+         OL=OL+IIF(MOD(I+1,3)=0,NUD(VAL(ENG(I))),NUM(VAL(ENG(I))))+' '+IIF(MOD(I,3)=0,'HUNDRED ',IIF(I=4,'THOUSAND ',IIF(I=7,'MILLION ',IIF(I=10,'BILLION ',''))))                  
+      ENDIF      
+  ENDFOR   
+  FOR I=1 TO CEILING(H/2)
+      IF AT('TEN ONE',OL)<>0 
+         OL=STUFF(OL,AT('TEN ONE',OL),7,S11)
+      ELSE
+         IF AT('TEN TWO',OL)<>0
+            OL=STUFF(OL,AT('TEN TWO',OL),7,S12)
+         ELSE
+            IF AT('TEN THREE',OL)<>0
+               OL=STUFF(OL,ATC('TEN THREE',OL),9,S13)
+            ELSE
+               IF AT('TEN FOUR',OL)<>0
+                  OL=STUFF(OL,AT('TEN FOUR',OL),8,S14)   
+               ELSE
+                  IF AT('TEN FIVE',OL)<>0
+                     OL=STUFF(OL,AT('TEN FIVE',OL),8,S15)
+                  ELSE
+                     IF AT('TEN SIX',OL)<>0
+                        OL=STUFF(OL,AT('TEN SIX',OL),7,S16)
+                     ELSE
+                        IF AT('TEN SEVEN',OL)<>0
+                           OL=STUFF(OL,AT('TEN SEVEN',OL),9,S17)
+                        ELSE
+                           IF AT('TEN EIGHT',OL)<>0
+                              OL=STUFF(OL,AT('TEN EIGHT',OL),9,S18)
+                           ELSE
+                              IF AT('TEN NINE',OL)<>0
+                                 OL=STUFF(OL,AT('TEN NINE',OL),8,S19)
+                              ENDIF    
+                           ENDIF   
+                        ENDIF   
+                     ENDIF   
+                  ENDIF   
+               ENDIF   
+            ENDIF   
+         ENDIF      
+      ENDIF   
+  ENDFOR
+*******計算小數
+  IF VAL(GK)<>0
+     H=LEN(GK)
+     GL=''
+FOR I=LEN(GK) TO 1 STEP -1
+      STORE SUBSTR(GK,H-I+1,1) TO ENH(I)     
+      IF ENH(I)='0'
+         GL=GL+''
+      ELSE   
+         GL=GL+IIF(MOD(I+1,3)=0,NUD(VAL(ENH(I))),NUM(VAL(ENH(I))))+' ' 
+      ENDIF      
+  ENDFOR   
+  FOR I=I TO CEILING(H/2)
+      IF AT('TEN ONE',GL)<>0 
+         GL=STUFF(GL,AT('TEN ONE',GL),7,S11)
+      ELSE
+         IF AT('TEN TWO',GL)<>0
+            GL=STUFF(GL,AT('TEN TWO',GL),7,S12)
+         ELSE
+            IF AT('TEN THREE',GL)<>0
+               GL=STUFF(GL,ATC('TEN THREE',GL),9,S13)
+            ELSE
+               IF AT('TEN FOUR',GL)<>0
+                  GL=STUFF(GL,AT('TEN FOUR',GL),8,S14)   
+               ELSE
+                  IF AT('TEN FIVE',GL)<>0
+                     GL=STUFF(GL,AT('TEN FIVE',GL),8,S15)
+                  ELSE
+                     IF AT('TEN SIX',GL)<>0
+                        GL=STUFF(GL,AT('TEN SIX',GL),7,S16)
+                     ELSE
+                        IF AT('TEN SEVEN',GL)<>0
+                           GL=STUFF(GL,AT('TEN SEVEN',GL),9,S17)
+                        ELSE
+                           IF AT('TEN EIGHT',GL)<>0
+                              GL=STUFF(GL,AT('TEN EIGHT',GL),9,S18)
+                           ELSE
+                              IF AT('TEN NINE',GL)<>0
+                                 GL=STUFF(GL,AT('TEN NINE',OL),8,S19)
+                              ENDIF    
+                           ENDIF   
+                        ENDIF   
+                     ENDIF   
+                  ENDIF   
+               ENDIF   
+            ENDIF   
+         ENDIF      
+      ENDIF   
+  ENDFOR  
+  ENDIF
+*****************  
+  HL=OL+IIF(VAL(GK)<>0,'AND CENTS '+GL,'')
+  RETURN HL
+************
+
+****************************&&客戶型態 
+FUNCTION CTP
+ PARAMETERS PPT 
+     PTP=''
+       DO CASE
+          CASE PPT='A'
+               PTP='其他   '                    
+          CASE PPT='E'
+               PTP='OEM    '
+          CASE PPT='D'
+               PTP='ODM    '               
+          CASE PPT='O'
+               PTP='OEM&ODM'                    
+          CASE PPT='B'
+               PTP='OBM    '               
+          CASE PPT='C'
+               PTP='CMMS   '                              
+          CASE PPT='M'
+               PTP='EMS    '
+          CASE PPT='T'
+               PTP='貿易商 '
+          CASE PPT='K'
+               PTP='加工廠 '     
+       OTHERWISE
+          PTP='其他'
+       ENDCASE               
+       RETURN PTP              
+***********************************************薪資/扣款類別 
+***S05.人事薪資基本檔,S06.離職人員薪資基本檔   使用
+FUNC SALARY_CLASS   
+     PARA JUK1
+     JO1=''
+     DO CASE
+        CASE JUK1='A'
+             JO1='底薪'
+        CASE JUK1='B'
+             JO1='日薪'   
+        CASE JUK1='C'
+             JO1='時薪'                   
+        CASE JUK1='D'
+             JO1='伙食費' 
+        CASE JUK1='E'
+             JO1='交通費'    
+        CASE JUK1='F'
+             JO1='全勤獎金'       
+        CASE JUK1='G'
+             JO1='職務津貼'                               
+        CASE JUK1='H'
+             JO1='自訂項目'            
+        CASE JUK1='I'
+             JO1='其他所得發放'                 
+        CASE JUK1='J'
+             JO1='勞保費'    
+        CASE JUK1='K'
+             JO1='健保費' 
+        CASE JUK1='L'                 
+             JO1='所得稅'              
+        CASE JUK1='M'
+             JO1='其他扣款'           
+        CASE JUK1='N'
+             JO1='其他所得發放扣稅額'                    
+        CASE JUK1='O'
+             JO1='勞退自行提撥金額'                  
+     ENDCASE
+     RETURN JO1  
+*********************************************任職狀況
+***S05.人事薪資基本檔,S06.離職人員薪資基本檔   使用
+FUNC BILL_MODE
+     PARA JUK2
+     JO2=''
+     DO CASE
+        CASE JUK2='A'
+             JO2='新進人員'
+        CASE JUK2='B'
+             JO2='資料補登'     
+        CASE JUK2='C'
+             JO2='在        職'                       
+        CASE JUK2='1'
+             JO2='已  離  職'
+        CASE JUK2='2'
+             JO2='離職復職'
+        CASE JUK2='3'
+             JO2='留職停薪'           
+        CASE JUK2='4'
+             JO2='留職復職'            
+        CASE JUK2='5'		&&暫不使用
+             JO2='職務調整'       
+        CASE JUK2='6'		&&暫不使用
+             JO2='升        遷'    
+        CASE JUK2='7'
+             JO2='退        休'            
+        CASE JUK2='8'
+             JO2='資        遣'        
+        CASE JUK2='9'
+             JO2='外包人員'
+     ENDCASE
+     RETURN JO2
+************************************************薪資/扣款類別    
+FUNCTION BASE_CLASS
+     PARA JUK3
+     JO3=''
+     DO CASE
+        CASE JUK3='H'
+             JO3='時薪'     
+        CASE JUK3='D'
+             JO3='日薪'
+        CASE JUK3='B'
+             JO3='底薪' 
+        CASE JUK3='T'
+             JO3='薪資總額' 
+     ENDCASE
+     RETURN JO3         
+*******判斷月份天數
+FUNCTION DAY_NUM
+     PARA YearMonth	&&帶入年/月
+     NMAXDAYS=0
+     DO CASE
+           CASE RIGHT(ALLTRIM(YearMonth),2)='01' OR RIGHT(ALLTRIM(YearMonth),2)='03' OR RIGHT(ALLTRIM(YearMonth),2)='05'  OR;
+	              RIGHT(ALLTRIM(YearMonth),2)='07' OR RIGHT(ALLTRIM(YearMonth),2)='08' OR RIGHT(ALLTRIM(YearMonth),2)='10'  OR RIGHT(ALLTRIM(YearMonth),2)='12'
+	              NMAXDAYS=31
+           CASE RIGHT(ALLTRIM(YearMonth),2)='04' OR RIGHT(ALLTRIM(YearMonth),2)='06' OR;
+	              RIGHT(ALLTRIM(YearMonth),2)='09' OR RIGHT(ALLTRIM(YearMonth),2)='11' 
+		      NMAXDAYS=30
+           CASE RIGHT(ALLTRIM(YearMonth),2)='02'    
+	             IF MOD(YEAR(CTOD(YearMonth+'/01')),4)=0         &&如果是潤年
+	                 NMAXDAYS=29             			    		 &&每月最多天數是29天
+		     ELSE
+		         NMAXDAYS=28            			    		 &&不潤年的天數是28天
+		     ENDIF   	          	       
+     ENDCASE	     
+   RETURN NMAXDAYS       
+*******************民國年日期轉換
+FUNCTION DTCX
+PARAMETERS DT
+DTF=IIF(INT_012=2,DTOC(DT),ALLTRIM(STR(VAL(LEFT(DTOS(DT),4))-1911))+RIGHT(DTOC(DT),6))
+RETURN DTF
+******************每旬第一天轉換
+FUNCTION NOUME
+PARAMETERS MD
+TD='01'
+DO CASE
+   CASE VAL(MD)<11
+        TD='01'
+   CASE VAL(MD) >10 AND VAL(MD)<21
+        TD='11'
+   CASE VAL(MD)>20
+        TD='21'
+ENDCASE   
+RETURN TD
+***************天干
+FUNC TG
+     PARA DK
+     OL=''
+     DO CASE
+        CASE DK='1'
+             OL='甲'
+        CASE DK='2'
+             OL='乙'
+        CASE DK='3'
+             OL='丙'
+        CASE DK='4'
+             OL='丁'
+        CASE DK='5'
+             OL='戊'
+        CASE DK='6'
+             OL='己'
+        CASE DK='7'
+             OL='庚'
+        CASE DK='8'
+             OL='辛'
+        CASE DK='9'
+             OL='壬'
+        CASE DK='0'
+             OL='癸'
+     ENDCASE
+     RETURN OL
+***************地支
+FUNC DG
+     PARA IK
+     IL=''
+     DO CASE
+        CASE IK=1
+             IL='子'
+        CASE IK=2
+             IL='丑'
+        CASE IK=3
+             IL='寅'
+        CASE IK=4
+             IL='卯'
+        CASE IK=5
+             IL='辰'
+        CASE IK=6
+             IL='巳'
+        CASE IK=7
+             IL='午'
+        CASE IK=8
+             IL='未'
+        CASE IK=9
+             IL='申'
+        CASE IK=10
+             IL='酉'
+        CASE IK=11
+             IL='戌'
+        CASE IK=0
+             IL='亥'                          
+     ENDCASE
+     RETURN IL     
+*******   卦
+FUNC GS
+     PARA BK
+     QL=''
+     DO CASE
+        CASE BK=6
+             QL='交'      
+        CASE BK=7
+             QL='單'      
+        CASE BK=8
+             QL='拆'      
+        CASE BK=9
+             QL='重'      
+      ENDCASE  
+      RETURN QL
+*******發送MAIL    
+FUNCTION SEND_MAIL
+		PARAMETERS Mail_From,Mail_To,Mail_DNS,Mail_Subject,Mail_Format,Mail_Body
+		CK_RETURN = .T.
+		   TRY
+				LOCAL CDOMail
+				CDOMail = CREATEOBJECT("CDO.MESSAGE") 
+				CDOMail.FROM = Mail_From
+				CDOMail.TO = Mail_To
+				CDOMail.Subject = Mail_Subject
+				IF Mail_Format = 'HTML'
+				   CDOMail.HTMLBody = Mail_Body
+				ELSE
+				   CDOMail.TextBody = Mail_Body
+				ENDIF
+				IF ALLTRIM(Mail_DNS) = ALLTRIM(INT_DNO)		&&外部伺服器位址
+				   CDOMail.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/sendusing") = 2					&& 1表示由本地smtp傳送,2表示由其他SMTP傳送
+				   CDOMail.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25				&& 設定SMTP使用通訊埠
+				   IF AT('@',ALLTRIM(INT_DNO)) > 0			&& 設定外部發信伺服器名稱
+				  	  CDOMail.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = RIGHT(ALLTRIM(INT_DNO),LEN(ALLTRIM(INT_DNO)) - AT('@',INT_DNO))
+				   ELSE
+				      CDOMail.Configuration.Fields.Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = ALLTRIM(INT_DNO)	
+				   ENDIF
+				   CDOMail.Configuration.Fields.Update		
+				ENDIF									
+				CDOMail.Send() 
+				CK_RETURN = .T.
+		   CATCH
+		        TRY 
+			       LOCAL jMail 
+				   JMail = CREATEOBJECT("JMail.SMTPMail") 
+				   JMail.Logging = .F.
+				   JMail.Priority = 1 
+				   JMail.ContentType = "text" 
+				   JMail.Charset = "big5" 
+				   JMail.ContentTransferEncoding = "base64" 
+				   JMail.ISOEncodeHeaders = .F. 
+				   JMail.ServerAddress = Mail_DNS
+				   JMail.Sender = Mail_From
+				   JMail.SenderName = 'Service'
+				   JMail.AddRecipient(Mail_To) 
+				   JMail.Subject = Mail_Subject
+				   IF Mail_Format = 'HTML'
+				  	  JMail.HTMLBody = Mail_Body
+				   ELSE
+				  	  JMail.Body = Mail_Body
+				   ENDIF
+				   JMail.Execute
+				   JMail.Close
+				   CK_RETURN = .T.
+				CATCH	   
+   		     	   =MESSAGEBOX('系統傳送郵件發生錯誤,可能未安裝CDO.DLL或JMail.DLL請洽系統管理人員',0+64,'提示訊息視窗')
+   		     	  CK_RETURN = .F.
+   		     	ENDTRY		
+		   ENDTRY 
+		RETURN CK_RETURN 	       
+***********
+DEFINE CLASS A01 AS COMMANDBUTTON                
+      PROC CLICK
+           PRG_NO='A01'
+           DO EXCCHK
+     ENDPROC      
+ENDDEFINE
+DEFINE CLASS A02 AS COMMANDBUTTON                
+      PROC CLICK
+           PRG_NO='A02'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS A05 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A05'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS A07 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A07'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS A08 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A08'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS A09 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A09'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS A11 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A11'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS A12 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A12'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS A20 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A20'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS A21 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A21'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS A26 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A26'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS A30 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A30'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS A31 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A31'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS A32 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A32'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS A33 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A33'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE 
+DEFINE CLASS A40 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A40'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS A41 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A41'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS A42 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='A42'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS B01 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B01'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS B02 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B02'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS B03 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B03'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS B04 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B04'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS B05 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B05'
+           DO EXCCHK
+      ENDPROC
+ENDDEFINE      
+DEFINE CLASS B06 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B06'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B07 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B07'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE   
+DEFINE CLASS B08 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B08'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE 
+DEFINE CLASS B09 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B09'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B10 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B10'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B11 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B11'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE
+DEFINE CLASS B12 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B12'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE
+DEFINE CLASS B22 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B22'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE
+DEFINE CLASS B23 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B23'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE     
+DEFINE CLASS B24 AS COMMANDBUTTON 
+      PROC CLICK 
+           PRG_NO='B24'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B25 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B25'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B26 AS COMMANDBUTTON 
+      PROC CLICK 
+           PRG_NO='B26'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B27 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B27'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B28 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B28'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B33 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B33'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE
+DEFINE CLASS B34 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B34'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE       
+DEFINE CLASS B35 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B35'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE       
+DEFINE CLASS B36 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B36'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE       
+DEFINE CLASS B37 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B37'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE       
+DEFINE CLASS B38 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B38'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B39 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B39'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B40 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B40'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B55 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B55'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B56 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B56'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B61 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B61'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B62 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B62'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B63 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B63'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B64 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B64'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B65 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B65'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B66 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B66'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B67 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B67'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE      
+DEFINE CLASS B68 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B68'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE
+DEFINE CLASS B98 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B98'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE    
+DEFINE CLASS B99 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='B99'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE       
+DEFINE CLASS C00 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C00'
+           DO EXCCHK
+      ENDPROC        
+ENDDEFINE      
+DEFINE CLASS C01 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C01'
+           DO EXCCHK
+      ENDPROC        
+ENDDEFINE      
+DEFINE CLASS C02 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C02'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C03 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C03'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C04 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C04'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C05 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C05'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C08 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C08'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C09 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C09'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C10 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C10'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C12 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C12'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C20 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C20'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C21 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C21'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE 
+DEFINE CLASS C22 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C22'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS C23 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C23'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS C30 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C30'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C38 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C38'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS C39 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C39'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS C40 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C40'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE 
+DEFINE CLASS C41 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C41'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE       
+DEFINE CLASS C49 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C49'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS C66 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C66'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS C90 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C90'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS C91 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C91'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS C96 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C96'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS C97 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C97'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS C98 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C98'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS C99 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='C99'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS D00 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D00'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS D01 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D01'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS D02 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D02'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS D04 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D04'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS D08 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D08'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS D10 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D10'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS D11 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D11'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS D19 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D19'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS D20 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D20'
+           DO EXCCHK
+      ENDPROC      
+ENDDEFINE 
+DEFINE CLASS D38 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D38'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS D39 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D39'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS D40 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='D40'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS E00 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E00'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS E01 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E01'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS E02 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E02'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS E03 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E03'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS E04 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E04'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE     
+DEFINE CLASS E05 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E05'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE   
+DEFINE CLASS E06 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E06'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS E07 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E07'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS E08 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E08'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS E13 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E13'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS E15 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E15'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE     
+DEFINE CLASS E16 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E16'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS E17 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E17'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS E19 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='E19'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS F01 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='F01'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS F02 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='F02'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS F03 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='F03'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS F04 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='F04'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS F08 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='F08'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS F13 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='F13'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS G05 AS COMMANDBUTTON
+       PROC CLICK
+           PRG_NO='G05'
+           DO EXCCHK
+       ENDPROC
+ENDDEFINE     
+DEFINE CLASS G06 AS COMMANDBUTTON
+       PROC CLICK
+           PRG_NO='G06'
+           DO EXCCHK
+       ENDPROC
+ENDDEFINE       
+DEFINE CLASS G07 AS COMMANDBUTTON
+       PROC CLICK
+           PRG_NO='G07'
+           DO EXCCHK
+       ENDPROC
+ENDDEFINE       
+DEFINE CLASS G08 AS COMMANDBUTTON
+       PROC CLICK
+           PRG_NO='G08'
+           DO EXCCHK
+       ENDPROC
+ENDDEFINE            
+DEFINE CLASS G09 AS COMMANDBUTTON
+       PROC CLICK
+           PRG_NO='G09'
+           DO EXCCHK
+       ENDPROC
+ENDDEFINE            
+DEFINE CLASS G10 AS COMMANDBUTTON
+       PROC CLICK
+           PRG_NO='G10'
+           DO EXCCHK
+       ENDPROC
+ENDDEFINE    
+DEFINE CLASS G11 AS COMMANDBUTTON
+       PROC CLICK
+           PRG_NO='G111'
+           DO EXCCHK
+       ENDPROC
+ENDDEFINE    
+DEFINE CLASS G12 AS COMMANDBUTTON
+       PROC CLICK
+           PRG_NO='G12'
+           DO EXCCHK
+       ENDPROC
+ENDDEFINE   
+DEFINE CLASS G13 AS COMMANDBUTTON
+       PROC CLICK
+           PRG_NO='G13'
+           DO EXCCHK
+       ENDPROC
+ENDDEFINE            
+DEFINE CLASS G14 AS COMMANDBUTTON
+       PROC CLICK
+           PRG_NO='G14'
+           DO EXCCHK
+       ENDPROC
+ENDDEFINE            
+DEFINE CLASS H02 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='H02'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS H05 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='H05'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS H06 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='H06'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS K01 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K01'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS K03 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K03'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS K08 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K08'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS K09 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K09'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS K17 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K17'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS K18 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K18'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS K19 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K19'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS K20 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K20'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS K21 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K21'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS K29 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K29'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS K30 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K30'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS K50 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K50'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS K51 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K51'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE    
+DEFINE CLASS K99 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='K99'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE    
+DEFINE CLASS L00 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='L00'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE    
+DEFINE CLASS L01 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='L01'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE    
+DEFINE CLASS L02 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='L02'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE    
+DEFINE CLASS L04 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='L04'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE    
+DEFINE CLASS P02 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P02'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P03 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P03'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P04 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P04'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P05 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P05'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P07 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P07'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P10 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P10'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P11 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P11'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P12 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P12'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P13 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P13'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P15 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P15'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS P16 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P16'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE         
+DEFINE CLASS P17 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P17'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE 
+DEFINE CLASS P19 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P19'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P20 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P20'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P21 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P21'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE      
+DEFINE CLASS P38 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P38'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS P49 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P49'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS P99 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='P99'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE       
+DEFINE CLASS Q01 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='Q01'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE         
+DEFINE CLASS Q98 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='Q98'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE         
+DEFINE CLASS Q99 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='Q99'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS S00 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S00'
+           DO EXCCHK
+      ENDPROC             
+ENDDEFINE
+DEFINE CLASS S01 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S01'
+           DO EXCCHK
+      ENDPROC            
+ENDDEFINE
+DEFINE CLASS S02 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S02'
+           DO EXCCHK
+      ENDPROC            
+ENDDEFINE 
+DEFINE CLASS S03 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S03'
+           DO EXCCHK
+      ENDPROC         
+ENDDEFINE
+DEFINE CLASS S04 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S04'
+           DO EXCCHK
+      ENDPROC          
+ENDDEFINE
+DEFINE CLASS S05 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S05'
+           DO EXCCHK
+      ENDPROC          
+ENDDEFINE
+DEFINE CLASS S06 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S06'
+           DO EXCCHK
+      ENDPROC          
+ENDDEFINE
+DEFINE CLASS S07 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S07'
+           DO EXCCHK
+      ENDPROC           
+ENDDEFINE
+DEFINE CLASS S08 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S08'
+           DO EXCCHK
+      ENDPROC           
+ENDDEFINE
+DEFINE CLASS S09 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S09'
+           DO EXCCHK
+      ENDPROC        
+ENDDEFINE
+DEFINE CLASS S10 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S10'
+           DO EXCCHK
+      ENDPROC       
+ENDDEFINE
+DEFINE CLASS S11 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S11'
+           DO EXCCHK
+      ENDPROC       
+ENDDEFINE
+DEFINE CLASS S12 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S12'
+           DO EXCCHK
+      ENDPROC       
+ENDDEFINE
+DEFINE CLASS S13 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S13'
+           DO EXCCHK
+      ENDPROC       
+ENDDEFINE
+DEFINE CLASS S14 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S14'
+           DO EXCCHK
+      ENDPROC  
+ENDDEFINE      
+DEFINE CLASS S15 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S15'
+           DO EXCCHK
+      ENDPROC       
+ENDDEFINE
+DEFINE CLASS S16 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S16'
+           DO EXCCHK
+      ENDPROC       
+ENDDEFINE
+DEFINE CLASS S17 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S17'
+           DO EXCCHK
+      ENDPROC  
+ENDDEFINE 
+DEFINE CLASS S18 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S18'
+           DO EXCCHK
+      ENDPROC  
+ENDDEFINE      
+DEFINE CLASS S19 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S19'
+           DO EXCCHK
+      ENDPROC       
+ENDDEFINE
+DEFINE CLASS S20 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S20'
+           DO EXCCHK
+      ENDPROC    
+ENDDEFINE       
+DEFINE CLASS S21 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S21'
+           DO EXCCHK
+           DO S21
+      ENDPROC    
+ENDDEFINE     
+DEFINE CLASS S22 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S22'
+           DO EXCCHK
+      ENDPROC    
+ENDDEFINE   
+DEFINE CLASS S23 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S23'
+           DO EXCCHK
+      ENDPROC    
+ENDDEFINE  
+ DEFINE CLASS S24 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S24'
+           DO EXCCHK
+      ENDPROC    
+ENDDEFINE 
+DEFINE CLASS S25 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S25'
+           DO EXCCHK
+      ENDPROC    
+ENDDEFINE 
+DEFINE CLASS S30 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S30'
+           DO EXCCHK
+      ENDPROC    
+ENDDEFINE  
+DEFINE CLASS S50 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S50'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+DEFINE CLASS S51 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S51'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE
+DEFINE CLASS S52 AS COMMANDBUTTON 
+      PROC CLICK
+           PRG_NO='S52'
+           DO EXCCHK
+      ENDPROC     
+ENDDEFINE  
+******************************************以下為主超過四十七項功能者之主畫面
+  DEFINE CLASS CMDA AS COMMANDBUTTON 
+      LEFT=INT_015*10
+      TOP=INT_015*20
+      CAPTION='\<A.系統管理'
+      VISIBLE=.T.
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'     
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*21
+           THIS.LEFT=INT_015*11
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*20
+           THIS.LEFT=INT_015*10                  
+      ENDPROC        
+      PROC CLICK
+           BK='A'
+           DO CHOICE       
+      ENDPROC     
+  ENDDEFINE    
+  DEFINE CLASS CMDB AS COMMANDBUTTON     
+      LEFT=INT_015*10
+      TOP=INT_015*80
+      CAPTION='\<B.庫存管理'
+      VISIBLE=.T.
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'          
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*81
+           THIS.LEFT=INT_015*11
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*80
+           THIS.LEFT=INT_015*10                  
+      ENDPROC        
+       PROC CLICK
+           BK='B'
+           DO CHOICE       
+      ENDPROC          
+  ENDDEFINE    
+  DEFINE CLASS CMDC AS COMMANDBUTTON 
+      LEFT=INT_015*10
+      TOP=INT_015*140
+      CAPTION='\<C.業務管理'          
+      VISIBLE=.T.
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'          
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*141
+           THIS.LEFT=INT_015*11
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*140
+           THIS.LEFT=INT_015*10                  
+      ENDPROC         
+      PROC CLICK
+           BK='C'
+           DO CHOICE       
+      ENDPROC             
+  ENDDEFINE    
+  DEFINE CLASS CMDD AS COMMANDBUTTON 
+      LEFT=INT_015*10
+      TOP=INT_015*200
+      CAPTION='\<D.採購管理'
+      VISIBLE=.T.      
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'       
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*201
+           THIS.LEFT=INT_015*11
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*200
+           THIS.LEFT=INT_015*10                  
+      ENDPROC        
+       PROC CLICK
+           BK='D'
+           DO CHOICE       
+      ENDPROC              
+  ENDDEFINE    
+  DEFINE CLASS CMDP AS COMMANDBUTTON 
+      LEFT=INT_015*580
+      TOP=INT_015*20
+      CAPTION='\<P.外購管理'      
+      VISIBLE=.T.      
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'       
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*21
+           THIS.LEFT=INT_015*581
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*20
+           THIS.LEFT=INT_015*580              
+      ENDPROC           
+      PROC CLICK
+           BK='P'
+           DO CHOICE       
+      ENDPROC          
+  ENDDEFINE          
+  DEFINE CLASS CMDE AS COMMANDBUTTON 
+      LEFT=INT_015*10
+      TOP=INT_015*260
+      CAPTION='\<E.生產管理'  
+      VISIBLE=.T.      
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'          
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*261
+           THIS.LEFT=INT_015*11
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*260
+           THIS.LEFT=INT_015*10                  
+      ENDPROC        
+      PROC CLICK
+           BK='E'
+           DO CHOICE       
+      ENDPROC           
+  ENDDEFINE        
+  DEFINE CLASS CMDF AS COMMANDBUTTON 
+      LEFT=INT_015*10
+      TOP=INT_015*320
+      CAPTION='\<F.料表管理'         
+      VISIBLE=.T.      
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'    
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*321
+           THIS.LEFT=INT_015*11
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*320
+           THIS.LEFT=INT_015*10                  
+      ENDPROC        
+      PROC CLICK
+           BK='F'
+           DO CHOICE       
+      ENDPROC                  
+  ENDDEFINE     
+  DEFINE CLASS CMDG AS COMMANDBUTTON  
+      LEFT=INT_015*200
+      TOP=INT_015*20
+      CAPTION='\<G.成本計算'   
+      VISIBLE=.T.      
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'   
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*21
+           THIS.LEFT=INT_015*201
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*20
+           THIS.LEFT=INT_015*200                  
+      ENDPROC        
+       PROC CLICK
+           BK='G'
+           DO CHOICE       
+      ENDPROC                 
+  ENDDEFINE                   
+  DEFINE CLASS CMDH AS COMMANDBUTTON  
+      LEFT=INT_015*200
+      TOP=INT_015*80
+      CAPTION='\<H.品質管理'    
+      VISIBLE=.T.      
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'     
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*81
+           THIS.LEFT=INT_015*201
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*80
+           THIS.LEFT=INT_015*200                 
+      ENDPROC             
+       PROC CLICK
+           BK='H'
+           DO CHOICE       
+      ENDPROC          
+  ENDDEFINE                        
+  DEFINE CLASS CMDK AS COMMANDBUTTON 
+      LEFT=INT_015*200
+      TOP=INT_015*140
+      CAPTION='\<K.財務管理'    
+      VISIBLE=.T.      
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'    
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*141
+           THIS.LEFT=INT_015*201
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*140
+           THIS.LEFT=INT_015*200                  
+      ENDPROC        
+       PROC CLICK
+           BK='K'
+           DO CHOICE       
+      ENDPROC                      
+  ENDDEFINE       
+  DEFINE CLASS CMDL AS COMMANDBUTTON 
+      LEFT=INT_015*200
+      TOP=INT_015*200
+      CAPTION='\<L.固定資產'         
+      VISIBLE=.T.      
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'       
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*201
+           THIS.LEFT=INT_015*201
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*200
+           THIS.LEFT=INT_015*200                  
+      ENDPROC        
+      PROC CLICK
+           BK='L'
+           DO CHOICE       
+      ENDPROC              
+  ENDDEFINE             
+  DEFINE CLASS CMDS AS COMMANDBUTTON 
+      LEFT=INT_015*200
+      TOP=INT_015*260
+      CAPTION='\<S.人事出勤'   
+      VISIBLE=.T.      
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'    
+      PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*261
+           THIS.LEFT=INT_015*201
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*260
+           THIS.LEFT=INT_015*200                  
+      ENDPROC        
+       PROC CLICK
+           BK='S'
+           DO CHOICE       
+      ENDPROC                
+   ENDDEFINE   
+   DEFINE CLASS CMDQ AS COMMANDBUTTON 
+      LEFT=INT_015*200
+      TOP=INT_015*320
+      CAPTION='\<Q.統計品管'   
+      VISIBLE=.T.      
+      FONTSIZE=INT_015*14
+      AUTOSIZE=.T.
+      MOUSEPOINTER=99
+      MOUSEICON='BMPS\harrow.cur'    
+       PROC MOUSEENTER      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(255,0,0)
+           THIS.TOP=INT_015*321
+           THIS.LEFT=INT_015*201
+      ENDPROC     
+      PROC MOUSELEAVE      
+           LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+           THIS.FORECOLOR=RGB(0,0,0)  
+           THIS.TOP=INT_015*320
+           THIS.LEFT=INT_015*200                  
+      ENDPROC       
+       PROC CLICK
+           BK='Q'
+           DO CHOICE       
+      ENDPROC                     
+  ENDDEFINE                
+***************************
+PROCEDURE CHOICE
+   SELECT A02.F03,A03.F02 FROM A02,A03 WHERE A02.F01=SYS_OPER AND LEFT(A02.F03,1)=BK AND A03.F01=A02.F03 INTO CURSOR PRGS ORDER BY A02.F03
+       PRG_SEEK=CREATEOBJECT("PRG_SEEK")  
+       PRG_SEEK.SHOW    
+       FLG='0'
+ENDPROC    
+******************************
+PROCEDURE EXCCHK     &&檢查進入程序是否重複
+           IF !USED('A03')
+              SELECT 0
+              USE A03
+           ELSE
+              SELECT A03              
+           ENDIF   
+           SET ORDER TO 1
+           IF !USED('A05')
+               SELECT  0
+               USE A05 
+           ELSE
+               SELECT  A05
+           ENDIF
+           SET ORDER TO A051
+           SELECT A05               
+           SEEK SYS_OPER+PRG_NO
+           IF FOUND()
+              =MESSAGEBOX('你已經開啟此作業不得重複操作',0+48,'提示訊息視窗')
+              SELECT A05
+              USE
+           ELSE
+              APPEND BLANK
+              REPLACE F01 WITH SYS_OPER
+              REPLACE F02 WITH PRG_NO
+              REPLACE F03 WITH IIF(SEEK(PRG_NO,'A03'),A03.F02,'')
+              REPLACE F04 WITH DTCX(DATE())+' '+TIME()                     
+              IF !USED('A04')
+                 SELECT 0
+                 USE A04
+              ELSE
+                 SELECT A04
+              ENDIF
+              SET ORDER TO 1
+              SEEK A05.F01
+              IF !FOUND()
+                 SEEK 'zzzzz'
+                 IF FOUND()
+                    REPLACE f01 WITH SYS_OPER
+                    REPLACE f04 WITH DTCX(DATE())+' '+TIME()
+                 ELSE
+                   =MESSAGEBOX('使用人數已超過',0+64,'請稍後登錄')
+                   RETURN 
+                 ENDIF 
+              ENDIF                    
+              DO &PRG_NO
+           ENDIF    
+
+ENDPROC
+********************
+       DEFINE CLASS CMDBK4 AS COMMANDBUTTON 
+           LEFT=INT_015*390
+           TOP=INT_015*320
+           FONTSIZE=INT_015*14
+           AUTOSIZE=.T.
+           VISIBLE=.T.
+           CAPTION='重用單號檔'  
+           PROC MOUSEENTER      
+                LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+                THIS.FORECOLOR=RGB(255,0,0)
+                THIS.TOP=INT_015*321
+                THIS.LEFT=INT_015*391
+           ENDPROC     
+           PROC MOUSELEAVE      
+                LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+                THIS.FORECOLOR=RGB(0,0,0)  
+                THIS.TOP=INT_015*320
+                THIS.LEFT=INT_015*390                  
+           ENDPROC            
+           PROCEDURE CLICK
+              DO BK4
+           ENDPROC
+       ENDDEFINE                          
+       DEFINE CLASS CMDBK5 AS COMMANDBUTTON 
+           LEFT=INT_015*390
+           TOP=INT_015*260
+           FONTSIZE=INT_015*14
+           AUTOSIZE=.T.
+           VISIBLE=.T.           
+           CAPTION='訂單表身檔'              
+           PROC MOUSEENTER      
+                LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+                THIS.FORECOLOR=RGB(255,0,0)
+                THIS.TOP=INT_015*261
+                THIS.LEFT=INT_015*391
+           ENDPROC     
+           PROC MOUSELEAVE      
+                LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+                THIS.FORECOLOR=RGB(0,0,0)  
+                THIS.TOP=INT_015*260
+                THIS.LEFT=INT_015*390                  
+           ENDPROC                          
+           PROCEDURE CLICK
+              DO BK5
+           ENDPROC
+        ENDDEFINE
+
+

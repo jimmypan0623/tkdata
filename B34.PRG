@@ -1,0 +1,2398 @@
+***µ\¦¡¦WºÙ:»s¥O°h®Æ³æ
+close all
+clear 
+FLG='0'
+FCH=''
+CHK=''
+CHK_STR=''
+R=0
+QTY=0
+TQTY=0
+AREA1='B18_1'
+AREA2='B18'
+IF !USED('A09')
+   SELE 0
+   USE A09
+ELSE
+   SELE A09
+ENDIF
+SET ORDER TO 1
+IF !USED('A23')
+    SELE 0
+    USE A23
+ELSE 
+   SELE A23
+ENDIF
+SET ORDER TO 1         
+IF !USED('C20')
+   SELE 0
+   USE C20
+ELSE
+   SELE C20
+ENDIF
+SET ORDER TO 1
+IF !USED('E11')
+   SELE 0
+   USE E11
+ELSE
+   SELE E11
+ENDIF
+SET ORDER TO E111     
+IF !USED('E16')
+   SELE 0
+   USE E16
+ELSE
+   SELE E16
+ENDIF
+SET ORDER TO E164      
+A24='A24'+LEFT(DTOS(DATE()),6)     &&³æ¸¹¼È¦sÀÉ
+IF !USED('&A24')
+   SELE 0
+   USE (A24) ALIA A24
+ELSE
+   SELE A24
+ENDIF
+SET ORDER TO 1      
+B25='B25'+LEFT(DTOS(DATE()),6)    &&³¡ªù§O¤ë³øªí
+IF !USED('&B25')
+   SELE 0
+   USE (B25) ALIA B25
+ELSE
+   SELE B25
+ENDIF
+SET ORDER TO 1      
+B26='B26'+LEFT(DTOS(DATE()),6)   &&®w¦s²§°Ê°O¿ý
+IF !USED('&B26')
+   SELE 0
+   USE (B26) ALIA B26
+ELSE
+   SELE B26
+ENDIF
+SET ORDER TO 1      
+B39='B39'+LEFT(DTOS(DATE()),6)   &&¥¼¹L±b³æ¾Ú¬d¸ßÀÉ
+IF !USED('&B39')
+   SELE 0
+   USE (B39) ALIA B39
+ELSE
+   SELE B39
+ENDIF
+SET ORDER TO 1      
+SELE A23
+SET ORDER TO 1
+SEEK DTOS(CTOD(LEFT(DTOC(DATE()),5)+'/'+'01'))
+IF ! USED('A01')
+   SELE 0
+   USE A01 INDE A01
+ELSE
+   SELE A01
+ENDIF      
+SET ORDER TO A01
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK sys_oper+'B34'
+IF !USED('A14')
+   SELE 0
+   USE A14
+ELSE 
+   SELE A14
+ENDIF
+SET ORDER TO 1
+SET FILTER TO F04='*'
+CREATE CURSOR A14_1 (F01 C(5),F02 C(8))
+INDE ON F01 TAG A14_11
+SELE F01,F02 FROM A14 WHERE F04='*' AND F05='*' INTO CURSOR A14_2 ORDER BY F01
+GO TOP
+DO WHILE !EOF()
+   SELE A14_1
+   APPEND BLANK
+   REPL F01 WITH A14_2.F01
+   REPL F02 WITH A14_2.F02
+   SELE A14_2
+   SKIP
+ENDDO   
+SELE A14_2
+USE 
+SELE A14_1
+SET ORDER TO 1     
+IF !USED('B01')
+   SELE 0
+   USE B01 INDE B01
+ELSE
+   SELE B01
+ENDIF
+SET ORDER TO 1   
+set filter to !EMPTY(F98)  
+IF !USED('B11')
+   SELE 0
+   USE B11 
+ELSE
+   SELE B11
+ENDIF
+SET ORDER TO B111 
+B18='B18'+LEFT(DTOS(DATE()),6)
+B181='B181'+LEFT(DTOS(DATE()),6)
+IF !USED('&B18')
+   SELE 0
+   USE (B18) ALIA B18
+ELSE
+   SELE B18
+ENDIF
+SET ORDER TO 1      
+SET RELA TO F08 INTO B01
+CREATE CURSOR B18_1;
+(F01 C(10),F02 C(2),F07 C(5),F13 C(1),F04 C(5),F06 C(17),F90 C(17))
+INDE ON F01 TAG B18_11
+INDE ON F07 TAG B18_12
+INDE ON F04 TAG B18_13
+SET RELA TO F07 INTO A14 
+SET RELA TO F04 INTO A14_1 ADDI
+SELE F01,F02,F07,F13,F04,F06,F90 FROM B18 GROUP BY F01 ORDER BY F01 INTO CURSOR B18_2
+SELE B18_2
+GO TOP
+DO WHILE !EOF()
+   SELE B18_1
+   APPEND BLANK
+   REPL F01 WITH B18_2.F01
+   REPL F02 WITH B18_2.F02
+   REPL F07 WITH B18_2.F07
+   REPL F13 WITH B18_2.F13 
+   REPL F04 WITH B18_2.F04
+   REPL F06 WITH B18_2.F06
+   REPL F90 WITH B18_2.F90
+   SELE B18_2
+   SKIP   
+ENDDO
+SELE B18_2
+USE   
+SELE B18_1
+SET ORDER TO 1
+B34form=createobject("tkB34")
+B34form.show  
+define class tkB34 as form
+  caption='B34.»s¥O°h®Æ³æ'
+  controlbox=.F.
+  BORDERSTYLE=3  
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  controlcount=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  showtips=.t.
+  showwindow=1
+  WIDTH=INT_015*789
+  windowtype=1
+  NAME='TKB34'
+  add object shape1 as shape1 with;
+      autocenter=.t.
+  ADD OBJECT LBL_REC AS LBL_REC WITH;
+      AUTOCENTER =.T.
+  ADD OBJECT REC_COUNT AS REC_COUNT  with;
+      caption=str(reccount())        
+  add object shape2 as shape2 with;
+      autocenter=.t.
+  add object shape3 as shape3 with;
+      autocenter=.t.            
+  ADD OBJECT PAGEFRAME1 AS PAGEFRAME WITH;
+      LEFT=INT_015*236,;
+      WIDTH=INT_015*540,;
+      HEIGHT=INT_015*200,;
+      FONTSIZE=INT_015*9,;
+      PAGECOUNT=2,;
+      TABSTRETCH=1,;
+      ACTIVEPAGE=1,;
+      VISIBLE=.T.,;
+      PAGE1.NAME='PAGE1',;
+      PAGE1.VISIBLE=.T.,;
+      PAGE1.CAPTION='ªíÀY¸ê®Æ',;
+      PAGE2.NAME='PAGE2',;
+      PAGE2.VISIBLE=.T.,;
+      PAGE2.CAPTION='ªí¨­¸Ô²Ó¸ê®Æ¤º®e'   
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      autocenter=.t.,;
+      WIDTH=INT_015*130
+  ADD OBJECT MTH_LIST AS MTH_LIST WITH;
+      autocenter=.t.
+  ADD OBJECT grid1 AS grid1 WITH;
+      columncount=5,;            
+      RECORDSOURCE='B18_1',;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;      
+      COLUMN3.NAME='COLUMN3',;      
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5'      
+  ADD OBJECT grid2 AS grid2 WITH;
+      columncount=5,;            
+      RECORDSOURCE='B18',; 
+      LINKMASTER='B18_1',;
+      RELATIONALEXPR='F01',;
+      childorder=B181,;  
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5'
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      AUTOSIZE=.T.              
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+      AUTOSIZE=.T.              
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*173,;
+      LEFT=INT_015*558          
+  ADD OBJECT ANS_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*15,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;      
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<A.¹L±b',;
+      NAME='ANS_BOTT'                 
+ADD OBJECT EXCEL_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*58,;
+      HEIGHT=INT_015*25,;
+      FONTSIZE=INT_015*9,;
+      WIDTH=INT_015*65,;
+      CAPTION='\<T.ÂàEXCEL',;
+      NAME='EXCEL_BOTT'                 
+  PROCEDURE PAGEFRAME1.PAGE1.INIT     
+     THIS.ADDOBJECT('LBLF01','LABEL')
+     WITH THIS.LBLF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*13
+          .WIDTH=INT_015*50
+          .CAPTION='°h®Æ³æ¸¹'          
+     ENDWITH
+     THIS.ADDOBJECT('LBLF07','LABEL')     
+     WITH THIS.LBLF07
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*63
+          .WIDTH=INT_015*60  
+          .CAPTION='­ìµo®Æ³¡ªù'
+     ENDWITH            
+     THIS.ADDOBJECT('LBLF071','LABEL')     
+     WITH THIS.LBLF071
+          .VISIBLE=.T.
+          .LEFT=INT_015*125
+          .TOP=INT_015*63
+          .AUTOSIZE=.T.
+     ENDWITH                 
+     THIS.ADDOBJECT('LBLF04','LABEL')
+     WITH THIS.LBLF04
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*88
+         .WIDTH=INT_015*60
+         .CAPTION='­ì»â¥Î³¡ªù'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF041','LABEL')
+     WITH THIS.LBLF041
+         .VISIBLE=.T.
+         .LEFT=INT_015*125
+         .TOP=INT_015*88
+         .AUTOSIZE=.T. 
+     ENDWITH    
+
+*!*	     THIS.ADDOBJECT('LBLF08','LABEL')
+*!*	     WITH THIS.LBLF08
+*!*	         .VISIBLE=.T.
+*!*	         .LEFT=INT_015*14
+*!*	         .TOP=INT_015*138
+*!*	         .WIDTH=INT_015*50
+*!*	         .CAPTION='³Æµù»¡©ú'
+*!*	     ENDWITH    
+     THIS.ADDOBJECT('LBLF02','LABEL')
+     WITH THIS.LBLF02
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*13
+         .WIDTH=INT_015*50
+         .CAPTION='°h®Æ¤é´Á'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF13','LABEL')
+     WITH THIS.LBLF13
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*38
+         .WIDTH=INT_015*50
+         .CAPTION='¹L  ±b  ½X'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF131','LABEL')
+     WITH THIS.LBLF131
+         .VISIBLE=.T.
+         .LEFT=INT_015*419
+         .TOP=INT_015*38
+         .AUTOSIZE=.T.
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF06','LABEL')
+     WITH THIS.LBLF06
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*63
+         .WIDTH=INT_015*50
+         .CAPTION='¦w¥þ¸ê®Æ'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF061','LABEL')
+     WITH THIS.LBLF061
+         .VISIBLE=.T.
+         .LEFT=INT_015*419
+         .TOP=INT_015*63
+         .AUTOSIZE=.T.
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF90','LABEL')
+     WITH THIS.LBLF90
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*88
+         .WIDTH=INT_015*50
+         .CAPTION='½T»\¤H­û'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF901','LABEL')
+     WITH THIS.LBLF901
+         .VISIBLE=.T.
+         .LEFT=INT_015*419
+         .TOP=INT_015*88
+         .AUTOSIZE=.T.
+     ENDWITH        
+     THIS.ADDOBJECT('TXTF01','TEXTBOX')          
+     WITH THIS.TXTF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*9
+          .WIDTH=INT_015*81
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+     ENDWITH        
+     THIS.ADDOBJECT('TXTF07','TEXTBOX')          
+     WITH THIS.TXTF07
+          .VISIBLE=.T.
+          .LEFT=INT_015*74
+          .TOP=INT_015*59
+          .WIDTH=INT_015*49
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=5
+     ENDWITH        
+     THIS.ADDOBJECT('TXTF04','TEXTBOX')          
+     WITH THIS.TXTF04
+          .VISIBLE=.T.
+          .LEFT=INT_015*74
+          .TOP=INT_015*84
+          .WIDTH=INT_015*49
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=5
+     ENDWITH  
+                         
+*!*	     THIS.ADDOBJECT('TXTF08','TEXTBOX')          
+*!*	     WITH THIS.TXTF08
+*!*	          .VISIBLE=.T.
+*!*	          .LEFT=INT_015*64
+*!*	          .TOP=INT_015*134
+*!*	          .WIDTH=INT_015*140
+*!*	          .HEIGHT=INT_015*25
+*!*	          .MAXLENGTH=15
+*!*	     ENDWITH      
+     THIS.ADDOBJECT('TXTF02','TEXTBOX')          
+     WITH THIS.TXTF02
+          .VISIBLE=.T.
+          .LEFT=INT_015*418
+          .TOP=INT_015*9
+          .WIDTH=INT_015*40
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=2
+     ENDWITH        
+  ENDPROC   
+  PROCEDURE PAGEFRAME1.PAGE2.INIT
+	THIS.ADDOBJECT('LBLF08','LABEL')
+	WITH THIS.LBLF08  
+	     .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*18
+	     .WIDTH=INT_015*50
+         .CAPTION='®Æ«~½s¸¹'
+    ENDWITH  
+    THIS.ADDOBJECT('LBLF081','LABEL')
+    WITH THIS.LBLF081
+         .VISIBLE=.T.
+         .LEFT=INT_015*327
+	     .TOP=INT_015*18
+	     .autosize=.t.
+	ENDWITH     
+	THIS.ADDOBJECT('LBLF05','LABEL')
+	WITH THIS.LBLF05
+	     .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*43
+	     .WIDTH=INT_015*50
+         .CAPTION='»s¥O½s¸¹'
+    ENDWITH  	
+    THIS.ADDOBJECT('LBLF10','Label')
+    WITH THIS.LBLF10
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*68
+         .WIDTH=INT_015*50
+         .CAPTION='À³»â¼Æ¶q'         
+    ENDWITH         
+    THIS.ADDOBJECT('LBLF101','Label')
+    WITH THIS.LBLF101
+         .VISIBLE=.T.
+         .LEFT=INT_015*64
+         .TOP=INT_015*68
+         .AUTOSIZE=.T.
+         .CAPTION=''         
+    ENDWITH             
+    THIS.ADDOBJECT('LBLF12','Label')
+    WITH THIS.LBLF12
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*93
+         .WIDTH=INT_015*50
+         .CAPTION='°h®Æ¼Æ¶q'         
+    ENDWITH     
+    THIS.ADDOBJECT('LBLF03','Label')
+    WITH THIS.LBLF03
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*128
+         .WIDTH=INT_015*50
+         .CAPTION='³Æ®Æ³æ¸¹'         
+    ENDWITH         
+    THIS.ADDOBJECT('LBLF031','Label')
+    WITH THIS.LBLF031
+         .VISIBLE=.T.
+         .LEFT=INT_015*65
+         .TOP=INT_015*128
+         .AUTOSIZE=.T.
+         .CAPTION=''         
+    ENDWITH             
+    THIS.ADDOBJECT('LBLF06','LABEL')
+    WITH THIS.LBLF06
+        .VISIBLE=.T.           
+        .LEFT=INT_015*328
+        .TOP=INT_015*143
+        .WIDTH=INT_015*50
+        .CAPTION='¦w¥þ¸ê®Æ'         
+    ENDWITH    
+    THIS.ADDOBJECT('LBLF061','LABEL')
+    WITH THIS.LBLF061
+        .VISIBLE=.T.           
+        .LEFT=INT_015*380
+        .TOP=INT_015*143
+        .AUTOSIZE=.T.
+    ENDWITH    
+	THIS.ADDOBJECT('TXTF08','TXTF08')
+	WITH THIS.TXTF08      
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*65
+	     .TOP=INT_015*14
+	     .WIDTH=INT_015*261
+	     .HEIGHT=INT_015*25
+	     .MAXLENGTH=43
+	     .NAME='TXTF08'  
+             .BACKCOLOR=RGB(255,255,100)	   
+             .MOUSEPOINTER=99               
+             .MOUSEICON='BMPS\harrow.cur'                  	                  
+	ENDWITH     
+	THIS.ADDOBJECT('TXTF05','TXTF05')
+	WITH THIS.TXTF05      
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*65
+	     .TOP=INT_015*39
+	     .WIDTH=INT_015*90
+	     .HEIGHT=INT_015*25
+	     .MAXLENGTH=12
+	     .NAME='TXTF05'  
+             .BACKCOLOR=RGB(255,255,100)	   
+             .MOUSEPOINTER=99               
+             .MOUSEICON='BMPS\harrow.cur'                         
+             .MOUSEICON='BMPS\harrow.cur'                  	                        	     
+	ENDWITH     	
+	THIS.ADDOBJECT('TXTF12','TEXTBOX')
+	WITH THIS.TXTF12
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*65
+	     .TOP=INT_015*89
+	     .WIDTH=INT_015*100
+	     .HEIGHT=INT_015*25
+	     .INPUTMASK='999999999.9999'
+	     .NAME='TXTF12'	    
+	ENDWITH     
+  ENDPROC       
+  PROCEDURE PAGEFRAME1.PAGE1.activate
+     R=0
+     SELE B18_1
+     IF THISFORM.SHRGROUP.VISIBLE=.F.
+        THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(B18_1.F13<>'2',RGB(255,0,0),'')","COLUMN")         
+        THISFORM.GRID1.ENABLED=.T.   
+        THISFORM.GRID1.SETFOCUS   
+        THISFORM.KEY_LIST.ENABLED=.T.
+        THISFORM.MTH_LIST.ENABLED=.T.
+     ELSE
+       THISFORM.KEY_LIST.ENABLED=.F.   
+       THISFORM.MTH_LIST.ENABLED=.F.   
+     ENDIF                
+    IF THISFORM.GRID1.ACTIVEROW=0 .AND. thisform.SHRGROUP.ENABLED=.F.
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+        THISFORM.ANS_BOTT.ENABLED=.F.
+        THISFORM.EXCEL_BOTT.ENABLED=.F.        
+        THISFORM.PAGEFRAME1.PAGE1.SETALL('VALUE','','TEXTBOX')        
+        THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF071.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF041.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF131.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF061.CAPTION=''        
+        THISFORM.PAGEFRAME1.PAGE1.LBLF901.CAPTION=''           
+        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.      
+     ELSE
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  .AND. B18_1.F13<>'2' &&§PÂ_¦³µL­×§ïªºÅv­­
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   .AND. B18_1.F13<>'2' &&§PÂ_¦³µL§R°£ªºÅv­­
+        THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)    &&§PÂ_¦³µL¦C¦LªºÅv­­  
+        THISFORM.ANS_BOTT.ENABLED=IIF(B18_1.F13='2',.F.,.T.) .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED
+        THISFORM.EXCEL_BOTT.ENABLED=IIF(A02.F10='*',.T.,.F.)                
+        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.
+     ENDIF   
+     THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.);
+     .AND. !IIF(SEEK(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),'A23','A231'),A23.F07,.F.)
+  ENDPROC
+  PROCEDURE PAGEFRAME1.PAGE2.activate
+     SELE B18
+     IF THISFORM.SHRGROUP.ENABLED=.F.
+        THISFORM.GRID2.READONLY=.T.   
+        THISFORM.GRID2.SETFOCUS   
+     ENDIF   
+     IF THISFORM.GRID2.ACTIVEROW=0 .and. thisform.SHRGROUP.ENABLED=.F.
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+        THISFORM.ANS_BOTT.ENABLED=.F.
+        THISFORM.PAGEFRAME1.PAGE2.SETALL('VALUE','','TEXTBOX')
+        THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.LBLF081.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE2.LBLF031.CAPTION=''
+     ELSE
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) .AND. B18.F13<>'2'  &&§PÂ_¦³µL­×§ïªºÅv­­
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  .AND. B18.F13<>'2' &&§PÂ_¦³µL§R°£ªºÅv­­
+        THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&&&§PÂ_¦³µL¦C¦LªºÅv­­  
+        THISFORM.ANS_BOTT.ENABLED=IIF(B18.F13='2',.F.,.T.) .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED
+     ENDIF   
+     R=RECNO('&AREA1')
+     THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+     THISFORM.GRID1.ENABLED=.F.     
+     THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)   .AND. B18_1.F13<>'2' &&§PÂ_¦³µL·s¼WªºÅv­­
+     THISFORM.KEY_LIST.ENABLED=.F.     
+     THISFORM.MTH_LIST.ENABLED=.F.     
+    THISFORM.EXCEL_BOTT.ENABLED=.F.
+  ENDPROC     
+  PROC INIT       
+       thisform.setall('height',INT_015*25,'textbox')
+       thisform.setall('height',INT_015*17,'label')     
+       thisform.setall('FONTSIZE',INT_015*9,'textbox')
+       thisform.setall('FONTSIZE',INT_015*9,'label')         
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+       THISFORM.EXCEL_BOTT.ENABLED=IIF(A02.F10='*',.T.,.F.)                       
+       THISFORM.SHRGROUP.VISIBLE=.F.
+       THISFORM.SHRGROUP.ENABLED=.F.
+       thisform.GRID1.setall('FONTSIZE',INT_015*9,'COLUMN')
+       thisform.GRID1.setall('FONTSIZE',INT_015*9,'HEADER')         
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID2.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='²¾Âà³æ¸¹'
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='­ìµo®Æ³¡ªù½s¸¹'
+       THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='­ìµo®Æ³¡ªùÂ²ºÙ'
+       THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='­ì»â¥Î³¡ªù½s¸¹'
+       THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='­ì»â¥Î³¡ªùÂ²ºÙ'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B18_1.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='B18_1.F07'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE="A14.F02"       
+       THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B18_1.F04'
+       THISFORM.GRID1.COLUMN5.CONTROLSOURCE='A14_1.F02'       
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*81
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*49
+       THISFORM.GRID1.COLUMN3.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN4.WIDTH=INT_015*49
+       THISFORM.GRID1.COLUMN5.WIDTH=INT_015*80
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(B18_1.F13<>'2',RGB(255,0,0),'')","COLUMN")         
+       thisform.GRID2.setall('FONTSIZE',INT_015*9,'COLUMN')
+       thisform.GRID2.setall('FONTSIZE',INT_015*9,'HEADER')       
+       THISFORM.grid2.COLUMN1.HEADER1.CAPTION='®Æ«~½s¸¹'       
+       THISFORM.grid2.COLUMN2.HEADER1.CAPTION='»s¥O¸¹½X'
+       THISFORM.grid2.COLUMN3.HEADER1.CAPTION='À³»â¼Æ¶q'
+	   THISFORM.grid2.COLUMN4.HEADER1.CAPTION='°h®Æ¼Æ¶q'
+	   THISFORM.grid2.COLUMN5.HEADER1.CAPTION='¼Æ¶q¤p­p'	   
+	   
+	   THISFORM.GRID2.LINKMASTER='B18_1'
+       THISFORM.GRID2.RELATIONALEXPR='F01'
+	   THISFORM.grid2.COLUMN1.CONTROLSOURCE='B18.F08'
+	   THISFORM.grid2.COLUMN2.CONTROLSOURCE='B18.F05'
+	   THISFORM.grid2.COLUMN3.CONTROLSOURCE='B18.F10'
+	   THISFORM.grid2.COLUMN4.CONTROLSOURCE='B18.F12'
+	   THISFORM.grid2.COLUMN5.CONTROLSOURCE="IIF(B18.F14>0,B18.F14,'')"
+	   THISFORM.grid2.COLUMN1.WIDTH=INT_015*179
+	   THISFORM.GRID2.COLUMN2.WIDTH=INT_015*80
+       THISFORM.grid2.COLUMN3.WIDTH=INT_015*80
+       THISFORM.GRID2.COLUMN4.WIDTH=INT_015*80
+       THISFORM.GRID2.COLUMN5.WIDTH=INT_015*90      
+       THISFORM.grid1.READONLY=.T.      
+       THISFORM.grid2.READONLY=.T.            
+       THISFORM.grid1.SETFOCUS
+       IF THISFORM.GRID1.ACTIVEROW=0
+          THISFORM.CMDGROUP.ENABLED=.F.
+          THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+          THISFORM.ANS_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.ENABLED=.T.      
+          THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) .AND. B18_1.F13<>'2'  &&§PÂ_¦³µL­×§ïªºÅv­­
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  .AND. B18_1.F13<>'2' &&§PÂ_¦³µL§R°£ªºÅv­­
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&§PÂ_¦³µL¦C¦LªºÅv­­       
+          THISFORM.ANS_BOTT.ENABLED=IIF(B18_1.F13='2',.F.,.T.)  .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED
+       ENDIF          
+*       THISFORM.KEY_LIST.DISPLAYVALUE='¨Ì²¾Âà³æ¸¹±Æ¦C'      
+       JK='°h®Æ³æ¸¹'
+       SELE B18_1
+       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=B18_1.F01
+  ENDPROC               
+  PROC KEY_LIST.INIT 
+       with this 
+           .additem('¨Ì°h®Æ³æ¸¹±Æ¦C')
+           .additem('¨Ì­ìµo®Æ³¡ªù±Æ¦C')
+           .additem('¨Ì­ì»â¥Î³¡ªù±Æ¦C')
+           .VALUE=1
+       endwith             
+  ENDPROC 
+  PROC KEY_LIST.INTERACTIVECHANGE                 
+       SELE B18_1 
+       DO CASE
+          CASE THIS.DISPLAYVALUE='¨Ì°h®Æ³æ¸¹±Æ¦C'
+               set order to 1 
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='°h®Æ³æ¸¹'
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B18_1.F01'
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*81
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='­ìµo®Æ³¡ªù½s¸¹'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='B18_1.F07'
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*49
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='­ìµo®Æ³¡ªùÂ²ºÙ'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='­ì»â¥Î³¡ªù½s¸¹'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B18_1.F04'
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*49               
+               THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='­ì»â¥Î³¡ªùÂ²ºÙ'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='A14_1.F02'
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*80                                
+          CASE THIS.DISPLAYVALUE='¨Ì­ìµo®Æ³¡ªù±Æ¦C'
+               set order to 2
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='­ìµo®Æ³¡ªù½s¸¹'
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B18_1.F07'
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*49
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='­ìµo®Æ³¡ªùÂ²ºÙ'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='°h®Æ³æ¸¹'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='B18_1.F01'
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*81                                                   
+               THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='­ì»â¥Î³¡ªù½s¸¹'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B18_1.F04'
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*49  
+               THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='­ì»â¥Î³¡ªùÂ²ºÙ'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='A14_1.F02'
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*58                 
+          CASE THIS.DISPLAYVALUE='¨Ì­ì»â¥Î³¡ªù±Æ¦C'
+               set order to 3
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='­ì»â¥Î³¡ªù½s¸¹'
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B18_1.F04'
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*49
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='­ì»â¥Î³¡ªùÂ²ºÙ'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='A14_1.F02'
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='°h®Æ³æ¸¹'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='B18_1.F01'
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*81               
+               THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='­ìµo®Æ³¡ªù½s¸¹'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B18_1.F07'
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*49                  
+               THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='­ìµo®Æ³¡ªùÂ²ºÙ'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*80                                                            
+       ENDCASE 
+        THISFORM.grid1.SETFOCUS
+  ENDPROC      
+  PROC MTH_LIST.INTERACTIVECHANGE
+       THISFORM.GRID1.RECORDSOURCE=''
+       THISFORM.GRID2.RECORDSOURCE=''
+       THISFORM.GRID2.LINKMASTER=''
+       THISFORM.GRID2.RELATIONALEXPR=''
+       THISFORM.GRID2.childorder=''
+       SELE A24
+       USE
+       A24='A24'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&A24')
+          SELE 0
+          USE (A24) ALIA A24
+       ELSE
+          SELE A24
+       ENDIF
+       SET ORDER TO 1             
+       SELE B25
+       USE
+       B25='B25'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&B25')
+          SELE 0
+          USE (B25) ALIA B25
+       ELSE
+          SELE B25
+       ENDIF
+       SET ORDER TO 1                    
+       SELE B26
+       USE
+       B26='B26'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&B26')
+          SELE 0
+          USE (B26) ALIA B26
+       ELSE
+          SELE B26
+       ENDIF
+       SET ORDER TO 1                           
+       SELE B39
+       USE
+       B39='B39'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&B39')
+          SELE 0
+          USE (B39) ALIA B39
+       ELSE
+          SELE B39
+       ENDIF
+       SET ORDER TO 1                                  
+       SELE B18
+       set rela off into b01
+       SET RELA OFF INTO B18_1
+       USE
+       SELE B18_1
+       SET RELA OFF INTO A14
+       SET RELA OFF INTO A14_1
+       USE
+       B18='B18'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       B181='B181'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&B18')
+          SELE 0
+          USE (B18) ALIA B18
+       ELSE
+          SELE B18
+       ENDIF
+       SET ORDER TO 1      
+       SET RELA TO F08 INTO B01
+       CREATE CURSOR B18_1;
+       (F01 C(10),F02 C(2),F07 C(5),F13 C(1),F04 C(5),F06 C(17),F90 C(17))
+       INDE ON F01 TAG B18_11
+       INDE ON F07 TAG B18_12
+       INDE ON F04 TAG B18_13
+       SELE F01,F02,F07,F13,F04,F06,F90 FROM B18 GROUP BY F01 ORDER BY F01 INTO CURSOR B18_2
+       SELE B18_2
+       GO TOP
+       DO WHILE !EOF()
+          SELE B18_1
+          APPEND BLANK
+          REPL F01 WITH B18_2.F01
+          REPL F02 WITH B18_2.F02
+          REPL F07 WITH B18_2.F07         
+          REPL F13 WITH B18_2.F13
+          REPL F04 WITH B18_2.F04
+          REPL F06 WITH B18_2.F06
+          REPL F90 WITH B18_2.F90
+          SELE B18_2
+          SKIP
+       ENDDO
+       SELE B18_2
+       USE   
+       SELE B18_1
+       SET ORDER TO 1
+       SET RELA TO F07 INTO A14
+       SET RELA TO F04 INTO A14_1 ADDI
+       THISFORM.GRID1.RECORDSOURCE='B18_1'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B18_1.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='B18_1.F07'       
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE='A14.F02'       
+       THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B18_1.F04'              
+       THISFORM.GRID1.COLUMN5.CONTROLSOURCE='A14_1.F02'
+       THISFORM.GRID2.RECORDSOURCE='B18'
+	   THISFORM.GRID2.LINKMASTER='B18_1'
+       THISFORM.GRID2.RELATIONALEXPR='F01'      
+       THISFORM.GRID2.CHILDORDER=B181  
+	   THISFORM.grid2.COLUMN1.CONTROLSOURCE='B18.F08'
+	   THISFORM.grid2.COLUMN2.CONTROLSOURCE='B18.F05'
+	   THISFORM.grid2.COLUMN3.CONTROLSOURCE='B18.F10'
+	   THISFORM.grid2.COLUMN4.CONTROLSOURCE='B18.F12'
+	   THISFORM.grid2.COLUMN5.CONTROLSOURCE="IIF(B18.F14>0,B18.F14,' ')"
+       THISFORM.KEY_LIST.INTERACTIVECHANGE
+	   THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+	   THISFORM.REFRESH
+	   thisform.grid1.setfocus        
+       IF THISFORM.GRID1.ACTIVEROW=0
+          THISFORM.CMDGROUP.ENABLED=.F.
+          THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+          THISFORM.ANS_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.ENABLED=.T.      
+          THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) .AND. B18_1.F13<>'2'  &&§PÂ_¦³µL­×§ïªºÅv­­
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  .AND. B18_1.F13<>'2' &&§PÂ_¦³µL§R°£ªºÅv­­
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&§PÂ_¦³µL¦C¦LªºÅv­­    
+          THISFORM.ANS_BOTT.ENABLED=IIF(B18_1.F13='2',.F.,.T.)  .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED               
+       ENDIF          
+*!*	       THISFORM.KEY_LIST.DISPLAYVALUE='¨Ì­ì¥X³f³æ¸¹±Æ¦C'      
+*!*	       JK='­q³æ½s¸¹'
+*!*	       SELE B18_1
+*!*	       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=B18_1.F01	   
+*       THISFORM.REFRESH       
+  ENDPROC
+  PROC grid1.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex
+       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=B18_1.F01
+       THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=B18_1.F07
+       THISFORM.PAGEFRAME1.PAGE1.LBLF071.CAPTION=A14.F02
+       THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE=B18_1.F04
+       THISFORM.PAGEFRAME1.PAGE1.LBLF041.CAPTION=A14_1.F02
+       THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE=B18_1.F02
+       THISFORM.PAGEFRAME1.PAGE1.lblF131.caption=B18_1.F13
+       THISFORM.PAGEFRAME1.PAGE1.lblF061.caption=B18_1.F06
+       THISFORM.PAGEFRAME1.PAGE1.lblF901.caption=B18_1.F90
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) .AND. B18_1.F13<>'2'  &&§PÂ_¦³µL­×§ïªºÅv­­
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  .AND. B18_1.F13<>'2' &&§PÂ_¦³µL§R°£ªºÅv­­
+       THISFORM.ANS_BOTT.ENABLED=IIF(B18_1.F13='2',.F.,.T.) .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED        
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       JK=THIS.COLUMN1.HEADER1.CAPTION  
+       IF THIS.ACTIVEROW=0
+          THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+       ENDIF   
+       CHK=''     
+*       thisform.refresh
+  ENDPROC     
+  PROC grid2.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex
+       THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=B18.F08
+       THISFORM.PAGEFRAME1.PAGE2.LBLF081.CAPTION=B01.F02
+       THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE=B18.F05
+       THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=B18.F12      
+       THISFORM.PAGEFRAME1.PAGE2.LBLF061.CAPTION=B18.F06
+       THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION=TRANSFORM(B18.F10,'@R 9999999.9999')
+       THISFORM.PAGEFRAME1.PAGE2.LBLF031.CAPTION=B18.F03
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       JK=THIS.COLUMN1.HEADER1.CAPTION
+       CHK=B18_1.F01
+       if thisform.pageframe1.activepage=1
+          thisform.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+       ENDIF   
+*       thisform.refresh
+  ENDPROC 
+  PROCEDURE ORPGROUP.NEW_BOTT.CLICK    
+    THISFORM.KEY_LIST.ENABLED=.F. 
+    THISFORM.MTH_LIST.ENABLED=.F. 
+    THISFORM.ANS_BOTT.ENABLED=.F.
+    IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1       
+       THISFORM.GRID2.RECORDSOURCE=''
+       THISFORM.GRID2.CHILDORDER=''
+       THISFORM.PAGEFRAME1.PAGE1.SETALL('READONLY',.F.,'TEXTBOX')     &&³B²zªíÀY·s¼W
+       THISFORM.GRID1.ENABLED=.F.   
+       THISFORM.GRID2.ENABLED=.F.   
+          H='B012 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+          SELE A24   
+          SET ORDER TO 1
+          SEEK H           
+          IF FOUND() 
+              PO_NO=F08
+              RLOCK()
+              DELE 
+              UNLOCK
+          ELSE
+             SELE A09
+             SEEK H            
+             IF !FOUND()                                                    &&¦pªG¬°¥»¤ë²Ä¤@±i­q³æ«h­«ÀY¶\©l½s¸¹
+		        APPEND BLANK                                                
+		        REPLACE  f01 WITH 'B012 '
+	            REPLACE  f02 WITH  SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+	            REPLACE  F05 WITH 'BL'+f02
+	            REPLACE  F06 WITH '»s¥O°h®Æ³æ'
+  		        REPLACE  F08 WITH ALLTRIM(F05)+'0000'
+	         ENDIF
+             LOCK()
+             HX=VAL(RIGHT(F08,4))+1
+             PO_NO=LEFT(F08,6)+PADL(ALLTRIM(STR(HX)),4,'0')
+             REPLACE  F08 WITH PO_NO                                             &&°O¿ý¥»­q³æ¸¹½X,¥»¤ë¥÷«áÄòªº­q³æ¸¹½X±N¥H¦¹©¹¤U½s
+             UNLOCK
+          ENDIF       
+          THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=PO_NO
+          THISFORM.PAGEFRAME1.PAGE1.TXTF01.REFRESH
+          thisform.PAGEFRAME1.PAGE1.txtf01.readonly=.t.
+          THISFORM.PAGEFRAME1.PAGE1.TXTF07.SETFOCUS
+        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+        THISFORM.PAGEFRAME1.PAGE1.TXTF07.READONLY=.F.
+        THISFORM.PAGEFRAME1.PAGE1.TXTF04.READONLY=.F.    
+        THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE=''                
+        THISFORM.PAGEFRAME1.PAGE1.LBLF071.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF041.CAPTION=''        
+        THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE=RIGHT(DTOS(DATE()),2)
+        THISFORM.PAGEFRAME1.PAGE1.LBLF061.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF131.CAPTION=''       
+        THISFORM.PAGEFRAME1.PAGE1.LBLF901.CAPTION=''         
+     ELSE
+        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.              &&³B²zªí¨­·s¼W
+        THISFORM.GRID2.ENABLED=.F.   
+        THISFORM.PAGEFRAME1.PAGE2.SETALL('READONLY',.F.,'TEXTBOX')     
+        THISFORM.PAGEFRAME1.PAGE2.TXTF08.READONLY=.F.
+        THISFORM.PAGEFRAME1.PAGE2.TXTF05.READONLY=.F.
+        THISFORM.PAGEFRAME1.PAGE2.TXTF08.SETFOCUS
+        THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=''          
+        THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE=''                  
+        THISFORM.PAGEFRAME1.PAGE2.lblF081.caption=''               
+        THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION=TRANSFORM(0,'@R 99999999.9999')
+        THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=0
+        THISFORM.PAGEFRAME1.PAGE2.LBLF061.CAPTION=''               
+        THISFORM.PAGEFRAME1.PAGE2.LBLF031.CAPTION=''                       
+     ENDIF   
+
+  ENDPROC  
+  PROCEDURE ORPGROUP.EDIT_BOTT.CLICK
+     THISFORM.KEY_LIST.ENABLED=.F. 
+     THISFORM.MTH_LIST.ENABLED=.F. 
+     THISFORM.ANS_BOTT.ENABLED=.F.
+     THISFORM.GRID1.ENABLED=.F.   
+     THISFORM.GRID2.ENABLED=.F.   
+     IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+        PO_NO=B18_1.F01     
+        SELE RECNO() FROM B18 WHERE B18.F01=PO_NO AND F13<>'2' INTO ARRAY BK1
+        JJ1=''                
+        IF _TALLY>0                   
+           FOR I= 1 TO ALEN(BK1)
+               JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+           ENDFOR  
+           KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')
+           RLOCK(KK1,'B18')
+           LL1=RLOCK(KK1,'B18')
+        ELSE 
+           =MESSAGEBOX('¦¹³æ¾Ú¤w¥Ñ§Oªº¤u§@¯¸¹L±b¤¤µLªk­×§ï!',0+64,'´£¥Ü°T®§µøµ¡')
+           SELE B18_1           
+           UNLOCK ALL
+           REPL F13 WITH '2'
+           THISFORM.SHRGROUP.ABANDON_BOTT.CLICK   
+        ENDIF   
+        IF LL1 =.T.
+           THISFORM.PAGEFRAME1.PAGE1.SETALL('READONLY',.F.,'TEXTBOX')     &&³B²zªíÀY­×§ï
+           THISFORM.PAGEFRAME1.PAGE1.TXTF01.READONLY=.T.
+           THISFORM.PAGEFRAME1.PAGE1.TXTF07.READONLY=.F.
+           THISFORM.PAGEFRAME1.PAGE1.TXTF04.READONLY=.F.
+           THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+           THISFORM.PAGEFRAME1.PAGE1.TXTF07.SETFOCUS
+        ELSE 
+           DO file_impact
+           UNLOCK ALL
+           THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+        endif   
+     ELSE             
+        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.            
+        SELE E16
+        SEEK B18.F05+B18.F08
+        IF FOUND()
+           RLOCK()
+           LL1=RLOCK()
+        ELSE
+           LL1=.T.   
+        ENDIF   
+        SELE E11
+        SEEK B18.F05+B18.F08
+        IF FOUND()
+           RLOCK()
+           LL2=RLOCK()
+        ELSE
+           LL2=.T.
+        ENDIF      
+        SELE B18                                                      &&³B²zªí¨­­×§ï
+        IF RLOCK() .AND. LL1 .AND. LL2=.T.
+           THISFORM.PAGEFRAME1.PAGE2.SETALL('READONLY',.F.,'TEXTBOX') 
+           THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=B18.F08
+           THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=B18.F12
+           THISFORM.PAGEFRAME1.PAGE2.TXTF12.SETFOCUS
+        ELSE  
+           DO file_impact 
+           unlock all
+           THISFORM.SHRGROUP.ABANDON_BOTT.CLICK           
+       endif        
+     ENDIF   
+     RELEASE ALL LIKE BK*
+  endproc    
+  PROC ORPGROUP.DEL_BOTT.CLICK                    &&§R°£¸ê®Æµ\§Ç
+       IF messagebox('¬O§_½T©w­n§R°£¦¹µ§¸ê®Æ',4+32+256,'½Ð½T»\') = 6	        
+          if ALIA()='B18_1'           &&§R°£¾ã±i­q³æ
+             
+             SELE B18_1             
+                PO_NO=B18_1.F01
+                SELE RECNO() FROM B18 WHERE B18.F01=PO_NO  AND B18.F13<>'2' INTO ARRAY BK1              
+                JJ1=''                
+                IF _TALLY>0   
+                   FOR I= 1 TO ALEN(BK1)
+                       JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+                   ENDFOR    
+                   KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')              
+                   RLOCK(KK1,'B18')
+                   LL1=RLOCK(KK1,'B18')
+                ELSE
+                   LL1=.T.   
+                ENDIF    
+                SELE E16
+                SELE RECNO() FROM E16 WHERE E16.F01+E16.F02=ANY(SELE F05+F08 FROM B18 WHERE B18.F01=PO_NO) INTO ARRAY BK2
+                JJ2=''
+                IF _TALLY>0
+                   FOR I=1 TO ALEN(BK2)
+                       JJ2=JJ2+ALLTRIM(STR(BK2(I)))+','                               
+                   ENDFOR
+                   KK2=STUFF(JJ2,RAT(',',JJ2,1),1,'')              
+                   RLOCK(KK2,'E16')
+                   LL2=RLOCK(KK2,'E16')
+                ELSE
+                   LL2=.T.   
+                ENDIF                           
+                SELE E11
+                SELE RECNO() FROM E11 WHERE E11.F01+E11.F04=ANY(SELE F05+F08 FROM B18 WHERE B18.F01=PO_NO) INTO ARRAY BK3
+                JJ3=''
+                IF _TALLY>0
+                   FOR I=1 TO ALEN(BK3)
+                       JJ3=JJ3+ALLTRIM(STR(BK3(I)))+','                               
+                   ENDFOR
+                   KK3=STUFF(JJ3,RAT(',',JJ3,1),1,'')              
+                   RLOCK(KK3,'E11')
+                   LL3=RLOCK(KK3,'E11')
+                ELSE
+                   LL3=.T.   
+                ENDIF                   
+                IF LL1 .AND. LL2 .AND. LL3 .AND. RLOCK('B18_1')=.T.
+                   SELE B18
+                   FOR I=1 TO ALEN(BK1)
+                       GO BK1(I)
+                       SELE E16
+                       SEEK B18.F05+B18.F08
+                       IF FOUND()
+                          REPL F05 WITH F05+B18.F12*(-1)
+                       ENDIF                 
+                       SELE E11
+                       SEEK B18.F05+B18.F08
+                       IF FOUND()
+                          REPLACE F13 WITH F13+B18.F12*(-1)
+                       ENDIF            
+                       SELE B18
+                   ENDFOR    
+                   
+                   DELE FROM B18 WHERE B18.F01=PO_NO
+                   SELE B39                     &&§R°£¥¼¹L±b³æ¾Ú¬ö¿ý
+                   SEEK A02.F03+B18_1.F01                   
+                   IF FOUND()
+                      DELE
+                   ENDIF   
+                   SELE B18_1
+                   DELE
+                   UNLOCK ALL
+                   IF INT_099=.T. .AND. SUBSTR(PO_NO,3,4)=SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+                      SELE A24
+                      SEEK 'B012 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)+PO_NO
+                      IF !FOUND()
+                          APPEND BLANK
+                          LOCK()
+                          REPLACE  F01 WITH 'B012 '
+                          REPLACE  F02 WITH SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+                          REPLACE  F05 WITH 'BL'+f02
+                          REPLACE  F06 WITH '»s¥O°h®Æ³æ'
+                          REPLACE  F08 WITH PO_NO
+                          UNLOCK
+                       ENDIF    
+                   ENDIF  
+                ELSE
+                   DO file_impact                  
+                ENDIF             
+             THISFORM.GRID1.SETFOCUS
+             IF THISFORM.GRID1.ACTIVEROW=0
+                THISFORM.CMDGROUP.ENABLED=.F.
+                THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+                THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.               
+                THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+                THISFORM.ANS_BOTT.ENABLED=.F.
+             ELSE      
+                THISFORM.CMDGROUP.ENABLED=.T.
+                THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  .AND. B18_1.F13>'2' &&§PÂ_¦³µL­×§ïªºÅv­­
+                THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   .AND. B18_1.F13<>'2' &&§PÂ_¦³µL§R°£ªºÅv­­
+                THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&§PÂ_¦³µL¦C¦LªºÅv­­
+                THISFORM.ANS_BOTT.ENABLED=IIF(B18_1.F13='2',.F.,.T.) .AND. IIF(A02.F11='*',.T.,.F.)  .AND. !THISFORM.SHRGROUP.ENABLED                
+             ENDIF     
+          ELSE        
+              SELE E16
+              SEEK B18.F05+B18.F08
+              IF FOUND()
+                 RLOCK()
+                 LL1=RLOCK()
+              ELSE
+                 LL1=.T.
+              ENDIF      
+              SELE E11
+              SEEK B18.F05+B18.F08
+              IF FOUND()
+                 RLOCK()
+                 LL2=RLOCK()
+              ELSE
+                 LL2=.T.   
+              ENDIF
+              SELE B18                                                      &&§R°£³æµ§¸ê®Æ  
+              IF LL1 .AND. LL2 .AND. RLOCK('B18')=.T.
+                 SELE E16
+                 SEEK B18.F05+B18.F08
+                 IF FOUND()
+                    REPL F05 WITH F05+MIN(B18.F10,B18.F12)*(-1)
+                 ENDIF                                        
+                 SELE E11
+                 SEEK B18.F05+B18.F08
+                 IF FOUND()
+                    REPL F13 WITH F13+MIN(B18.F10,B18.F12)*(-1)
+                 ENDIF                    
+                 SELE B18
+                 DELE
+                 SKIP -1
+                 IF BOF()
+                    GO TOP
+                 ENDIF   
+              ELSE
+                 DO file_impact                  
+                 RETURN
+              ENDIF     
+              THISFORM.GRID2.SETFOCUS
+              IF THISFORM.GRID2.ACTIVEROW=0         &&¦pªG³æ¨­³Q§RªÅ
+                   SELE B39                           &&§R°£¥¼¹L±b³æ¾Ú¬ö¿ý       
+                   SEEK A02.F03+B18_1.F01
+                   IF FOUND()
+                       DELE
+                   ENDIF                    
+                   SELE B18_1                        
+                   PO_NO=B18_1.F01                    
+                   DELE                               &&³sªíÀY¤]­n§R°£
+                   IF INT_099=.T. .AND. SUBSTR(PO_NO,3,4)=SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+                        SELE A24
+                        SEEK 'B012 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)+PO_NO
+                        IF !FOUND()
+                            APPEND BLANK
+                            LOCK()
+                            REPLACE  F01 WITH 'B012 '
+                            REPLACE  F02 WITH SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+		            REPLACE  F05 WITH 'BL'+f02
+                            REPLACE  F06 WITH '»s¥O°h®Æ³æ'
+                            REPLACE  F08 WITH PO_NO
+                            UNLOCK                 
+                        ENDIF   
+                   ENDIF
+                   SELE B18_1
+                   SKIP -1
+                   IF BOF()
+                       GO TOP
+                   ENDIF   
+                   THISFORM.PAGEFRAME1.ACTIVEPAGE=1 
+                   THISFORM.REFRESH          
+               ELSE
+                    THISFORM.SHRGROUP.FINISH_BOTT.CLICK    
+              ENDIF
+          ENDIF
+       ENDIF
+       RELEASE ALL LIKE BK*   
+  ENDPROC  
+  PROCEDURE SHRGROUP.SHURE1_BOTT.CLICK               &&·s¼W½T»\
+    IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+       THISFORM.GRID2.RECORDSOURCE='B18'
+       THISFORM.GRID2.CHILDORDER=B181
+	   THISFORM.grid2.COLUMN1.CONTROLSOURCE='B18.F08'
+	   THISFORM.grid2.COLUMN2.CONTROLSOURCE='B18.F05'
+	   THISFORM.grid2.COLUMN3.CONTROLSOURCE='B18.F10'
+	   THISFORM.grid2.COLUMN4.CONTROLSOURCE='B18.F12'
+	   THISFORM.grid2.COLUMN5.CONTROLSOURCE="IIF(B18.F14>0,B18.F14,'')"
+       SELE B18_1 
+       COD=SYS(21)
+       SET ORDER TO 1
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,'B18_1')=.T.   &&¦pªG³æ¸¹­«½Æ
+             SELE A24
+             SEEK 'B012 '+SUBSTR(DTOS(DATE()),3,4)+THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+             IF FOUND()
+                  DO WHILE F01+F02+F08='B012 '+SUBSTR(DTOS(DATE()),3,4)+THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+                         RLOCK()
+                         DELE
+                         UNLOCK
+                          SKIP
+                  ENDDO   
+             ENDIF                     
+             SELE A09
+             SEEK 'B012 '+SUBSTR(DTOS(DATE()),3,4)
+             IF FOUND()
+                 RLOCK()
+                 HX=VAL(RIGHT(F08,4))+1
+                 PO_NO=LEFT(F08,6)+PADL(ALLTRIM(STR(HX)),4,'0')
+                 REPLACE  F08 WITH PO_NO                                             &&°O¿ý¥»­q³æ¸¹½X,¥»¤ë¥÷«áÄòªº­q³æ¸¹½X±N¥H¦¹©¹¤U½s
+                 UNLOCK
+	         THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=PO_NO
+		 THISFORM.PAGEFRAME1.PAGE1.TXTF01.REFRESH
+              ENDIF   		           
+       ENDIF
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE,'A14')=.F. .OR. EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE)
+          =MESSAGEBOX('¤u§@³¡ªù¥DÀÉ¤¤µL¦¹½s¸¹½Ð¥ý«Ø¥ß!',0+64,'´£¥Ü°T®§µøµ¡')
+          THISFORM.PAGEFRAME1.PAGE1.TXTF07.SETFOCUS
+          SET ORDER TO &COD
+          RETURN            
+       ENDIF
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE,'A14_1')=.F. .OR. EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE)
+          =MESSAGEBOX('¤u§@³¡ªù¥DÀÉ¤¤µL¦¹½s¸¹©ÎµL¦¹³¡ªù¤§»s¥O½Ð¥ý«Ø¥ß!',0+64,'´£¥Ü°T®§µøµ¡')
+          THISFORM.PAGEFRAME1.PAGE1.TXTF04.SETFOCUS
+          SET ORDER TO &COD
+          RETURN            
+       ENDIF       
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE,'E16','E163')=.F.
+         =MESSAGEBOX('¦¹»â¥Î³¡ªù¥¼¦³¥Í²£­p¹º¤£¥i°h®Æ!',0+48,'´£¥Ü°T®§µøµ¡')
+         THISFORM.PAGEFRAME1.PAGE1.TXTF04.SETFOCUS
+         SET ORDER TO &COD
+         RETURN
+       ENDIF  
+       IF EMPTY(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/'+THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE))          
+          =MESSAGEBOX('»â¥Î¤é´Á¿é¤J¿ù»~!',0+64,'´£¥Ü°T®§µøµ¡') 
+          THISFORM.PAGEFRAME1.PAGE1.TXTF02.SETFOCUS
+          SET ORDER TO &COD          
+          RETURN
+       ENDIF   
+       SELE B18_1          
+       APPEND BLANK
+       LOCK()
+       IF RLOCK()
+          REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+          REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+          REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE
+          REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE
+          REPLACE F06 WITH dtoc(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+       ENDIF   
+*       UNLOCK
+       SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+       SET ORDER TO &COD
+       SELE B39
+       APPEND BLANK
+       REPL F01 WITH A02.F03
+       REPL F02 WITH B18_1.F01
+       REPL F03 WITH B18_1.F02
+       REPL F05 WITH B18_1.F07
+       REPL F06 WITH IIF(SEEK(B18_1.F07,'A14'),A14.F02,'')
+       REPL F07 WITH B18_1.F04
+       THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+       THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.  
+       THISFORM.PAGEFRAME1.ACTIVEPAGE=2
+       THISFORM.ORPGROUP.NEW_BOTT.CLICK
+       THISFORM.REFRESH
+    ELSE                                                   &&ªí¨­·s¼W½T»\
+       SELE E11
+       SEEK THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE
+       IF FOUND()
+          RLOCK()
+          IF RLOCK()=.F.
+             DO file_impact
+             THISFORM.PAGEFRAME1.PAGE2.TXTF08.SETFOCUS
+             return
+          ENDIF
+       ENDIF    
+       SELE E16
+       SEEK THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE
+       IF FOUND()
+          RLOCK()
+          IF RLOCK()=.F.
+             DO file_impact
+             THISFORM.PAGEFRAME1.PAGE2.TXTF08.SETFOCUS
+             return
+          ENDIF
+       ENDIF   
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE,'B01')=.F.
+          =MESSAGEBOX('ª«®Æ°ò¥»¥DÀÉ¤¤µL¦¹®Æ¸¹!',0+48,'´£¥Ü°T®§µøµ¡')          
+          THISFORM.PAGEFRAME1.PAGE2.TXTF08.SETFOCUS
+          RETURN
+       ENDIF   
+       IF !EMPTY(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE)
+           IF SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE,'E16')=.F.
+              =MESSAGEBOX('µL¦¹µ§»â¥Î­p¹º!',0+48,'´£¥Ü°T®§µøµ¡')
+              THISFORM.PAGEFRAME1.PAGE2.TXTF05.SETFOCUS
+              RETURN           
+           ENDIF
+       ENDIF
+       IF THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE<=0
+          =MESSAGEBOX('°h®Æ¼Æ¶q¤£±o¤p©óµ¥©ó 0',0+48,'´£¥Ü°T®§µøµ¡')
+          THISFORM.PAGEFRAME1.PAGE2.TXTF12.SETFOCUS
+          RETURN
+       ENDIF   
+       IF VAL(THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION)>0
+           IF THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE>VAL(THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION)
+                =MESSAGEBOX('°h®Æ¼Æ¶q¤£±o¤j©óÀ³»â¼Æ¶q',0+48,'´£¥Ü°T®§¥Üµ¡')
+                THISFORM.PAGEFRAME1.PAGE2.TXTF12.SETFOCUS
+                RETURN
+           ENDIF       
+       ENDIF
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE+PADL(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE,12,'0'),'B18')=.T.           
+          =MESSAGEBOX('¦¹°h®Æ®Æ¸¹¦b¦¹±i°h®Æ³æ­«½Æ!',0+48,'´£¥Ü°T®§µøµ¡')
+          THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=''
+          THISFORM.PAGEFRAME1.PAGE2.TXTF08.REFRESH
+          THISFORM.PAGEFRAME1.PAGE2.TXTF08.SETFOCUS
+          RETURN            
+       ENDIF           
+       SELE B18
+       APPEND BLANK
+       LOCK()
+       IF RLOCK()
+          REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+          REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+          REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE
+          REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE
+          REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE
+          REPLACE F08 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE
+          REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE
+          REPLACE F10 WITH VAL(THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION)
+          REPLACE F06 WITH dtoc(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+       ENDIF
+       SELE E11
+       SEEK THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE    &&¼g¤J»s¥Oªí¨­ÀÉ 
+       IF FOUND()
+          REPLACE F13 WITH F13+MIN(B18.F10,B18.F12)*(-1)
+       ENDIF       
+       SELE E16                                                                         &&¼g¤J°h®Æ­p¹º
+       SEEK THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE
+       IF FOUND()          
+          REPLACE F05 WITH F05+MIN(B18.F10,B18,F12)*(-1)
+       ENDIF       
+       UNLOCK ALL         
+       SELE B18
+       seek thisform.pageframe1.page1.txtf01.value+thisform.pageframe1.page2.txtF08.value+THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE
+       thisform.grid2.enabled=.t.
+       thisform.grid2.setfocus  
+
+       THISFORM.ORPGROUP.NEW_BOTT.CLICK      
+    ENDIF  
+  ENDPROC
+  PROCEDURE SHRGROUP.SHURE2_BOTT.CLICK                          &&­×§ï½T»\
+     IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+       IF EMPTY(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/'+THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE))          
+          =MESSAGEBOX('°h®Æ¤é´Á¿é¤J¿ù»~!',0+64,'´£¥Ü°T®§µøµ¡') 
+          THISFORM.PAGEFRAME1.PAGE1.TXTF02.SETFOCUS
+          RETURN
+        ENDIF           
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE,'A14_1')=.F. .OR. EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE)
+          =MESSAGEBOX('¤u§@³¡ªù¥DÀÉ¤¤µL¦¹½s¸¹½Ð¥ý«Ø¥ß!',0+64,'´£¥Ü°T®§µøµ¡')
+          THISFORM.PAGEFRAME1.PAGE1.TXTF07.SETFOCUS
+          RETURN            
+       ENDIF
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE,'A14')=.F. .OR. EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE)
+          =MESSAGEBOX('¤u§@³¡ªù¥DÀÉ¤¤µL¦¹½s¸¹½Ð¥ý«Ø¥ß!',0+64,'´£¥Ü°T®§µøµ¡')
+          THISFORM.PAGEFRAME1.PAGE1.TXTF04.SETFOCUS
+          RETURN            
+       ENDIF       
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE,'E16','E163')=.F.
+         =MESSAGEBOX('¦¹»â¥Î³¡ªù¥¼¦³¥Í²£­p¹º¤£¥i°h®Æ!',0+48,'´£¥Ü°T®§µøµ¡')
+         THISFORM.PAGEFRAME1.PAGE1.TXTF04.SETFOCUS
+         RETURN
+       ENDIF          
+           SELE B18
+           SEEK B18_1.F01
+           IF FOUND()
+              DO WHILE F01=B18_1.F01
+                 REPL F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+                 REPL F07 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE
+                 REPL F06 WITH dtoc(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')                 
+                 REPL F04 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE
+                 SKIP
+              ENDDO    
+           ENDIF        
+        SELE B18_1
+           REPL F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE
+           REPL F07 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE
+           REPL F04 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE
+           REPL F06 WITH dtoc(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+     ELSE                                                        &&ªí¨­­×§ï½T»\     
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE,'B01')=.F.
+          =MESSAGEBOX('ª«®Æ°ò¥»¥DÀÉ¤¤µL¦¹®Æ¸¹!',0+48,'´£¥Ü°T®§µøµ¡')          
+          THISFORM.PAGEFRAME1.PAGE2.TXTF08.SETFOCUS
+          RETURN
+       ENDIF   
+       IF B18.F10>0
+           IF THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE>B18.F10
+                =MESSAGEBOX('°h®Æ¼Æ¶q¤£±o¤j©óÀ³»â¼Æ¶q',0+48,'´£¥Ü°T®§¥Üµ¡')
+                THISFORM.PAGEFRAME1.PAGE2.TXTF12.SETFOCUS
+                RETURN
+           ENDIF       
+       ENDIF
+       SELE E11
+       SEEK B18.F05+B18.F08
+       IF FOUND()
+          REPLACE F13 WITH F13+B18.F12
+       ENDIF   
+       SELE E16
+       SEEK B18.F05+B18.F08
+       IF FOUND()
+          REPL F05 WITH F05+B18.F12
+       ENDIF        
+       SELE B18                    
+       REPLACE F08 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE
+       REPLACE F12 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE      
+       REPLACE F06 WITH DTOC(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')          
+       SELE E16                                                                         &&¼g¤J°h®Æ­p¹º
+       SEEK THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE
+       IF FOUND()
+          REPLACE F05 WITH F05+B18.F12*(-1)
+          REPLACE F07 WITH dtoc(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')        
+       ENDIF                           
+       SELE E11                         &&¼g¤J»s¥Oªí¨­
+       SEEK B18.F05+B18.F08
+       IF FOUND()
+          REPLACE F13 WITH F13+B18.F12*(-1)
+       ENDIF   
+       SELECT B18
+       H=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE
+       SEEK H
+       IF FOUND()           
+           K=0
+           DO WHILE F01+F08=H
+                  REPLACE F14 WITH 0
+                  K=K+F12
+                  SKIP 
+           ENDDO
+           SKIP -1
+           REPLACE F14 WITH K
+       ENDIF
+    ENDIF   
+    THISFORM.SHRGROUP.FINISH_BOTT.CLICK
+*           THISFORM.SHRGROUP.ABANDON_BOTT.CLICK    
+  ENDPROC   
+  procedure SHRGROUP.ABANDON_BOTT.CLICK
+      THISFORM.SHRGROUP.ENABLED=.F.
+      THISFORM.SHRGROUP.VISIBLE=.F.      
+      THISFORM.ORPGROUP.ENABLED=.T.
+      THISFORM.ORPGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.CMDGROUP.ENABLED=.T.
+      THISFORM.CMDGROUP.SETALL('ENABLED',.T.,'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.SETALL('READONLY',.T.,'TEXTBOX')  
+      THISFORM.PAGEFRAME1.PAGE1.SETALL('READONLY',.T.,'TEXTBOX')  
+      THISFORM.PAGEFRAME1.PAGE2.SETALL('READONLY',.T.,'TEXTBOX')  
+      THISFORM.PAGEFRAME1.PAGE1.TXTF07.READONLY=.T.
+      THISFORM.PAGEFRAME1.PAGE1.TXTF04.READONLY=.T.  
+      THISFORM.PAGEFRAME1.PAGE2.TXTF08.READONLY=.T.   
+      THISFORM.PAGEFRAME1.PAGE2.TXTF05.READONLY=.T.         
+      
+      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.T.
+      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.
+      THISFORM.grid1.ENABLED=.T.
+      THISFORM.grid2.ENABLED=.T.
+      IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1         
+         THISFORM.GRID1.SETFOCUS
+         THISFORM.KEY_LIST.ENABLED=.T.
+         THISFORM.MTH_LIST.ENABLED=.T.      
+      ELSE
+         THISFORM.GRID2.SETFOCUS
+         IF THISFORM.GRID2.ACTIVEROW=0
+              SELE A24         
+              SEEK 'B012 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)+PO_NO
+              IF !FOUND()
+                  APPEND BLANK
+                  LOCK()
+                  REPLACE  F01 WITH 'B012 '
+                  REPLACE  F02 WITH SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+		  REPLACE  F05 WITH 'BL'+f02
+                  REPLACE  F06 WITH '»s¥O°h®Æ³æ'
+                  REPLACE  F08 WITH PO_NO
+              ENDIF    
+              SELE B39
+              SEEK A02.F03+B18_1.F01
+              SET ORDER TO 1
+              IF FOUND()
+                  DELE            
+              ENDIF   
+              SELE B18_1
+              DELE
+              THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+              THISFORM.REFRESH  
+         ENDIF   
+      ENDIF       
+      UNLOCK ALL
+      THISFORM.ANS_BOTT.ENABLED=IIF(B18_1.F13='2',.F.,.T.) .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED               
+  ENDPROC
+  PROCEDURE SHRGROUP.FINISH_BOTT.CLICK
+         IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+              IF THISFORM.GRID2.RECORDSOURCE<>'B18'
+                  THISFORM.GRID2.RECORDSOURCE='B18'
+                  THISFORM.GRID2.CHILDORDER=B181
+	          THISFORM.grid2.COLUMN1.CONTROLSOURCE='B18.F08'
+	          THISFORM.grid2.COLUMN2.CONTROLSOURCE='B18.F05'
+	          THISFORM.grid2.COLUMN3.CONTROLSOURCE='B18.F10'
+	          THISFORM.grid2.COLUMN4.CONTROLSOURCE='B18.F12'
+	          THISFORM.grid2.COLUMN5.CONTROLSOURCE="IIF(B18.F14>0,B18.F14,'')"        
+	      ENDIF   
+	      IF INT_099=.T.
+                  SELE A24         
+                  SEEK 'B012 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)+PO_NO
+                  IF !FOUND()
+                      APPEND BLANK
+                      LOCK()
+                      REPLACE  F01 WITH 'B012 '
+                      REPLACE  F02 WITH SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+		      REPLACE  F05 WITH 'BL'+f02
+                      REPLACE  F06 WITH '»s¥O°h®Æ³æ'
+                      REPLACE  F08 WITH PO_NO
+                      UNLOCK
+                  ENDIF    
+              ENDIF   
+              SELE B18_1
+              DO CASE 
+                    CASE THISFORM.KEY_LIST.DISPLAYVALUE='¨Ì­ì»â¥Î³æ¸¹±Æ¦C'
+                               SET ORDER TO 1
+                    CASE THISFORM.KEY_LIST.DISPLAYVALUE='¨Ì­ìµo®Æ³¡ªù±Æ¦C'
+                               SET ORDER TO 2
+                     CASE THISFORM.KEY_LIST.DISPLAYVALUE='¨Ì­ì»â¥Î³¡ªù±Æ¦C'
+                                SET ORDER TO 3
+               ENDCASE   
+         ELSE
+                SELECT B18
+                UKEF=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+                    SEEK UKEF                                         &&­«ºâ²Ö­p¼Æ¶q
+                    H=B18.F01+B18.F08
+                    SEEK H
+                    DO WHILE F01=UKEF   
+                            K=0
+                           IF FOUND()            
+                                DO WHILE F01+F08=H
+                                       REPLACE F14 WITH 0
+                                       IF INT_056='Y'
+                                           K=K+IIF(!EMPTY(F05),F12,0)
+                                       ELSE
+                                           K=K+F12    
+                                       ENDIF    
+                                      SKIP                                      
+                                ENDDO
+                                SKIP -1                                
+                                     QS=B18.F01+B18.F08+B18.F05                                                                                                
+                                IF IIF(SEEK(B18.F08,'B01'),B01.F39,'')='B'   AND INT_056='Y'&&­Y¥²¶·¾ã§å°h®Æ
+
+                                    SELECT C20
+                                    SEEK B18.F08
+                                    IF FOUND() AND VAL(C20.F03)>0
+                                        M=CEILING(K/VAL(C20.F03))*VAL(C20.F03)-K
+                                        K=K+M
+                                        IF M>0
+                                            SELECT B18
+                                            SEEK H+SPACE(12)
+                                            IF !FOUND()
+                                                 APPEND BLANK 
+                                                 REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+                                                 REPLACE F02 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+                                                 REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE
+                                                 REPLACE F06 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')	                                                                                                                                                                                                                             
+                                                 REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE                                        
+                                                 REPLACE F08 WITH SUBSTR(QS,11,43)
+                                            ENDIF     
+                                            REPLACE F12 WITH M
+                                        ENDIF
+                                     ENDIF   
+                                     SELECT B18
+                                     SEEK QS                                    
+                                ENDIF    
+                                 SELECT B18
+                                     QS=B18.F01+B18.F08+B18.F05                                                                                                    
+                                REPLACE F14 WITH K
+                                SKIP
+                           ENDIF
+                           H=F01+F08
+                    ENDDO                                            
+         ENDIF  
+         THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+  ENDPROC     
+  PROC ANS_BOTT.CLICK     &&¹L±bµ\§Ç
+       if messagebox('¬O§_½T»\¸ê®ÆµL»~¥i¥H¹L±b?',4+32+256,'½Ð½T»\') = 6	 
+          SELE RECNO() FROM B18 WHERE B18.F01=B18_1.F01  AND F13<>'2' INTO ARRAY BK1              
+          JJ1=''                
+          IF _TALLY>0   
+             FOR I= 1 TO ALEN(BK1)
+                 JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+             ENDFOR    
+             KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')              
+             RLOCK(KK1,'B18')
+             LL1=RLOCK(KK1,'B18')
+          ELSE
+             LL1=.T.   
+          ENDIF 
+          
+          SELE RECNO() FROM E11 WHERE F01+F04=ANY(SELE F05+F08 FROM B18 WHERE F01=B18_1.F01) INTO ARRAY BK2
+          JJ2=''                
+          IF _TALLY>0   
+             FOR I= 1 TO ALEN(BK2)
+                 JJ2=JJ2+ALLTRIM(STR(BK2(I)))+','
+             ENDFOR    
+             KK2=STUFF(JJ2,RAT(',',JJ2,1),1,'')              
+             RLOCK(KK2,'E11')
+             LL2=RLOCK(KK2,'E11')
+          ELSE
+             LL2=.T.   
+          ENDIF                                                 
+          IF LL1 .AND. LL2  =.T. 
+             IF LEN(ALLTRIM(JJ1))>0 
+                SELE B18
+                FOR I= 1 TO ALEN(BK1)                      
+                    GO BK1(I) 
+                    SELE B11                                            &&³¡ªù®w¦s©ú²ÓÀÉ 
+                    SEEK B18.F07+B18.F08                                   &&­ìµo®Æ³¡ªù®w¦s©ú²Ó 
+                    IF FOUND()
+                       REPL F04 WITH F04+B18.F12
+                       IF F04=0
+                          DELE
+                       ELSE   
+                          IF F05<CTOD((THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B18.F02))
+                             REPL F05 WITH CTOD((THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B18.F02))
+                          ENDIF
+                       ENDIF   
+                    ELSE
+                       APPEND BLANK
+                       REPL F01 WITH B18.F07
+                       REPL F03 WITH B18.F08
+                       REPL F04 WITH B18.F12
+                       REPL F05 WITH CTOD((THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B18.F02))
+                    ENDIF   
+                    SEEK B18.F04+B18.F08                                  &&­ì¦¬®Æ³¡ªù®w¦s©ú²Ó 
+                    IF FOUND()
+                       REPL F04 WITH F04+B18.F12*(-1)
+                       IF F05<CTOD((THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B18.F02))
+                          REPL F05 WITH CTOD((THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B18.F02))
+                       ENDIF
+                    ELSE
+                       APPEND BLANK
+                       REPL F01 WITH B18.F04
+                       REPL F03 WITH B18.F08
+                       REPL F04 WITH B18.F12*(-1)
+                       REPL F05 WITH CTOD((THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B18.F02))
+                    ENDIF                            
+                    *******
+                    SELE B25                                             &&¤À³¡ªù®w¦s¤ë³øªí 
+                    SEEK B18.F07+B18.F08
+                    IF FOUND()                                                     &&­ìµo®Æ³¡ªù³øªí
+                       REPLACE  F08 WITH F08+B18.F12
+                       REPLACE F15 WITH F15+B18.F12
+                    ELSE
+                       APPEND BLANK
+                       REPLACE  F01 WITH B18.F07
+                       REPLACE  F02 WITH B18.F08
+                       REPLACE  F08 WITH B18.F12
+                       REPLACE F15 WITH B18.F12
+                    ENDIF   
+                    SEEK B18.F04+B18.F08                                           &&­ì¦¬®Æ³¡ªù³øªí
+                    IF FOUND()
+                        REPLACE  F09 WITH F09+B18.F12
+                        REPLACE F15 WITH F15+B18.F12*(-1)
+                    ELSE
+                       APPEND BLANK
+                       REPL F01 WITH B18.F04
+                       REPL F02 WITH B18.F08
+                       REPL F09 WITH B18.F12   
+                       REPLACE F15 WITH B18.F12*(-1)                                             
+                    ENDIF                         
+                    SELE E11
+                    SEEK B18.F05+B18.F08
+                    IF FOUND()
+                       REPLACE F13 WITH F13+B18.F12
+                       REPLACE F08 WITH F08+B18.F12*(-1)
+                    ENDIF   
+                    SELE B18
+                    REPL F13 WITH '2'
+                    REPL F90 WITH dtoc(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')                    
+                    REPLACE F03 WITH  IIF(SEEK(F05+F08,'E16'),E16.F14,'')
+                 ENDFOR   
+                 SELE F01,F02,F04,F07,F08,SUM(F12) FROM B18 WHERE F01=B18_1.F01 GROUP BY F08 ORDER BY F08 INTO CURSOR B18_4
+                 SELE B18_4
+                 GO TOP
+                 DO WHILE !EOF()
+                    SELE B26                       &&®w¦s²§°Ê¬ö¿ý                                                                                   
+                    APPEND BLANK               &&Âà¥X                                 
+                    REPL F01 WITH B18_4.F08                               
+                    REPL F02 WITH B18_4.F07
+                    REPL F03 WITH B18_4.F02
+                    REPL F04 WITH B18_4.SUM_F12
+                    REPL F06 WITH 'P'
+                    REPL F07 WITH B18_4.F01
+                    REPL F08 WITH IIF(SEEK(B18_4.F04,'A14'),'Ä'+A14.F02+'ÍË»Ø','')                      
+                    APPEND BLANK                                               &&Âà¤J                      
+                    REPL F01 WITH B18_4.F08
+                    REPL F02 WITH B18_4.F04
+                    REPL F03 WITH B18_4.F02
+                    REPL F04 WITH B18_4.SUM_F12*(-1)
+                    REPL F06 WITH 'P'
+                    REPL F07 WITH B18_4.F01 
+                    REPL F08 WITH IIF(SEEK(B18_4.F07,'A14'),'ÍËÁÏ½o'+A14.F02,'')
+                    SELE B18_4
+                    SKIP
+                 ENDDO  
+                 SELE B18_4
+                 USE                 
+                 SELE B39                    &&¥¼¹L±b®w¦s³æ¾Ú¬d¸ßÀÉ
+                 SEEK A02.F03+B18_1.F01
+                  IF FOUND()
+                     DELE
+                  ENDIF                                             
+                  SELE B18_1
+                  REPL F13 WITH '2'
+                  REPL F90 WITH dtoc(DATE())+' '+IIF(SEEK(sys_oper,'A01'),A01.F03,'')  
+             ELSE
+                =MESSAGEBOX('¦¹³æ¾Ú¤w¥Ñ§Oªº¤u§@¯¸¹L±b§¹¦¨',0+64,'´£¥Ü°T®§µøµ¡')
+                SELE B18_1
+                REPL F13 WITH '2'
+             ENDIF           
+             THIS.ENABLED=.F.
+             THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+             THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.             
+             UNLOCK ALL
+             IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+                THISFORM.GRID1.SETFOCUS
+             ELSE
+                 THISFORM.GRID2.SETFOCUS
+                 THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.
+             ENDIF
+             THISFORM.REFRESH
+          ELSE
+            DO file_impact
+            unlock all
+            return
+          ENDIF   
+          unlock all
+         RELEASE ALL LIKE BK*
+      ENDIF      
+  ENDPROC
+PROC EXCEL_BOTT.CLICK
+           IF !USED('E03')
+               SELECT 0
+               USE E03
+           ELSE
+              SELECT E03
+           ENDIF
+           SET ORDER TO 1       
+           SELECT B18.F01 °h®Æ³æ¸¹,B18.F02 °h®Æ¤é´Á,B18.F07 ­ìµo®Æ³æ¦ì,B18.F04 ­ì»â¥Î³æ¦ì,;
+           B18.F05 »s¥O½s¸¹,IIF(SEEK(B18.F05,'E03'),E03.F01,'') §¹¦¨«~¸¹,B18.F08 »â¥Î®Æ¸¹,B18.F12 °h®Æ¼Æ¶q,B01.F37 ¦¨¥»³æ»ù;
+           FROM B18,B01 WHERE B18.F13='2' AND B01.F01=B18.F08 ;
+            INTO CURSOR B18_K ORDER BY B18.F01,B18.F05,B18.F08 NOWAIT
+            IF _TALLY>0
+	         FILENAME=LEFT(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),6)+'»s¥O°h®Æ³æ'
+		 GCDELIMFILE=PUTFILE('Àx¦s¸ô®|',FILENAME,'XLS')
+		 IF !EMPTY(GCDELIMFILE) 
+		      ON ERROR DO FILE_IMPACT
+		      COPY TO (GCDELIMFILE) TYPE XL5     
+		       =MESSAGEBOX('Àx¦s¦¨¥\!',0+64,'´£¥Ü°T®§µøµ¡') 
+		  ENDIF     
+            ELSE
+                  =MESSAGEBOX('µL¤w¹L±b³æ¾Ú¸ê®Æ!',0+48,'´£¥Ü°T®§µøµ¡')
+            ENDIF		  
+            SELECT B18_K
+            USE
+            SELECT E03
+            USE 
+            SELECT B18_1            
+       THISFORM.GRID1.SETFOCUS
+  ENDPROC   
+enddefine    
+
+***********************************************¦C¦Lµ\§Ç
+PROCEDURE PNT_PRC  
+     LK=B18_1.F01     
+     HK=LEFT(DTOC(A23.F01),5)
+     FRMDPT=IIF(SEEK(B18_1.F07,'A14'),A14.F02,'')
+     TODDPT=IIF(SEEK(B18_1.F04,'A14'),A14_1.F02,'')
+     SELECT B18.F01,;
+            B18.F02,;
+            B18.F12,;                    
+            B18.F07,;
+            B18.F08,;
+            B18.F04,;
+            B18.F05,;
+            B18.F14,;
+            B01.F02;            
+     FROM B18,B01 WHERE B18.F01=LK AND B01.F01=B18.F08 ORDER BY B18.F08,B18.F05 NOWAIT
+     IF _tally >0
+       FRMDPT=IIF(SEEK(B18_1.F07,'A14'),A14.F02,'')
+       TODDPT=IIF(SEEK(B18_1.F04,'A14'),A14.F02,'')
+*        REPORT FORM ALLTRIM(INT_116)+'B18' PREVIEW
+         report form ALLTRIM(INT_116)+'B18' to print prompt 
+     ENDIF  
+ENDPROC
+************************************************¯S®í¿é¤JÄæ¦ìªº³]©w----®Æ¸¹
+DEFINE CLASS TXTF08 AS TEXTBOX
+  READONLY=.T.
+  MAXLENGTH=43
+  FONTSIZE=INT_015*9
+
+  PROCEDURE INTERACTIVECHANGE
+         CHK_IN='0'
+         PR_NO='1'
+         IF AT('?',ALLTRIM(THIS.VALUE))<>0
+             IF USED('OQT')=.T.
+                  SELECT OQT 
+                 USE
+             ENDIF
+
+             DO CASE
+
+                   CASE AT('?',ALLTRIM(THIS.Value))>1 AND EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE))
+                   			  SELECT 0,F04,F01,F10,F07,F08,F09 FROM E11 INTO CURSOR OQT READWRITE;
+                   			  ORDER BY F04,F10 WHERE F18='1' AND LEFT(F04,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1);
+                   			  AND (E11.F08-E11.F09)>0
+
+                   CASE AT('?',ALLTRIM(THIS.Value))>1 AND !EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE))
+                   			  SELECT 0,F04,F01,F10,F07,F08,F09 FROM E11 INTO CURSOR OQT READWRITE;
+                   			  ORDER BY F04,F10 WHERE F18='1' AND LEFT(F04,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1);
+                              AND (E11.F08-E11.F09)>0 AND F01=THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE   
+
+                   CASE AT('?',ALLTRIM(THIS.Value))=1 AND EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE))
+                   			  SELECT 0,F04,F01,F10,F07,F08,F09 FROM E11 INTO CURSOR OQT READWRITE;
+                   			  ORDER BY F04,F10 WHERE F18='1' AND (E11.F08-E11.F09)>0		  
+
+                   CASE AT('?',ALLTRIM(THIS.Value))=1 AND !EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE))
+                   			  SELECT 0,F04,F01,F10,F07,F08,F09 FROM E11 INTO CURSOR OQT READWRITE;
+                   			  ORDER BY F04,F10 WHERE F18='1' AND F01=THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE AND (E11.F08-E11.F09)>0                                         
+            ENDCASE 
+            SELECT OQT 
+            ALTER TABLE OQT ADD E11_F07  N(14,4)
+            INDE ON F04+DTOS(F10)+F01 TAG OQT_1   
+            INDE ON F01+F04 TAG OQT_2  
+            SET ORDER TO OQT_2 
+
+	    SELECT OQT 
+            IF _TALLY>0  
+                SELECT OQT 
+	        	SET ORDER TO OQT_1 
+                OQT_SEEK=CREATEOBJECT("OQT_SEEK")  
+                OQT_SEEK.SHOW   
+                THIS.REFRESH
+                SELECT OQT 
+                CALC SUM(EXP_1) TO NO   
+                DO CASE
+                      CASE NO=1 AND CHK_IN='1'
+                   	        SELECT * FROM OQT  WHERE OQT.EXP_1<>0 ORDER BY OQT.F04 INTO CURSOR OQT_TEMP
+		                SELECT OQT_TEMP
+			        THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=OQT_TEMP.F04
+			        THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=OQT_TEMP.E11_F07
+			        THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE=OQT_TEMP.F01
+			        THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION=TRANSFORM(OQT_TEMP.F07,'@R 999999999.9999')
+			        SELECT OQT_TEMP
+			        USE	                                       
+	               CASE NO>=1 AND CHK_IN='1'
+		                 SELECT * FROM OQT  WHERE OQT.EXP_1<>0  ORDER BY OQT.F04 DESC INTO CURSOR OQT_TEMP
+			         SELECT OQT_TEMP
+			         GO TOP
+			         DO WHILE !EOF()
+			                IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+OQT_TEMP.F04+OQT_TEMP.F01,'B18')=.F.  AND IIF(SEEK(OQT_TEMP.F04,'B01'),.T.,.F.)
+			                     SELECT  B18
+				             APPEND BLANK
+				             REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+				             REPLACE F02 WITH PADL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE),2,'0')
+				             REPLACE F08 WITH OQT_TEMP.F04
+				             REPLACE F12 WITH OQT_TEMP.E11_F07
+				             REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE
+				             REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE
+				             REPLACE F05 WITH OQT_TEMP.F01
+				             REPLACE F06 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')	
+				             REPLACE F10 WITH OQT_TEMP.F07	 
+				                 SELECT E16
+				                 SEEK B18.F05+B18.F08
+				                 IF FOUND()
+				                      REPLACE F05 WITH F05-B18.F12
+				                 ENDIF
+				                 SELECT E11
+				                 SEEK B18.F05+B18.F08
+				                 IF FOUND()
+				                     REPLACE F13 WITH F13-B18.F12
+				                 ENDIF 	      				                             
+					ENDIF       				            
+			                SELECT OQT_TEMP
+			                SKIP 
+		                 ENDDO  
+		                 SELECT OQT_TEMP
+		                  USE
+			         THISFORM.GRID2.ENABLED=.T.
+			         THISFORM.GRID2.SETFOCUS  
+			         THISFORM.GRID2.ENABLED=.F.                 
+			         THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=''
+			         THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=0   
+			         THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE='' 
+			         THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION='0'                                    
+                ENDCASE    
+            ENDIF       			                         
+    ELSE
+       IF !EMPTY(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE)
+          THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE+THIS.VALUE,'E11'),E11.F08-E11.F09,0)       
+          THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION=TRANSFORM(THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE,'@R 9999999.9999')
+       ENDIF          
+    ENDIF  
+       THISFORM.PAGEFRAME1.PAGE2.LBLF081.CAPTION=IIF(SEEK(THIS.VALUE,'B01'),B01.F02,'')      
+  ENDPROC
+
+ENDDEFINE
+***************************************************¯S®íÄæ¦ì-----------------»s¥O¸¹½X
+DEFINE CLASS TXTF05 AS TEXTBOX
+  READONLY=.T.
+  MAXLENGTH=12
+  FONTSIZE=INT_015*9
+
+  PROCEDURE INTERACTIVECHANGE
+         CHK_IN='0'
+         PR_NO='2'
+         IF AT('?',ALLTRIM(THIS.VALUE))<>0
+             IF USED('OQT')=.T.
+                  SELECT OQT 
+                 USE
+             ENDIF
+             DO CASE
+                   CASE AT('?',ALLTRIM(THIS.VALUE))>1 AND EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE))
+                   			  SELECT 0,F04,F01,F10,F07,F08,F09 FROM E11 INTO CURSOR OQT READWRITE;
+                   			  ORDER BY F04,F10 WHERE F18='1' AND LEFT(F01,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1);
+                   			  AND (E11.F08-E11.F09)>0 
+                   CASE AT('?',ALLTRIM(THIS.VALUE))>1 AND !EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE))
+                   			  SELECT 0,F04,F01,F10,F07,F08,F09 FROM E11 INTO CURSOR OQT READWRITE;
+                   			  ORDER BY F04,F10 WHERE F18='1' AND LEFT(F01,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1);
+                   			  AND (E11.F08-E11.F09)>0 AND F04=THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE                               
+                   CASE AT('?',ALLTRIM(THIS.VALUE))=1 AND EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE))
+                   			  SELECT 0,F04,F01,F10,F07,F08,F09 FROM E11 INTO CURSOR OQT READWRITE;
+                   			  ORDER BY F04,F10 WHERE F18='1' AND (E11.F08-E11.F09)>0                               
+                   CASE AT('?',ALLTRIM(THIS.VALUE))=1 AND !EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE))
+                   			  SELECT 0,F04,F01,F10,F07,F08,F09 FROM E11 INTO CURSOR OQT READWRITE;
+                   			  ORDER BY F04,F10 WHERE F18='1' AND (E11.F08-E11.F09)>0 AND F04=THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE         
+            ENDCASE 
+            SELECT OQT 
+            ALTER TABLE OQT ADD E11_F07  N(14,4)
+            INDE ON F04+DTOS(F10)+F01 TAG OQT_1   
+            INDE ON F01+F04 TAG OQT_2  
+            SET ORDER TO OQT_2 
+	    SELECT OQT 
+            IF _TALLY>0  
+                SELECT OQT 
+	        	SET ORDER TO OQT_1 
+                OQT_SEEK=CREATEOBJECT("OQT_SEEK")  
+                OQT_SEEK.SHOW   
+                THIS.REFRESH
+                SELECT OQT 
+                CALC SUM(EXP_1) TO NO   
+                DO CASE
+                      CASE NO=1 AND CHK_IN='1'
+                   	        SELECT * FROM OQT  WHERE OQT.EXP_1<>0 ORDER BY OQT.F04 INTO CURSOR OQT_TEMP
+		                SELECT OQT_TEMP
+			        THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=OQT_TEMP.F04
+			        THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=OQT_TEMP.E11_F07 
+			        THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE=OQT_TEMP.F01
+			        THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION=TRANSFORM(OQT_TEMP.F07,'@R 999999999.9999')
+			        SELECT OQT_TEMP
+			        USE	                                       
+	               CASE NO>=1 AND CHK_IN='1'
+		                 SELECT * FROM OQT  WHERE OQT.EXP_1<>0  ORDER BY OQT.F04 DESC INTO CURSOR OQT_TEMP
+			         SELECT OQT_TEMP
+			         GO TOP
+			         DO WHILE !EOF()
+			                IF  SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+OQT_TEMP.F04+OQT_TEMP.F01,'B18')=.F.  AND IIF(SEEK(OQT_TEMP.F04,'B01'),.T.,.F.)
+			                     SELECT  B18
+				             APPEND BLANK
+				             REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+				             REPLACE F02 WITH PADL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE),2,'0')
+				             REPLACE F08 WITH OQT_TEMP.F04
+				             REPLACE F12 WITH OQT_TEMP.E11_F07
+				             REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF07.VALUE
+				             REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF04.VALUE
+				             REPLACE F05 WITH OQT_TEMP.F01
+				             REPLACE F06 WITH DTOC(DATE())+' '+IIF(SEEK(SYS_OPER,'A01'),A01.F03,'')	
+				             REPLACE F10 WITH OQT_TEMP.F07	 
+				                 SELECT E16
+				                 SEEK B18.F05+B18.F08
+				                 IF FOUND()
+				                      REPLACE F05 WITH F05-B18.F12
+				                 ENDIF
+				                 SELECT E11
+				                 SEEK B18.F05+B18.F08
+				                 IF FOUND()
+				                     REPLACE F13 WITH F13-B18.F12
+				                 ENDIF 	      				                             
+					ENDIF       				            
+			                SELECT OQT_TEMP
+			                SKIP 
+		                 ENDDO  
+		                 SELECT OQT_TEMP
+		                  USE
+			         THISFORM.GRID2.ENABLED=.T.
+			         THISFORM.GRID2.SETFOCUS  
+			         THISFORM.GRID2.ENABLED=.F.                 
+			         THISFORM.PAGEFRAME1.PAGE2.TXTF08.VALUE=''
+			         THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=0   
+			         THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE='' 
+			         THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION='0'                                    
+                ENDCASE    
+            ENDIF       			                         
+    ELSE
+       IF !EMPTY(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE)
+          THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE=IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF05.VALUE+THIS.VALUE,'E11'),E11.F08-E11.F09,0)       
+          THISFORM.PAGEFRAME1.PAGE2.LBLF101.CAPTION=TRANSFORM(THISFORM.PAGEFRAME1.PAGE2.TXTF12.VALUE,'@R 9999999.9999')
+       ENDIF          
+    ENDIF  
+       THISFORM.PAGEFRAME1.PAGE2.LBLF081.CAPTION=IIF(SEEK(THIS.VALUE,'B01'),B01.F02,'')      
+  ENDPROC
+
+ENDDEFINE
+***************************************************¯S®íÄæ¦ì------------------µo®Æ³¡ªù
+DEFINE CLASS TXTF07 AS TEXTBOX
+  READONLY=.T.
+  MAXLENGTH=5 
+  FONTSIZE=INT_015*9  
+  PROCEDURE INTERACTIVECHANGE
+    IF AT('?',ALLTRIM(THIS.VALUE))<>0
+       IF AT('?',ALLTRIM(THIS.VALUE))>1             
+          SELECT F01,F02 FROM A14  INTO CURSOR DEPART ORDER BY F01 WHERE LEFT(F01,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1) AND F04='*'
+       ELSE
+          SELECT F01,F02 FROM A14  INTO CURSOR DEPART ORDER BY F01 WHERE F04='*'
+       ENDIF   
+       IF _TALLY>0
+          DEPART_SEEK=createobject("DEPART_SEEK")  
+          DEPART_SEEK.SHOW    
+          THIS.VALUE=FLG
+          THIS.REFRESH
+          FLG='0'
+       ENDIF   
+    ENDIF   
+       THISFORM.PAGEFRAME1.PAGE1.LBLF071.CAPTION=IIF(SEEK(THIS.VALUE,'A14'),A14.F02,'')  
+       THISFORM.PAGEFRAME1.PAGE1.LBLF071.REFRESH       
+  ENDPROC
+ENDDEFINE  
+*************************************************¯S®íÄæ¦ì------------------¦¬®Æ³¡ªù
+DEFINE CLASS TXTF04 AS TEXTBOX
+  READONLY=.T.
+  MAXLENGTH=5 
+  FONTSIZE=INT_015*9  
+  PROCEDURE INTERACTIVECHANGE
+    IF AT('?',ALLTRIM(THIS.VALUE))<>0
+       IF AT('?',ALLTRIM(THIS.VALUE))>1             
+          SELECT F01,F02 FROM A14_1 INTO CURSOR DEPART ORDER BY F01 WHERE LEFT(F01,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1) AND F01=ANY(SELE F06 FROM E16 WHERE F04-F05>0)
+       ELSE
+          SELECT F01,F02 FROM A14_1 INTO CURSOR DEPART ORDER BY F01 WHERE  F01=ANY(SELE F06 FROM E16 WHERE F04-F05>0)
+       ENDIF   
+       IF _TALLY>0
+          DEPART_SEEK=createobject("DEPART_SEEK")  
+          DEPART_SEEK.SHOW    
+          THIS.VALUE=FLG
+          THIS.REFRESH
+          FLG='0'
+       ENDIF   
+    ENDIF   
+       THISFORM.PAGEFRAME1.PAGE1.LBLF041.CAPTION=IIF(SEEK(THIS.VALUE,'A14'),A14.F02,'')         
+  ENDPROC
+ENDDEFINE  
+
+*********************************************************************°h®Æ­p¹º----¨Ì®Æ¸¹±Æ¦C·j´M
+
+***************************************°h®Æ­p¹º-------¨Ì»s¥O½s¸¹±Æ¦C·j´M
+
+***********************************************************************
+***************************************°h®Æ­p¹º
+DEFINE CLASS OQT_SEEK AS FORM
+*!*	  AUTOCENTER=.T.
+  CAPTION=ALLTRIM(A14.F02)+'         E11.¨î¥Oªí¨­'
+  TOP=INT_015*110
+  LEFT=INT_015*125    
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*325
+  WIDTH=INT_015*535
+  FONTSIZE=INT_015*9
+  MAXBUTTON=.F.
+  MINBUTTON=.F.    
+  CLOSABLE=.F.
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='OQT_SEEK'
+  ADD OBJECT GRID1 AS GRID WITH;          
+      AUTOCENTER=.T.,;
+      HIGHLIGHTROWLINEWIDTH=4,;
+      WIDTH=INT_015*535,;      
+      HEIGHT=INT_015*293,;      
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;
+      DELETEMARK=.F.,;
+      READONLY=.T.,;
+      RECORDSOURCETYPE=1,;
+      COLUMNCOUNT=6,;       
+      RECORDSOURCE='OQT',;     
+      NAME='GRID1',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;      
+      COLUMN3.NAME='COLUMN3',;      
+      COLUMN4.NAME='COLUMN4',;            
+      COLUMN5.NAME='COLUMN5',;  
+      COLUMN6.NAME='COLUMN6'
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*230,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*297,;        
+      WIDTH=INT_015*80,;    
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<S.½T©w',;
+      TOOLTIPTEXT='¿ï¾Ü´å¼Ð©Ò«üªº¬ö¿ý!§Ö³tÁä->ALT+S'
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*320,;
+      TOP=INT_015*297,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*80,;    
+      FONTSIZE=INT_015*9,;      
+      CAPTION='\<X.¨ú®ø',;
+      TOOLTIPTEXT='¨ú®ø¦¹·j´Mµe­±!§Ö³tÁä->ALT+X'
+      NAME='CMND2'
+  ADD OBJECT CMND3 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*50,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*297,;        
+      WIDTH=INT_015*80,;  
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<A.¥þ¿ï',;
+      TOOLTIPTEXT='¥þ¿ï©Ò¦³¸ê®Æ!§Ö³tÁä->ALT+A'
+      NAME='CMND3'
+  ADD OBJECT CMND4 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*130,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*297,;        
+      WIDTH=INT_015*80,;
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<C.²M°£',;
+      TOOLTIPTEXT='²M°£¤w¥þ¿ï¤§¸ê®Æ!§Ö³tÁä->ALT+C'
+      NAME='CMND4'               
+   PROCEDURE INIT 
+
+         SELE OQT
+         SET ORDER TO OQT_1
+         GO TOP
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')   
+         THISFORM.SETALL('MOVABLE',.F.,'COLUMN') 
+         THISFORM.SETALL('MOUSEPOINTER',99,'COMMANDBUTTON')
+         THISFORM.SETALL('MOUSEICON','BMPS\harrow.cur','COMMANDBUTTON')                           
+         THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+         THISFORM.GRID1.COLUMN1.HEADER1.CAPTION=''
+         THISFORM.GRID1.COLUMN1.WIDTH=INT_015*20
+         THISFORM.GRID1.COLUMN1.CONTROLSOURCE='OQT.EXP_1'       
+         IF PR_NO='1'  
+             THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='®Æ        ¸¹'
+             THISFORM.GRID1.COLUMN2.WIDTH=INT_015*180
+             THISFORM.GRID1.COLUMN2.CONTROLSOURCE='OQT.F04'               
+             THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='»s¥O¸¹½X'
+             THISFORM.GRID1.COLUMN3.CONTROLSOURCE='OQT.F01'
+             THISFORM.GRID1.COLUMN3.WIDTH=INT_015*80      
+         ELSE
+             THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='»s¥O¸¹½X'
+             THISFORM.GRID1.COLUMN2.CONTROLSOURCE='OQT.F01'
+             THISFORM.GRID1.COLUMN2.WIDTH=INT_015*80
+             THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='®Æ        ¸¹'
+             THISFORM.GRID1.COLUMN3.WIDTH=INT_015*180
+             THISFORM.GRID1.COLUMN3.CONTROLSOURCE='OQT.F04'        
+         ENDIF
+         THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='¤W½u¤é´Á'
+         THISFORM.GRID1.COLUMN4.CONTROLSOURCE='OQT.F10'
+         THISFORM.GRID1.COLUMN4.WIDTH=INT_015*65
+         THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='À³»â¼Æ¶q'         
+         THISFORM.GRID1.COLUMN5.CONTROLSOURCE='OQT.F07'
+         THISFORM.GRID1.COLUMN5.WIDTH=INT_015*80     
+         THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='°h®Æ¼Æ¶q'         
+         THISFORM.GRID1.COLUMN6.CONTROLSOURCE='OQT.E11_F07'
+         THISFORM.GRID1.COLUMN6.WIDTH=INT_015*80     
+
+         THISFORM.GRID1.SETFOCUS
+      ENDPROC
+      ***
+      PROC GRID1.INIT      
+	 THISFORM.GRID1.COLUMN1.READONLY=.F.
+	 THISFORM.GRID1.COLUMN2.READONLY=.T.
+	 THISFORM.GRID1.COLUMN3.READONLY=.T.
+	 THISFORM.GRID1.COLUMN4.READONLY=.T.
+	 THISFORM.GRID1.COLUMN5.READONLY=.T.
+	 THISFORM.GRID1.COLUMN6.READONLY=.F.
+	 THISFORM.GRID1.COLUMN6.HEADER1.BACKCOLOR=RGB(128,255,0)
+	 THISFORM.GRID1.COLUMN1.removeobject("TEXT1")
+	 THISFORM.GRID1.COLUMN1.AddObject("CheckBox1","CheckBox1") 
+	 THISFORM.GRID1.COLUMN1.CurrentControl="CheckBox1" 
+	 THISFORM.GRID1.COLUMN1.Sparse=.F.
+	 THISFORM.GRID1.COLUMN1.CheckBox1.Visible=.T.
+	 THISFORM.GRID1.COLUMN1.CheckBox1.CAPTION=''
+	 THISFORM.GRID1.COLUMN1.CheckBox1.AUTOSIZE=.T.
+	 THISFORM.GRID1.COLUMN1.CheckBox1.CENTERED=.T.
+	 THISFORM.GRID1.COLUMN1.CheckBox1.BACKSTYLE=0
+	 THISFORM.GRID1.COLUMN1.CheckBox1.LEFT=5
+	 THISFORM.GRID1.COLUMN6.removeobject("TEXT1")
+	 THISFORM.GRID1.COLUMN6.AddObject("TEXTBOX1","TEXTBOX1") 
+	 THISFORM.GRID1.COLUMN6.CurrentControl="TEXTBOX1" 
+	 THISFORM.GRID1.COLUMN6.Sparse=.F.	
+	 THISFORM.GRID1.COLUMN6.TEXTBOX1.Visible=.T.      	 
+      ENDPROC
+      ***
+      PROC GRID1.AFTERROWCOLCHANGE
+           LPARAMETERS XCOLINDEX
+*!*	           FCH='GRID1'
+      ENDPROC 
+ PROCEDURE CMND1.CLICK
+      SELECT OQT
+      CHK_IN='1'
+      THISFORM.RELEASE     
+ ENDPROC
+ PROCEDURE CMND2.CLICK
+      CHK_IN='0' 
+      THISFORM.RELEASE
+ ENDPROC  
+ **
+ PROCEDURE CMND3.CLICK     
+      SELECT OQT
+      RE=RECNO('OQT')
+      GO TOP
+      DO WHILE !EOF()
+	     REPLACE OQT.EXP_1 WITH 1 
+             REPLACE OQT.E11_F07 WITH (OQT.F08-OQT.F09)
+	     SELECT OQT
+	     SKIP
+      ENDDO
+      SELECT OQT
+      GO RE  
+      THISFORM.GRID1.SETFOCUS 
+ ENDPROC      
+  PROCEDURE CMND4.CLICK
+      SELECT OQT
+      RE=RECNO('OQT')
+      GO TOP
+      DO WHILE !EOF()
+             REPLACE OQT.EXP_1 WITH 0 
+             REPLACE OQT.E11_F07 WITH 0
+             SELECT OQT
+             SKIP
+      ENDDO
+      SELECT OQT
+      GO RE
+      THISFORM.GRID1.SETFOCUS 
+ ENDPROC  
+  PROC CMND1.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND1.TOP=INT_015*298
+             THISFORM.CMND1.LEFT=INT_015*231
+  ENDPROC     
+  PROC CMND1.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND1.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND1.TOP=INT_015*297
+             THISFORM.CMND1.LEFT=INT_015*230                  
+  ENDPROC  
+  PROC CMND2.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND2.TOP=INT_015*298
+             THISFORM.CMND2.LEFT=INT_015*321
+  ENDPROC     
+  PROC CMND2.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND2.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND2.TOP=INT_015*297
+             THISFORM.CMND2.LEFT=INT_015*320                  
+  ENDPROC  
+  PROC CMND3.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND3.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND3.TOP=INT_015*298
+             THISFORM.CMND3.LEFT=INT_015*51
+  ENDPROC     
+  PROC CMND3.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND3.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND3.TOP=INT_015*297
+             THISFORM.CMND3.LEFT=INT_015*50                  
+  ENDPROC   
+  PROC CMND4.MOUSEENTER      
+       LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND4.FORECOLOR=RGB(255,0,0)
+             THISFORM.CMND4.TOP=INT_015*298
+             THISFORM.CMND4.LEFT=INT_015*131
+  ENDPROC     
+  PROC CMND4.MOUSELEAVE      
+        LPARAMETERS nButton, nShift, nXCoord, nYCoord 
+             THISFORM.CMND4.FORECOLOR=RGB(0,0,0)  
+             THISFORM.CMND4.TOP=INT_015*297
+             THISFORM.CMND4.LEFT=INT_015*130                  
+  ENDPROC    
+ENDDEFINE 
+*********     
+DEFINE CLASS CheckBox1 AS CheckBox
+      PROCEDURE CLICK
+         SELECT OQT
+         IF THIS.VALUE=1
+              REPLACE OQT.EXP_1 WITH 1
+              REPLACE OQT.E11_F07 WITH (OQT.F08-OQT.F09)
+               
+         ELSE
+              REPLACE OQT.EXP_1 WITH 0
+              REPLACE OQT.E11_F07 WITH 0
+                 
+         ENDIF
+         THISFORM.GRID1.SETFOCUS     
+   ENDPROC 
+ENDDEFINE 
+*********     
+DEFINE CLASS TEXTBOX1 AS TEXTBOX
+  PROCEDURE INTERACTIVECHANGE 
+         SELECT OQT
+         IF OQT.EXP_1=1
+             DO CASE 
+                   CASE THIS.VALUE<=0
+                    	      THIS.VALUE=(OQT.F08-OQT.F09)
+                    	      =MESSAGEBOX('°h®Æ¼Æ¶q¤£±o¤p©óµ¥©ó¹s,½Ð­«·s¿é¤J!!',0+64,'´£¥Ü°T®§µøµ¡')        
+                  CASE THIS.VALUE>OQT.F08-OQT.F09
+			     =MESSAGEBOX('°h®Æ¼Æ¶q¤£±o¤j©ó'+TRANSFORM(OQT.F08-OQT.F09,'@R 999999999.9999'),0+48,'´£¥Ü°T®§µøµ¡') 
+                    	      THIS.VALUE=(OQT.F08-OQT.F09)		                        	      
+             ENDCASE   
+             REPLACE OQT.E11_F07 WITH THIS.VALUE        
+         ENDIF  
+         THISFORM.GRID1.SETFOCUS  
+   ENDPROC 
+ENDDEFINE   
+
+
+
+

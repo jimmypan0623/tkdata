@@ -1,0 +1,780 @@
+**程式名稱:E17.委外入貨日報表
+SET EXCL OFF
+CLOSE ALL
+CLEAR 
+AREA1='E17'
+EXCEL_CHK='N'
+FLG='0'
+FCH=''
+CHK=''
+IF !USED('A01')
+   SELE 0
+   USE A01
+ELSE 
+   SELE A01
+ENDIF
+SET ORDER TO A01      
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK SYS_OPER+'E17'      
+IF !USED('A23')
+    SELE 0
+    USE A23
+ELSE 
+   SELE A23
+ENDIF
+SET ORDER TO 1 
+
+IF !USED ('B01')
+   SELE 0
+   USE B01 
+ELSE 
+   SELE B01
+ENDIF
+SET ORDER TO 1     
+E14='E14'+LEFT(DTOS(DATE()),6)   &&出貨日報表檔
+IF !USED ('&E14')
+   SELE 0
+   USE (E14) ALIAS E14 
+ELSE 
+   SELE E14
+ENDIF
+SET ORDER TO 1
+IF !USED ('E00')
+   SELE 0
+   USE E00
+ELSE 
+   SELE E00
+ENDIF
+SET ORDER TO 1     
+IF !USED('E02')
+   SELE 0
+   USE E02
+ELSE 
+   SELE E02
+ENDIF
+SET ORDER TO E021                  
+E17='E17'+LEFT(DTOS(DATE()),6)   &&出貨日報表檔
+IF !USED('&E17')
+   SELE 0
+   USE (E17) ALIA E17 INDE (E17)
+ELSE
+   SELE E17
+ENDIF
+SET ORDER TO 1                
+GO TOP
+SET RELA TO F02 INTO E02 
+SET RELATION TO F06 INTO E00 ADDI
+E17FORM=CREATEOBJECT("TKE17")
+E17FORM.SHOW  
+DEFINE CLASS TKE17 AS FORM
+  CAPTION='E17.委外入庫日報表'
+*!*	  AUTOCENTER=.T.
+  CONTROLBOX=.F.
+  BORDERSTYLE=1
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  CONTROLCOUNT=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WIDTH=INT_015*789
+  WINDOWTYPE=1
+  ADD OBJECT REC_COUNT AS REC_COUNT  WITH;
+      LEFT=INT_015*628,;
+      TOP=INT_015*7,;
+      BACKCOLOR=RGB(255,255,0)
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      AUTOCENTER=.T.,;
+      WIDTH=INT_015*130
+  ADD OBJECT MTH_LIST AS MTH_LIST WITH;
+      AUTOCENTER=.T.      
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      COLUMNCOUNT=10,;            
+      RECORDSOURCE='E17',; 
+      HEIGHT=INT_015*500,;     
+      WIDTH=INT_015*780,;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',; 
+      COLUMN4.NAME='COLUMN4',; 
+      COLUMN5.NAME='COLUMN5',;             
+      COLUMN6.NAME='COLUMN6',;       
+      COLUMN7.NAME='COLUMN7',;       
+      COLUMN8.NAME='COLUMN8',;
+      COLUMN9.NAME='COLUMN9',;
+      COLUMN10.NAME='COLUMN10'      
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;      
+      TOP=INT_015*0,;
+      LEFT=INT_015*403              
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      TOP=INT_015*0,;
+      LEFT=INT_015*250,;
+      ENABLED=.T.,;
+      VISIBLE=.T.              
+  ADD OBJECT EXCEL_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*5,;
+      LEFT=INT_015*467,;
+      HEIGHT=INT_015*25,;      
+      WIDTH=INT_015*65,;
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<E.轉EXCEL'                     
+  PROCEDURE INIT
+       SELE E17
+       CALC SUM(F07*F08) TO TQTY  
+       GO TOP
+       CHK_STR=THISFORM.MTH_LIST.DISPLAYVALUE
+       THISFORM.REC_COUNT.CAPTION='目前金額：'+ALLTRIM(TRANSFORM(ROUND(TQTY,2),'@R 999,999,999,999.99'))
+       THISFORM.ORPGROUP.NEW_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.EDIT_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.DEL_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限      
+       THISFORM.EXCEL_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')       
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*30
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*149
+       THISFORM.GRID1.COLUMN3.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN4.WIDTH=INT_015*50
+       THISFORM.GRID1.COLUMN5.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN6.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN7.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN8.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN9.WIDTH=INT_015*80
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='日期'
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='料        號'	          
+       THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='單據編號'	   	     	   	   
+       THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='廠商編號'	   	   
+       THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='廠商簡稱'
+       THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='製令號碼'  	   
+       THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='數        量'
+       THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='製        程' 
+       THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號'   	                 
+       THISFORM.GRID1.COLUMN10.HEADER1.CAPTION='單        價'   	   
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E17.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E17.F03'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E17.F04'
+       THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E17.F02'
+       THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E02.F04'
+       THISFORM.GRID1.COLUMN6.CONTROLSOURCE='E17.F05'
+       THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E17.F08'
+       THISFORM.GRID1.COLUMN8.CONTROLSOURCE='E00.F04'
+       THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E17.F09'       
+       THISFORM.GRID1.COLUMN10.CONTROLSOURCE='E17.F07'	   
+       THISFORM.GRID1.COLUMN10.VISIBLE=!EMPTY(A02.F08)
+       THISFORM.GRID1.READONLY=.T.       
+       THISFORM.GRID1.SETFOCUS     
+       JK='日期'
+  ENDPROC      
+  PROC KEY_LIST.INIT 
+       WITH THIS 
+           .ADDITEM('依  日期   排列')
+           .ADDITEM('依廠商+日期排列')
+           .ADDITEM('依料號+日期排列')           
+           .ADDITEM('依製令+日期排列')           
+           .ADDITEM('依訂單+製令排列')
+       ENDWITH      
+  ENDPROC 
+  PROC KEY_LIST.INTERACTIVECHANGE                 
+       SELE E17
+       DO CASE
+          CASE THIS.DISPLAYVALUE='依  日期   排列'
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='日期'
+	           THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='料        號'	                   	   
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='單據編號'	   	     	   	   
+	           THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='廠商編號'	   	   
+	           THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='廠商簡稱'
+  	           THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='製令號碼'  	   
+  	           THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='數        量'
+  	           THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='製        程' 
+  	           THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號'   	           
+  	           THISFORM.GRID1.COLUMN10.HEADER1.CAPTION='單        價'   	   
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E17.F01'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E17.F03'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E17.F04'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E17.F02'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E02.F04'
+               THISFORM.GRID1.COLUMN6.CONTROLSOURCE='E17.F05'
+               THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E17.F08'
+               THISFORM.GRID1.COLUMN8.CONTROLSOURCE='E00.F04'
+               THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E17.F09'               
+               THISFORM.GRID1.COLUMN10.CONTROLSOURCE='E17.F07'	        	   
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*30
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*149
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*50
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN6.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN7.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN8.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN9.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN10.WIDTH=INT_015*80               
+               SET ORDER TO 1
+          CASE THIS.DISPLAYVALUE='依廠商+日期排列'
+	           THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='廠商編號'
+	           THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='廠商簡稱'	           
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='日期'
+	           THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='料        號'	          
+               THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='單據編號'	   	     	   	   
+  	           THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='製令號碼'  	   
+  	           THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='數        量'
+  	           THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='製        程' 
+  	           THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號'   	           
+  	           THISFORM.GRID1.COLUMN10.HEADER1.CAPTION='單        價'   	   
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E17.F02'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E02.F04'                 	           
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E17.F01'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E17.F03'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E17.F04'
+               THISFORM.GRID1.COLUMN6.CONTROLSOURCE='E17.F05'
+               THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E17.F08'
+               THISFORM.GRID1.COLUMN8.CONTROLSOURCE='E00.F04'
+               THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E17.F09'               
+               THISFORM.GRID1.COLUMN10.CONTROLSOURCE='E17.F07'	        	   
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*50
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*80               
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*30
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*149
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN6.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN7.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN8.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN9.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN10.WIDTH=INT_015*80               
+               SET ORDER TO 2
+          CASE THIS.DISPLAYVALUE='依料號+日期排列'
+	           THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='料        號'	          
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='日期'
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='單據編號'	   	     	   	   
+	           THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='廠商編號'	   	   
+	           THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='廠商簡稱'
+  	           THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='製令號碼'  	   
+  	           THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='數        量'
+  	           THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='製        程' 
+  	           THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號'   	           
+  	           THISFORM.GRID1.COLUMN10.HEADER1.CAPTION='單        價'   	   
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E17.F03'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E17.F01'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E17.F04'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E17.F02'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E02.F04'
+               THISFORM.GRID1.COLUMN6.CONTROLSOURCE='E17.F05'
+               THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E17.F08'
+               THISFORM.GRID1.COLUMN8.CONTROLSOURCE='E00.F04'
+               THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E17.F09'	        	                  
+               THISFORM.GRID1.COLUMN10.CONTROLSOURCE='E17.F07'	        	   
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*149
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*30
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*50
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN6.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN7.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN8.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN9.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN10.WIDTH=INT_015*80               
+               SET ORDER TO 3                                   	                             
+          CASE THIS.DISPLAYVALUE='依製令+日期排列'
+  	           THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='製令號碼'  	             
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='日期'
+	           THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='料        號'	          
+               THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='單據編號'	   	     	   	   
+	           THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='廠商編號'	   	   
+	           THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='廠商簡稱'
+  	           THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='數        量'
+  	           THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='製        程' 
+  	           THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號'   	           
+  	           THISFORM.GRID1.COLUMN10.HEADER1.CAPTION='單        價'   	   
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E17.F05'  	           
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E17.F01'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E17.F03'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E17.F04'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E17.F02'
+               THISFORM.GRID1.COLUMN6.CONTROLSOURCE='E02.F04'
+               THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E17.F08'
+               THISFORM.GRID1.COLUMN8.CONTROLSOURCE='E00.F04'
+               THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E17.F09'	        	                  
+               THISFORM.GRID1.COLUMN10.CONTROLSOURCE='E17.F07'	        	   
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*80               
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*30
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*149
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*50
+               THISFORM.GRID1.COLUMN6.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN7.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN8.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN9.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN10.WIDTH=INT_015*80
+               SET ORDER TO 4        
+          CASE THIS.DISPLAYVALUE='依訂單+製令排列'               
+  	           THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='委外單號'   	  
+  	           THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='製令號碼'  	           
+  	           THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='製        程'   	               	           
+                    THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='日期'  	                              
+	           THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='料        號'	          
+                    THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='單據編號'	   	     	   	   
+	           THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='廠商編號'	   	   
+	           THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='廠商簡稱'
+  	           THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='數        量'
+  	           THISFORM.GRID1.COLUMN10.HEADER1.CAPTION='單        價'   	
+                   THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E17.F09'	     
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E17.F05'  	    
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E00.F04'                                        
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E17.F01'               	                    	              
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E17.F03'
+               THISFORM.GRID1.COLUMN6.CONTROLSOURCE='E17.F04'
+               THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E17.F02'
+               THISFORM.GRID1.COLUMN8.CONTROLSOURCE='E02.F04'
+               THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E17.F08'
+               THISFORM.GRID1.COLUMN10.CONTROLSOURCE='E17.F07'	
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*80              
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*80                     
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*80                             
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*30                             	   
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*149
+               THISFORM.GRID1.COLUMN6.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN7.WIDTH=INT_015*50
+               THISFORM.GRID1.COLUMN8.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN9.WIDTH=INT_015*80
+               THISFORM.GRID1.COLUMN10.WIDTH=INT_015*80
+               SET ORDER TO 5
+       ENDCASE 
+       JK=THISFORM.GRID1.COLUMN1.HEADER1.CAPTION
+       THISFORM.GRID1.REFRESH
+       THISFORM.GRID1.SETFOCUS
+  ENDPROC              
+  PROC MTH_LIST.INTERACTIVECHANGE
+       CHK_STR=THISFORM.MTH_LIST.DISPLAYVALUE
+       THISFORM.GRID1.RECORDSOURCE=''
+       SELECT E14
+       USE
+       SELE E17
+       USE
+       E14='E14'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&E14')
+          SELE 0
+          USE (E14) ALIA E14
+       ELSE
+          SELE E14
+       ENDIF
+       SET ORDER TO 1               
+       E17='E17'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&E17')
+          SELE 0
+          USE (E17) ALIA E17
+       ELSE
+          SELE E17
+       ENDIF
+       SET ORDER TO 1        
+       SET RELA TO F02 INTO E02
+       SET RELATION TO F06 INTO E00 ADDI
+       CALC SUM(F07*F08) TO TQTY
+       GO TOP
+       THISFORM.REC_COUNT.CAPTION='目前金額：'+ALLTRIM(TRANSFORM(ROUND(TQTY,2),'@R 999,999,999,999.99'))
+       THISFORM.GRID1.RECORDSOURCE='E17'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E17.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E17.F03'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E17.F04'
+       THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E17.F02'
+       THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E02.F04'
+       THISFORM.GRID1.COLUMN6.CONTROLSOURCE='E17.F05'
+       THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E17.F08'
+       THISFORM.GRID1.COLUMN8.CONTROLSOURCE='E00.F04'
+       THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E17.F07'
+       THISFORM.KEY_LIST.INTERACTIVECHANGE
+	   THISFORM.GRID1.SETFOCUS        
+	   THISFORM.REFRESH
+       IF THISFORM.GRID1.ACTIVEROW=0
+          THISFORM.CMDGROUP.ENABLED=.F.
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+          THISFORM.EXCEL_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.ENABLED=.T.      
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限
+          THISFORM.EXCEL_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   
+       ENDIF          
+  ENDPROC      
+  PROC GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS NCOLINDEX
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       CHK=''
+       THISFORM.REFRESH
+  ENDPROC       
+PROCEDURE  EXCEL_BOTT.CLICK
+   EXCEL_CHK='Y'
+   FLG='0'
+   SELE E17
+   ANS_RANGE=CREATEOBJECT("ANS_RANGE")  
+   ANS_RANGE.SHOW    
+   IF FLG<>'1'
+       =MESSAGEBOX('無此範圍資料',0+48,'警示')
+   ENDIF   
+   FLG='0'   
+   THISFORM.GRID1.SETFOCUS 
+ENDPROC
+ENDDEFINE        
+***********************************************列印程序
+PROCEDURE PNT_PRC   
+  FLG='0'
+   SELE E17
+   ANS_RANGE=CREATEOBJECT("ANS_RANGE")  
+   ANS_RANGE.SHOW    
+   IF FLG<>'1'
+       =MESSAGEBOX('無此範圍資料',0+48,'警示')
+   ENDIF   
+   FLG='0'       
+ENDPROC
+***********************************************列印範圍選定
+DEFINE CLASS ANS_RANGE AS FORM
+  AUTOCENTER=.T.
+  CAPTION='請輸入列印資料範圍'
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*190
+  WIDTH=INT_015*480
+  FONTSIZE=INT_015*9
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='ANS_RANGE'
+  ADD OBJECT LABEL1 AS LABEL WITH;
+      AUTOSIZE=.T.,;
+      HEIGHT=INT_015*25,;
+      LEFT=INT_015*28,;
+      TOP=INT_015*75,;
+      NAME='LABEL1'
+  ADD OBJECT LABEL2 AS LABEL WITH;
+      AUTOSIZE=.T.,;
+      HEIGHT=INT_015*25,;
+      LEFT=INT_015*250,;
+      TOP=INT_015*75,;
+      NAME='LABEL2'
+  ADD OBJECT TEXT1 AS TEXTBOX WITH;
+      AUTOSIZE=.T.,;
+      TOP=INT_015*70,;
+      LEFT=INT_015*78,;
+      HEIGHT=INT_015*25,; 
+      NAME='TEXT1'
+  ADD OBJECT TEXT2 AS TEXTBOX WITH;
+      AUTOSIZE=.T.,;
+      TOP=INT_015*70,;
+      LEFT=INT_015*300,;
+      HEIGHT=INT_015*25,;         
+      NAME='TEXT2'    
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*60,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*144,;  
+      WIDTH=INT_015*80,;
+      CAPTION='\<Y.執行',;
+      TOOLTIPTEXT='確認所輸入的範圍鍵值!快速鍵->ALT+Y',;
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*200,;
+      TOP=INT_015*144,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*80,;
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消作業!快速鍵->ALT+C',;
+      NAME='CMND2'
+  PROCEDURE INIT 
+      THISFORM.SETALL('FONTSIZE',INT_015*9,'TEXTBOX')
+      THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')      
+      THISFORM.SETALL('FONTSIZE',INT_015*9,'COMMANDBUTTON')            
+      DO CASE
+         CASE KEY()='F01'    
+              THISFORM.LABEL1.CAPTION='起始日期'
+              THISFORM.LABEL2.CAPTION='截止日期'
+              THISFORM.TEXT1.WIDTH=INT_015*25
+              THISFORM.TEXT2.WIDTH=INT_015*25   
+              THISFORM.TEXT1.MAXLENGTH=2           
+              THISFORM.TEXT2.MAXLENGTH=2                                       
+              THISFORM.TEXT1.VALUE=E17.F01
+              THISFORM.TEXT2.VALUE=E17.F01              
+         CASE KEY()='F02+F01'
+              THISFORM.LABEL1.CAPTION='起始廠商'
+              THISFORM.LABEL2.CAPTION='截止廠商'
+              THISFORM.TEXT1.WIDTH=INT_015*60
+              THISFORM.TEXT2.WIDTH=INT_015*60 
+              THISFORM.TEXT1.MAXLENGTH=5
+              THISFORM.TEXT2.MAXLENGTH=5
+              THISFORM.TEXT1.VALUE=E17.F02
+              THISFORM.TEXT2.VALUE=E17.F02               
+         CASE KEY()='F03+F01'       
+              THISFORM.LABEL1.CAPTION='起始料號'
+              THISFORM.LABEL2.CAPTION='截止料號'
+              THISFORM.TEXT1.WIDTH=INT_015*170
+              THISFORM.TEXT2.WIDTH=INT_015*170   
+              THISFORM.TEXT1.MAXLENGTH=20              
+              THISFORM.TEXT2.MAXLENGTH=20                                       
+              THISFORM.TEXT1.VALUE=E17.F03
+              THISFORM.TEXT2.VALUE=E17.F03               
+         CASE KEY()='F05+F01'   
+              THISFORM.LABEL1.CAPTION='起始單號'
+              THISFORM.LABEL2.CAPTION='截止單號'
+              THISFORM.TEXT1.WIDTH=INT_015*80
+              THISFORM.TEXT2.WIDTH=INT_015*80              
+              THISFORM.TEXT1.MAXLENGTH=12              
+              THISFORM.TEXT2.MAXLENGTH=12                           
+              THISFORM.TEXT1.VALUE=E17.F05
+              THISFORM.TEXT2.VALUE=E17.F05                                                   
+         CASE KEY()='F09+F05+F06'   
+              THISFORM.LABEL1.CAPTION='起始單號'
+              THISFORM.LABEL2.CAPTION='截止單號'
+              THISFORM.TEXT1.WIDTH=INT_015*80
+              THISFORM.TEXT2.WIDTH=INT_015*80              
+              THISFORM.TEXT1.MAXLENGTH=10              
+              THISFORM.TEXT2.MAXLENGTH=10                            
+              THISFORM.TEXT1.VALUE=E17.F09
+              THISFORM.TEXT2.VALUE=E17.F09                                                                 
+      ENDCASE   
+  ENDPROC    
+  PROCEDURE CMND1.CLICK      
+     IF !USED('C00')
+         SELECT 0
+         USE C00
+     ELSE
+        SELECT C00
+     ENDIF
+     SET ORDER TO 1     
+     IF !USED('C01')
+         SELECT 0
+         USE C01
+     ELSE
+        SELECT C01
+     ENDIF
+     SET ORDER TO 1     
+     IF !USED('C04')
+        SELECT 0
+        USE C04
+     ELSE
+        SELECT C04
+     ENDIF
+    SET ORDER TO 1     
+   SELE E17
+   DO CASE 
+      CASE KEY()='F01'   
+           SELECT E17.F01,;           
+                  E17.F02,;
+                  E17.F03,;
+                  E17.F04,;
+                  E17.F05,;                  
+                  E17.F06,;
+                  E17.F07,;                    
+                  E17.F08,;
+                  B01.F02,;
+                  E02.F04;
+           FROM E17,B01,E02 WHERE E02.F01=E17.F02 AND B01.F01=E17.F03;
+           AND E17.F01>=THISFORM.TEXT1.VALUE AND E17.F01<=THISFORM.TEXT2.VALUE;
+           ORDER BY E17.F01 INTO CURSOR E17_TEMP NOWAIT
+           IF _TALLY >0
+             IF  EXCEL_CHK='N'
+                   REPORT FORM ALLTRIM(INT_116)+'E17A' TO PRINT PROMPT PREVIEW 
+             ELSE
+              IF !EMPTY(A02.F08)
+                  SELECT E17_TEMP.F01 日期,E17_TEMP.F03 料號,E17_TEMP.F02_B 品名規格,E17_TEMP.F04_A 單據編號,E17_TEMP.F02_A 廠商編號,E17_TEMP.F04_B 廠商簡稱,E17_TEMP.F05 製令號碼,E17_TEMP.F08 進貨數量,E17_TEMP.F07 加工單價,MTCST(E17_TEMP.F04_A,E17_TEMP.F05)/E17_TEMP.F08 材料單價,C04.F07*C00.F02 銷售單價,C04.F02 客戶編號,C01.F05 客戶簡稱;
+                  FROM E17_TEMP,C04,C00,C01 WHERE C04.F03+C04.F04='CA'+LEFT(E17_TEMP.F05,8)+E17_TEMP.F03 AND EMPTY(E17_TEMP.F06) AND C00.F01=C04.F06 AND C01.F01=C04.F02 ORDER BY 日期 NOWAIT
+              ELSE
+                  SELECT F01 日期,F03 料號,F02_B 品名規格,F04_A 單據編號,F02_A 廠商編號,F04_B 廠商簡稱,F05 製令號碼,F08 進貨數量,F06 製程;
+                  FROM E17_TEMP NOWAIT              
+              ENDIF    
+                  FILENAME=LEFT(CHK_STR,4)+'年'+RIGHT(CHK_STR,2)+'月份'+'E17委外入貨日報表'
+		          GCDELIMFILE=PUTFILE('儲存路徑',FILENAME,'XLS')
+		      IF !EMPTY(GCDELIMFILE) 
+		         ON ERROR DO FILE_IMPACT
+		         COPY TO (GCDELIMFILE) TYPE XL5     
+		         =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗') 
+		      ENDIF 
+             ENDIF 
+		   FLG='1'        
+           ENDIF  
+      CASE KEY()='F02+F01' 
+           SELECT E17.F01,;           
+                  E17.F02,;
+                  E17.F03,;
+                  E17.F04,;
+                  E17.F05,;                  
+                  E17.F06,;
+                  E17.F07,;                    
+                  E17.F08,;
+                  B01.F02,;
+                  E02.F04;
+           FROM E17,B01,E02 WHERE E02.F01=E17.F02 AND B01.F01=E17.F03;
+           AND  E17.F02>=THISFORM.TEXT1.VALUE AND E17.F02<=THISFORM.TEXT2.VALUE;
+           ORDER BY E17.F02,E17.F01  INTO CURSOR E17_TEMP NOWAIT
+           IF _TALLY >0
+             IF  EXCEL_CHK='N'
+                   REPORT FORM ALLTRIM(INT_116)+'E17B' TO PRINT PROMPT PREVIEW 
+             ELSE
+                  IF !EMPTY(A02.F08)
+                      SELECT E17_TEMP.F02_A 廠商編號,E17_TEMP.F04_B 廠商簡稱,E17_TEMP.F01 日期,E17_TEMP.F03 料號,E17_TEMP.F02_B 品名規格,E17_TEMP.F04_A 單據編號,E17_TEMP.F05 製令號碼,E17_TEMP.F08 進貨數量,E17_TEMP.F07 加工單價,MTCST(E17_TEMP.F04_A,E17_TEMP.F05)/E17_TEMP.F08 材料單價,C04.F07*C00.F02 銷售單價,C04.F02 客戶編號,C01.F05 客戶簡稱;
+                      FROM E17_TEMP,C04,C00,C01 WHERE C04.F03+C04.F04='CA'+LEFT(E17_TEMP.F05,8)+E17_TEMP.F03 AND EMPTY(E17_TEMP.F06) AND C00.F01=C04.F06 AND C01.F01=C04.F02 ORDER BY 廠商編號,日期 NOWAIT
+                  ELSE
+                      SELECT F02_A 廠商編號,F04_B 廠商簡稱,F01 日期,F03 料號,F02_B 品名規格,F04_A 單據編號,F05 製令號碼,F08 進貨數量,F06 製程;
+                     FROM E17_TEMP NOWAIT                    
+                  ENDIF    
+                  FILENAME=LEFT(CHK_STR,4)+'年'+RIGHT(CHK_STR,2)+'月份'+'E17委外入貨日報表'
+		          GCDELIMFILE=PUTFILE('儲存路徑',FILENAME,'XLS')
+		          IF !EMPTY(GCDELIMFILE) 
+		             ON ERROR DO FILE_IMPACT
+		             COPY TO (GCDELIMFILE) TYPE XL5     
+		             =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗') 
+		          ENDIF 
+             ENDIF 
+		     FLG='1'        
+           ENDIF                        
+      CASE KEY()='F03+F01'   
+           SELECT E17.F01,;           
+                  E17.F02,;
+                  E17.F03,;
+                  E17.F04,;
+                  E17.F05,;                  
+                  E17.F06,;
+                  E17.F07,;                    
+                  E17.F08,;
+                  B01.F02,;
+                  E02.F04;
+           FROM E17,B01,E02 WHERE E02.F01=E17.F02 AND B01.F01=E17.F03;
+           AND E17.F03>=THISFORM.TEXT1.VALUE AND E17.F03<=THISFORM.TEXT2.VALUE;
+           ORDER BY E17.F03,E17.F01 INTO CURSOR E17_TEMP NOWAIT
+           IF _TALLY >0
+             IF  EXCEL_CHK='N'
+                   REPORT FORM ALLTRIM(INT_116)+'E17C' TO PRINT PROMPT PREVIEW 
+             ELSE
+                 IF !EMPTY(A02.F08)
+                      SELECT E17_TEMP.F03 料號,E17_TEMP.F02_B 品名規格,E17_TEMP.F01 日期,E17_TEMP.F04_A 單據編號,E17_TEMP.F02_A 廠商編號,E17_TEMP.F04_B 廠商簡稱,E17_TEMP.F05 製令號碼,E17_TEMP.F08 進貨數量,E17_TEMP.F07 加工單價,MTCST(E17_TEMP.F04_A,E17_TEMP.F05)/E17_TEMP.F08 材料單價,C04.F07*C00.F02 銷售單價,C04.F02 客戶編號,C01.F05 客戶簡稱;
+                      FROM E17_TEMP,C04,C00,C01 WHERE C04.F03+C04.F04='CA'+LEFT(E17_TEMP.F05,8)+E17_TEMP.F03 AND EMPTY(E17_TEMP.F06) AND C00.F01=C04.F06 AND C01.F01=C04.F02 ORDER BY 料號,日期 NOWAIT
+                  ELSE
+                      SELECT F03 料號,F02_B 品名規格,F01 日期,F04_A 單據編號,F02_A 廠商編號,F04_B 廠商簡稱,F05 製令號碼,F08 進貨數量,F06 製程;
+                      FROM E17_TEMP NOWAIT                  
+                  ENDIF    
+                  FILENAME=LEFT(CHK_STR,4)+'年'+RIGHT(CHK_STR,2)+'月份'+'E17委外入貨日報表'
+		          GCDELIMFILE=PUTFILE('儲存路徑',FILENAME,'XLS')
+		          IF !EMPTY(GCDELIMFILE) 
+		             ON ERROR DO FILE_IMPACT
+		             COPY TO (GCDELIMFILE) TYPE XL5     
+		             =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗') 
+		          ENDIF 
+             ENDIF 
+		     FLG='1'        
+           ENDIF                              
+      CASE KEY()='F05+F01'   
+           SELECT E17.F01,;           
+                  E17.F02,;
+                  E17.F03,;
+                  E17.F04,;
+                  E17.F05,;                  
+                  E17.F06,;
+                  E17.F07,;                    
+                  E17.F08,;
+                  B01.F02,;
+                  E02.F04;                  
+           FROM E17,B01,E02 WHERE E02.F01=E17.F02 AND B01.F01=E17.F03;
+           AND E17.F05>=THISFORM.TEXT1.VALUE AND E17.F05<=THISFORM.TEXT2.VALUE;
+           ORDER BY E17.F05,E17.F01 INTO CURSOR E17_TEMP NOWAIT
+           IF _TALLY >0
+             IF  EXCEL_CHK='N'
+                   REPORT FORM ALLTRIM(INT_116)+'E17D' TO PRINT PROMPT PREVIEW 
+             ELSE
+                  IF !EMPTY(A02.F08)
+                       SELECT E17_TEMP.F05 製令號碼,E17_TEMP.F01 日期,E17_TEMP.F03 料號,E17_TEMP.F02_B 品名規格,E17_TEMP.F04_A 單據編號,E17_TEMP.F02_A 廠商編號,E17_TEMP.F04_B 廠商簡稱,E17_TEMP.F08 進貨數量,E17_TEMP.F07 加工單價,MTCST(E17_TEMP.F04_A,E17_TEMP.F05)/E17_TEMP.F08 材料單價,C04.F07*C00.F02 銷售單價,C04.F02 客戶編號,C01.F05 客戶簡稱;
+                       FROM E17_TEMP,C04,C00,C01 WHERE C04.F03+C04.F04='CA'+LEFT(E17_TEMP.F05,8)+E17_TEMP.F03 AND EMPTY(E17_TEMP.F06) AND C00.F01=C04.F06 AND C01.F01=C04.F02 ORDER BY 製令號碼,日期 NOWAIT
+                  ELSE
+                       SELECT F05 製令號碼,F01 日期,F03 料號,F02_B 品名規格,F04_A 單據編號,F02_A 廠商編號,F04_B 廠商簡稱,F08 進貨數量,F06 製程;
+                       FROM E17_TEMP NOWAIT                  
+                  ENDIF     
+                  FILENAME=LEFT(CHK_STR,4)+'年'+RIGHT(CHK_STR,2)+'月份'+'E17委外入貨日報表'
+		  GCDELIMFILE=PUTFILE('儲存路徑',FILENAME,'XLS')
+		  IF !EMPTY(GCDELIMFILE) 
+		       ON ERROR DO FILE_IMPACT
+		       COPY TO (GCDELIMFILE) TYPE XL5     
+		       =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗') 
+		  ENDIF 
+             ENDIF 
+		FLG='1'        
+           ENDIF                         
+      CASE KEY()='F09+F05+F06'   
+           SELECT E17.F01,;           
+                  E17.F02,;
+                  E17.F03,;
+                  E17.F04,;
+                  E17.F05,;
+                  E17.F09,;                  
+                  E17.F06,;
+                  E17.F07,;                    
+                  E17.F08,;
+                  B01.F02,;
+                  E02.F04;                  
+                  FROM E17,B01,E02 WHERE E02.F01=E17.F02 AND B01.F01=E17.F03;
+                  AND E17.F09>=THISFORM.TEXT1.VALUE AND E17.F09<=THISFORM.TEXT2.VALUE;
+                  ORDER BY E17.F09,E17.F05,E17.F06 INTO CURSOR E17_TEMP NOWAIT
+           IF _TALLY >0
+             IF  EXCEL_CHK='N'
+                   REPORT FORM ALLTRIM(INT_116)+'E17E' TO PRINT PROMPT PREVIEW 
+             ELSE
+                  IF !EMPTY(A02.F08)
+                       SELECT E17_TEMP.F09 委外單號,E17_TEMP.F05 製令號碼,E17_TEMP.F01 日期,E17_TEMP.F03 料號,E17_TEMP.F02_B 品名規格,E17_TEMP.F04_A 單據編號,E17_TEMP.F02_A 廠商編號,E17_TEMP.F04_B 廠商簡稱,E17_TEMP.F08 進貨數量,E17_TEMP.F07 加工單價,MTCST(E17_TEMP.F04_A,E17_TEMP.F05)/E17_TEMP.F08 材料單價,C04.F07*C00.F02 銷售單價,C04.F02 客戶編號,C01.F05 客戶簡稱;
+                       FROM E17_TEMP,C04,C00,C01 WHERE C04.F03+C04.F04='CA'+LEFT(E17_TEMP.F05,8)+E17_TEMP.F03 AND EMPTY(E17_TEMP.F06) AND C00.F01=C04.F06 AND C01.F01=C04.F02 ORDER BY 委外單號,製令號碼 NOWAIT
+                  ELSE
+                       SELECT F09 委外單號,F05 製令號碼,F01 日期,F03 料號,F02_B 品名規格,F04_A 單據編號,F02_A 廠商編號,F04_B 廠商簡稱,F08 進貨數量,F06 製程;
+                       FROM E17_TEMP NOWAIT                  
+                  ENDIF     
+                  FILENAME=LEFT(CHK_STR,4)+'年'+RIGHT(CHK_STR,2)+'月份'+'E17委外入貨日報表'
+		          GCDELIMFILE=PUTFILE('儲存路徑',FILENAME,'XLS')
+		          IF !EMPTY(GCDELIMFILE) 
+		             ON ERROR DO FILE_IMPACT
+		             COPY TO (GCDELIMFILE) TYPE XL5     
+		             =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗') 
+		          ENDIF 
+             ENDIF 
+		     FLG='1'        
+           ENDIF                                                                         
+       ENDCASE 
+*       CLEAR 
+    EXCEL_CHK='N'
+    SELECT C00
+    USE
+    SELECT C01
+    USE
+    SELECT C04
+    USE
+    THISFORM.RELEASE  
+  ENDPROC
+  PROCEDURE CMND2.CLICK
+      FLG='1'   
+      EXCEL_CHK='N'
+      THISFORM.RELEASE
+  ENDPROC        
+ENDDEFINE  
+*******************************************************************************************
+FUNCTION MTCST
+PARAMETERS K1,K2
+TLT=0
+SELECT E14
+SEEK K1+K2
+IF FOUND()
+   DO WHILE F04+F01=K1+K2
+      IF F08<>.T.
+         SELECT B01
+         SEEK E14.F02
+         IF FOUND()
+            TLT=TLT+B01.F37*E14.F05
+         ENDIF
+      ENDIF   
+     SELECT E14
+     SKIP
+   ENDDO
+ENDIF   
+RETURN TLT

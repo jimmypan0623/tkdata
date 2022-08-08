@@ -1,0 +1,53 @@
+CLEAR ALL
+CLOSE ALL
+IF !USED('A23')
+   SELECT 0
+   USE A23
+ELSE
+   SELECT A23
+ENDIF
+SET ORDER TO 1      
+GO BOTT
+DO WHILE !BOF()
+   DTE=LEFT(DTOS(F01),6)
+      MDB='B04'+DTE
+          IF FILE('&MDB'+'.DBF')
+               SELECT 0         
+               USE &MDB EXCLUSIVE
+               ALTER TABLE &MDB ADD F18 C(43)
+               SELECT &MDB 
+               USE        
+          ENDIF  
+          MDB='B06'+DTE
+          IF FILE('&MDB'+'.DBF')
+               SELECT 0         
+               USE &MDB EXCLUSIVE
+               ALTER TABLE &MDB ADD F11 C(43)
+               SELECT &MDB 
+               USE        
+          ENDIF           
+   SELECT A23
+   SKIP -1
+ENDDO   
+IF !USED('A22')
+   SELECT 0
+   USE A22
+ELSE
+   SELECT A22
+ENDIF
+SET ORDER TO 1
+APPEND BLANK
+REPLACE F01 WITH 'F18'
+REPLACE F02 WITH 'C'
+REPLACE F03 WITH 43
+REPLACE F05 WITH 'B04'
+REPLACE F06 WITH '改用新料料號'  
+REPLACE F20 WITH  '系統管理'+DTOC(DATE())
+APPEND BLANK
+REPLACE F01 WITH 'F11'
+REPLACE F02 WITH 'C'
+REPLACE F03 WITH 43
+REPLACE F05 WITH 'B06'
+REPLACE F06 WITH '改用新料料號'  
+REPLACE F20 WITH  '系統管理'+DTOC(DATE())
+CLOSE ALL

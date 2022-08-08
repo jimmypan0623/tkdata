@@ -1,0 +1,671 @@
+**程式名稱:E06.產出計劃
+set excl off
+close all
+clear 
+AREA1='E06'
+FLG='0'
+FCH=''
+CHK=''
+IF !USED('A01')
+   SELE 0
+   USE A01
+ELSE 
+   SELE A01
+ENDIF
+SET ORDER TO A01      
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK sys_oper+'E06'      
+IF !USED('A23')
+    SELE 0
+    USE A23
+ELSE 
+   SELE A23
+ENDIF
+SET ORDER TO 1 
+IF !USED('A14')
+   SELE 0
+   USE A14
+ELSE
+   SELE A14
+ENDIF
+SET ORDER TO 1      
+IF !USED('B11')
+   SELE 0
+   USE B11
+ELSE 
+   SELE B11
+ENDIF
+SET FILTER TO F01<>INT_190
+SET ORDER TO B112      
+IF !USED ('B01')
+   SELE 0
+   USE B01 
+ELSE 
+   SELE B01
+ENDIF
+SET ORDER TO 1
+SET RELA TO F01+F07 INTO B11
+IF !USED('D01')
+   SELE 0
+   USE D01
+ELSE
+   SELE D01
+ENDIF
+SET ORDER TO 1  
+IF !USED('C01')
+   SELE 0
+   USE C01
+ELSE
+   SELE C01
+ENDIF
+SET ORDER TO 1      
+IF !USED('E06')
+   SELE 0
+   USE E06
+ELSE
+   SELE E06
+ENDIF
+SET ORDER TO E061            
+SET RELA TO F01 INTO B01
+SET RELA TO F05 INTO A14 ADDI
+SET RELA TO F07 INTO C01 ADDI
+DELETE FROM E06 WHERE F04=0
+
+             SELE F01,F02,F03,F04 FROM D07 UNION ALL SELE F01,F02,F03,F04*(-1) FROM C05 WHERE F02= ANY(SELE F02 FROM E06) AND !EMPTY(C05.F15) INTO CURSOR TKE081             
+             SELE F01,F02,F03,F04 FROM E06 UNION ALL SELE F01,F02,F03,F04*(-1) FROM E16 WHERE F02= ANY(SELE F02 FROM E06) INTO CURSOR TKE082
+             CREATE CURSOR TKE08 (F01 C(12),F02 C(43),F03 D(8),F04 N(13,4))
+             INDEX ON F02+DTOS(F03)+F01 TAG TKE08
+             SET ORDER TO 1
+             SELE TKE081
+             GO TOP
+             DO WHILE !EOF()
+                SELE TKE08
+                APPEND BLANK
+                REPL F01 WITH TKE081.F01
+                REPL F02 WITH TKE081.F02
+                REPL F03 WITH TKE081.F03
+                REPL F04 WITH TKE081.F04
+                SELE TKE081
+                SKIP
+             ENDDO
+             SELE TKE081
+             USE
+             SELE TKE082
+             GO TOP
+             DO WHILE !EOF()
+                SELE TKE08
+                APPEND BLANK
+                REPL F01 WITH TKE082.F01
+                REPL F02 WITH TKE082.F02
+                REPL F03 WITH TKE082.F03
+                REPL F04 WITH TKE082.F04
+                SELE TKE082
+                SKIP
+             ENDDO             
+             SELE TKE082
+             USE
+
+SELECT E06
+GO TOP
+E06form=createobject("tkE06")
+E06form.show  
+define class tkE06 as form
+  caption='E06.產出計劃'
+*!*	  autocenter=.t.
+  controlbox=.F.
+  BORDERSTYLE=3  
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  controlcount=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  showtips=.t.
+  showwindow=1
+  WIDTH=INT_015*789
+  windowtype=1
+ ADD OBJECT LBL_REC AS LBL_REC WITH;
+      LEFT=INT_015*630,;
+      WIDTH=INT_015*50,;
+      CAPTION='安全資料',;
+      TOP=INT_015*8
+  ADD OBJECT REC_COUNT AS REC_COUNT  WITH;
+      LEFT=INT_015*680,;
+      WIDTH=INT_015*60,;
+      TOP=INT_015*8  
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      AUTOCENTER=.T.
+  ADD OBJECT GRID1 AS GRID1 WITH;
+      columncount=9,;            
+      RECORDSOURCE='E06',; 
+      HEIGHT=INT_015*500,;     
+      WIDTH=INT_015*800,;     
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',; 
+      COLUMN4.NAME='COLUMN4',; 
+      COLUMN5.NAME='COLUMN5',;             
+      COLUMN6.NAME='COLUMN6',;       
+      COLUMN7.NAME='COLUMN7',;       
+      COLUMN8.NAME='COLUMN8',;
+      COLUMN9.NAME='COLUMN9'
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;      
+      TOP=INT_015*0,;
+      LEFT=INT_015*405              
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      TOP=INT_015*0,;
+      LEFT=INT_015*220,;
+      ENABLED=.T.,;
+      VISIBLE=.T.                 
+   ADD OBJECT IODT_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*5,;
+      LEFT=INT_015*460,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*65,;
+      CAPTION='\<Z.預期異動',;
+      FONTSIZE=INT_015*9,;
+      ENABLED=.T.,;
+      VISIBLE=.T.           
+  PROCEDURE INIT
+       SELE E06
+       GO TOP
+       THISFORM.ORPGROUP.NEW_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.EDIT_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.DEL_BOTT.VISIBLE=.F.
+       THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限     
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+       THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')   
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","ICASE(E06.F09<>'1',RGB(255,255,0),DATE()-CTOD(LEFT(E06.F08,9))<=VAL(INT_208) AND E06.F09='1',RGB(0,255,255),E06.F03<DATE() AND E06.F09='1',RGB(255,0,0),LEN(ALLTRIM(E06.F05))=5 AND E06.F15>0 AND E06.F09='1',RGB(236,233,216),'')","COLUMN")
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*85
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*261
+       THISFORM.GRID1.COLUMN3.WIDTH=INT_015*70
+       THISFORM.GRID1.COLUMN4.WIDTH=INT_015*90
+       THISFORM.GRID1.COLUMN5.WIDTH=INT_015*60
+       THISFORM.GRID1.COLUMN6.WIDTH=INT_015*60
+       THISFORM.GRID1.COLUMN7.WIDTH=INT_015*60
+       THISFORM.GRID1.COLUMN8.WIDTH=INT_015*60              
+       THISFORM.GRID1.COLUMN9.WIDTH=INT_015*90  
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='製令編號'	          
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='完成品號'	
+	   THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='完工日期'
+	   THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='預計產出'	   	   
+  	   THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='部門編號'   	   
+  	   THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='部門名稱'   	     	   
+  	   THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='客戶編號'   	     	      
+  	   THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='客戶簡稱'   	     	   
+  	   THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號'      	   
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E06.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E06.F02'       
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E06.F03'
+       THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E06.F04'
+       THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E06.F05'
+       THISFORM.GRID1.COLUMN6.CONTROLSOURCE='A14.F02'
+       THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E06.F07'
+       THISFORM.GRID1.COLUMN8.CONTROLSOURCE='C01.F05'       
+       THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E06.F12' 
+       THISFORM.GRID1.READONLY=.T.       
+       JK='製令編號'
+       THISFORM.GRID1.SETFOCUS
+  ENDPROC          
+  PROC GRID1.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex       
+*       THISFORM.GRID1.TOOLTIPTEXT=IIF(DATE()-CTOD(LEFT(E06.F08,8))<=VAL(INT_208) AND E06.F09='1','剛回覆交期',IIF(E06.F09<>'1','未回覆交期',IIF(E06.F03<DATE() AND E06.F09='1','應完工而未完工','')))       
+       THISFORM.GRID1.TOOLTIPTEXT=ICASE(E06.F09<>'1','未回覆交期',DATE()-CTOD(LEFT(E06.F08,9))<=VAL(INT_208) AND E06.F09='1','剛回覆交期',E06.F03<DATE() AND E06.F09='1','應完工而未完工',LEN(ALLTRIM(E06.F05))=5 AND E06.F15>0 AND E06.F09='1','尚未委外加工','')       
+       THISFORM.REC_COUNT.CAPTION=E06.F08       
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       CHK=''
+       thisform.refresh
+  ENDPROC       
+  PROC KEY_LIST.INIT
+       WITH THIS 
+           .ADDITEM('依製令編號+完工日期排列')
+           .ADDITEM('依完工日期+製令編號排列')
+           .ADDITEM('依加工部門+完工日期排列')
+           .ADDITEM('依完成品號+完工日期排列')
+           .ADDITEM('依需求客戶+完工日期排列')                      
+       ENDWITH     
+  ENDPROC
+  PROC KEY_LIST.INTERACTIVECHANGE
+       SELE E06
+       DO CASE
+          CASE THIS.DISPLAYVALUE='依製令編號+完工日期排列'
+               SET ORDER TO E061
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*85
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*261
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*70
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*90
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN6.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN7.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN8.WIDTH=INT_015*60             
+               THISFORM.GRID1.COLUMN9.WIDTH=INT_015*90 
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='製令編號'	          
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='完成品號'	
+	           THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='完工日期'
+	           THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='預計產出'	   	   
+  	           THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='部門編號'   	   
+  	           THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='部門名稱'   	     	   
+  	           THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='客戶編號'   	     	      
+  	           THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='客戶簡稱'   	     	        
+  	           THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號'   	  	   
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E06.F01'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E06.F02'       
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E06.F03'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E06.F04'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E06.F05'
+               THISFORM.GRID1.COLUMN6.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E06.F07'
+               THISFORM.GRID1.COLUMN8.CONTROLSOURCE='C01.F05'       
+               THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E06.F12'  
+          CASE THIS.DISPLAYVALUE='依完工日期+製令編號排列'
+               SET ORDER TO E062
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*70               
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*85
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*261
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*90
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN6.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN7.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN8.WIDTH=INT_015*60   
+               THISFORM.GRID1.COLUMN9.WIDTH=INT_015*90
+	           THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='完工日期'                          
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='製令編號'	          
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='完成品號'	
+	           THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='預計產出'	   	   
+  	           THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='部門編號'   	   
+  	           THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='部門名稱'   	     	   
+  	           THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='客戶編號'   	     	      
+  	           THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='客戶簡稱'  
+  	           THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號'  
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E06.F03'  	            	     	        	   
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E06.F01'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E06.F02'       
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E06.F04'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E06.F05'
+               THISFORM.GRID1.COLUMN6.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E06.F07'
+               THISFORM.GRID1.COLUMN8.CONTROLSOURCE='C01.F05'       
+               THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E06.F12' 
+          CASE THIS.DISPLAYVALUE='依加工部門+完工日期排列'
+               SET ORDER TO E063
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*60      
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*70                        
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*85
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*261
+               THISFORM.GRID1.COLUMN6.WIDTH=INT_015*90
+               THISFORM.GRID1.COLUMN7.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN8.WIDTH=INT_015*60        
+               THISFORM.GRID1.COLUMN9.WIDTH=INT_015*90
+  	           THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='部門編號'   	   
+  	           THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='部門名稱'   
+	           THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='完工日期'  	           	                        
+               THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='製令編號'	          
+               THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='完成品號'	
+	           THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='預計產出'	   	   
+  	           THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='客戶編號'   	     	      
+  	           THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='客戶簡稱' 
+  	           THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號' 
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E06.F05'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='A14.F02'  
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E06.F03'               	             	     	        	   
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E06.F01'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E06.F02'       
+               THISFORM.GRID1.COLUMN6.CONTROLSOURCE='E06.F04'
+               THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E06.F07'
+               THISFORM.GRID1.COLUMN8.CONTROLSOURCE='C01.F05'   
+               THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E06.F12'   
+          CASE THIS.DISPLAYVALUE='依完成品號+完工日期排列'
+               SET ORDER TO E064
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*261
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*70               
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*85
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*90
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN6.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN7.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN8.WIDTH=INT_015*60   
+               THISFORM.GRID1.COLUMN9.WIDTH=INT_015*90
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='完成品號'	
+	           THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='完工日期'                          
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='製令編號'	          
+	           THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='預計產出'	   	   
+  	           THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='部門編號'   	   
+  	           THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='部門名稱'   	     	   
+  	           THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='客戶編號'   	     	      
+  	           THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='客戶簡稱'  
+  	           THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號'
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E06.F02'       
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='E06.F03'  	            	     	        	   
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E06.F01'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E06.F04'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E06.F05'
+               THISFORM.GRID1.COLUMN6.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E06.F07'
+               THISFORM.GRID1.COLUMN8.CONTROLSOURCE='C01.F05' 
+               THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E06.F12'                       
+          CASE THIS.DISPLAYVALUE='依需求客戶+完工日期排列'
+               SET ORDER TO E065
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*60     
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*70                                           
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*261
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*85
+               THISFORM.GRID1.COLUMN6.WIDTH=INT_015*90
+               THISFORM.GRID1.COLUMN7.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN8.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN9.WIDTH=INT_015*90
+  	           THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='客戶編號'   	     	      
+  	           THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='客戶簡稱' 
+	           THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='完工日期'                            	                           
+               THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='完成品號'	
+               THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='製令編號'	          
+	           THISFORM.GRID1.COLUMN6.HEADER1.CAPTION='預計產出'	   	   
+  	           THISFORM.GRID1.COLUMN7.HEADER1.CAPTION='部門編號'   	   
+  	           THISFORM.GRID1.COLUMN8.HEADER1.CAPTION='部門名稱'   	    
+  	           THISFORM.GRID1.COLUMN9.HEADER1.CAPTION='委外單號'  
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='E06.F07'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='C01.F05' 
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='E06.F03'  	            	     	        	                                                         	            	   
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='E06.F02'       
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='E06.F01'
+               THISFORM.GRID1.COLUMN6.CONTROLSOURCE='E06.F04'
+               THISFORM.GRID1.COLUMN7.CONTROLSOURCE='E06.F05'
+               THISFORM.GRID1.COLUMN8.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN9.CONTROLSOURCE='E06.F12'   
+       ENDCASE  
+       JK=THISFORM.GRID1.COLUMN1.HEADER1.CAPTION       
+       THISFORM.GRID1.SETFOCUS      
+  ENDPROC
+  *********************************查看進出明細
+  PROC IODT_BOTT.CLICK
+            LK=E06.F02
+            LV=E06.F03
+            SELE D07.F01,D07.F03,D07.F04,D07.F05,D07.F07,D07.F09 FROM D07 WHERE D07.F02=LK   INTO CURSOR IODT1 ORDER BY D07.F03 NOWAIT&&
+            SELE E06.F01,E06.F03,E06.F04,E06.F05,E06.F07,E06.F09 FROM E06 WHERE E06.F02=LK   INTO CURSOR IODT3  ORDER BY E06.F03 NOWAIT&&            
+            SELE C05.F01,C05.F03,C05.F04,C05.F06,C05.F09 FROM C05 WHERE C05.F02=LK AND !EMPTY(C05.F15) INTO CURSOR IODT2  ORDER BY C05.F03 NOWAIT&&
+            SELE E16.F01,E16.F03,E16.F04,E16.F06,E16.F09 FROM E16 WHERE E16.F02=LK  INTO CURSOR IODT4 ORDER BY E16.F03 NOWAIT&&         
+            CREATE CURSOR IODT(F01 C(12),F03 D(8),F04 N(13,3),F08 N(13,3),F05 C(50))
+            INDE ON DTOS(F03)+F01 TAG IODT
+            SET ORDER TO 1
+            SELE IODT1
+            GO TOP
+            DO WHILE !EOF()
+               SELE IODT
+               APPEND BLANK
+               REPL F01 WITH IODT1.F01
+               REPL F03 WITH IODT1.F03
+               REPL F04 WITH IODT1.F04
+               REPL F05 WITH '採:'+IODT1.F05+PADL(IIF(SEEK(IODT1.F05,'D01'),D01.F04,''),8,' ')+IIF(IODT1.F09='1','  ','><')+IIF(!EMPTY(IODT1.F07),'請:','')+IODT1.F07
+               SELE IODT1
+               SKIP
+            ENDDO   
+            USE
+            SELE IODT3
+            GO TOP
+            DO WHILE !EOF()
+               SELE IODT
+               APPEND BLANK
+               REPL F01 WITH IODT3.F01
+               REPL F03 WITH IODT3.F03
+               REPL F04 WITH IODT3.F04
+               REPL F05 WITH '產:'+IODT3.F05+PADL(IIF(SEEK(IODT3.F05,'A14'),A14.F02,''),8,' ')+IIF(IODT3.F09='1','  ','><')+'出:'+IODT3.F07+IIF(SEEK(IODT3.F07,'C01'),C01.F05,'')
+               SELE IODT3
+               SKIP
+            ENDDO   
+            USE
+            SELE IODT2
+            GO TOP
+            DO WHILE !EOF()
+               SELE IODT
+               APPEND BLANK
+               REPL F01 WITH IODT2.F01
+               REPL F03 WITH IODT2.F03
+               REPL F04 WITH IODT2.F04*(-1)
+               REPL F05 WITH '出:'+IODT2.F06+IIF(SEEK(IODT2.F06,'C01'),C01.F05,'')+'  單:'+IODT2.F09
+               SELE IODT2
+               SKIP
+            ENDDO   
+            USE
+            SELE IODT4
+            GO TOP
+            DO WHILE !EOF()
+               SELE IODT
+               APPEND BLANK
+               REPL F01 WITH IODT4.F01
+               REPL F03 WITH IODT4.F03
+               REPL F04 WITH IODT4.F04*(-1)
+               REPL F05 WITH '領:'+IODT4.F06+IIF(SEEK(IODT4.F06,'A14'),A14.F02,'')+'  成:'+IODT4.F09           
+               SELE IODT4
+               SKIP
+            ENDDO       
+            USE                               
+                ORD_NO=E06.F01
+                STD_NO=E06.F02            
+                DTE_NO=E06.F03
+               IODT_SEEK=CREATEOBJECT("IODT_SEEK")  
+               IODT_SEEK.SHOW           
+            AREA1='E06' 
+            SELE E06
+           THISFORM.GRID1.SETFOCUS    
+       ENDPROC    
+ENDDEFINE
+***********************************************列印程序
+PROCEDURE PNT_PRC  
+   FLG='0'
+   SELE E06
+   ANS_RANGE=CREATEOBJECT("ANS_RANGE")  
+   ANS_RANGE.SHOW    
+   IF FLG<>'1'
+       =MESSAGEBOX('無此範圍資料',0+48,'警示')
+   ENDIF   
+ENDPROC
+***********************************************
+DEFINE CLASS ANS_RANGE AS FORM
+  AUTOCENTER=.T.
+  CAPTION='請輸入列印資料範圍'
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*190
+  WIDTH=INT_015*480
+  FONTSIZE=INT_015*9
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  SHOWWINDOW=1
+  WINDOWTYPE=1
+  NAME='ANS_RANGE'
+  ADD OBJECT LABEL1 AS LABEL WITH;
+      AUTOSIZE=.T.,;
+      HEIGHT=INT_015*25,;
+      LEFT=INT_015*30,;
+      TOP=INT_015*75,;
+      NAME='LABEL1'
+  ADD OBJECT LABEL2 AS LABEL WITH;
+      AUTOSIZE=.T.,;
+      HEIGHT=INT_015*25,;
+      LEFT=INT_015*250,;
+      TOP=INT_015*75,;
+      NAME='LABEL2'
+  ADD OBJECT TEXT1 AS TEXTBOX WITH;
+      AUTOSIZE=.T.,;
+      TOP=INT_015*70,;
+      LEFT=INT_015*80,;
+      HEIGHT=INT_015*25,; 
+      NAME='TEXT1'
+  ADD OBJECT TEXT2 AS TEXTBOX WITH;
+      AUTOSIZE=.T.,;
+      TOP=INT_015*70,;
+      LEFT=INT_015*300,;
+      HEIGHT=INT_015*25,;         
+      NAME='TEXT2'    
+  ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*60,;    
+      HEIGHT=INT_015*25,;   
+      TOP=INT_015*144,;  
+      WIDTH=INT_015*80,;
+      CAPTION='\<Y.執行',;
+      TOOLTIPTEXT='確認所輸入的範圍鍵值!快速鍵->ALT+Y',;
+      NAME='CMND1'
+  ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+      AUTOSIZE=.T.,;
+      LEFT=INT_015*200,;
+      TOP=INT_015*144,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*80,;
+      CAPTION='\<C.取消',;
+      TOOLTIPTEXT='取消作業!快速鍵->ALT+C',;
+      NAME='CMND2'
+  PROCEDURE INIT 
+      THISFORM.SETALL('FONTSIZE',INT_015*9,'TEXTBOX')
+      THISFORM.SETALL('FONTSIZE',INT_015*9,'LABEL')      
+      THISFORM.SETALL('FONTSIZE',INT_015*9,'COMMANDBUTTON')           
+      DO CASE
+         CASE KEY()='F01+F02+DTOS(F03)'    
+              THISFORM.LABEL1.CAPTION='起始單號'
+              THISFORM.LABEL2.CAPTION='截止單號'
+              THISFORM.TEXT1.WIDTH=INT_015*82
+              THISFORM.TEXT2.WIDTH=INT_015*82   
+              THISFORM.TEXT1.MAXLENGTH=12             
+              THISFORM.TEXT2.MAXLENGTH=12                                       
+              THISFORM.TEXT1.VALUE=E06.F01
+              THISFORM.TEXT2.VALUE=E06.F01              
+         CASE KEY()='DTOS(F03)+F01'
+              THISFORM.LABEL1.CAPTION='起始日期'
+              THISFORM.LABEL2.CAPTION='截止日期'
+              THISFORM.TEXT1.WIDTH=INT_015*70
+              THISFORM.TEXT2.WIDTH=INT_015*70              
+              THISFORM.TEXT1.VALUE=E06.F03
+              THISFORM.TEXT2.VALUE=E06.F03               
+         CASE KEY()='F05+DTOS(F03)'       
+              THISFORM.LABEL1.CAPTION='起始部門'
+              THISFORM.LABEL2.CAPTION='截止部門'
+              THISFORM.TEXT1.WIDTH=INT_015*60
+              THISFORM.TEXT2.WIDTH=INT_015*60   
+              THISFORM.TEXT1.MAXLENGTH=5              
+              THISFORM.TEXT2.MAXLENGTH=5                                       
+              THISFORM.TEXT1.VALUE=E06.F05
+              THISFORM.TEXT2.VALUE=E06.F05               
+         CASE KEY()='F02+DTOS(F03)'   
+              THISFORM.LABEL1.CAPTION='起始料號'
+              THISFORM.LABEL2.CAPTION='截止料號'
+              THISFORM.TEXT1.WIDTH=INT_015*149
+              THISFORM.TEXT2.WIDTH=INT_015*149              
+              THISFORM.TEXT1.MAXLENGTH=43
+              THISFORM.TEXT2.MAXLENGTH=43              
+              THISFORM.TEXT1.VALUE=E06.F02
+              THISFORM.TEXT2.VALUE=E06.F02                       
+         CASE KEY()='F07+DTOS(F03)'             
+              THISFORM.LABEL1.CAPTION='起始客戶'
+              THISFORM.LABEL2.CAPTION='截止客戶'
+              THISFORM.TEXT1.WIDTH=INT_015*60
+              THISFORM.TEXT2.WIDTH=INT_015*60
+              THISFORM.TEXT1.MAXLENGTH=5              
+              THISFORM.TEXT2.MAXLENGTH=5                            
+              THISFORM.TEXT1.VALUE=E06.F07
+              THISFORM.TEXT2.VALUE=E06.F07   
+      ENDCASE   
+  ENDPROC          
+  PROCEDURE CMND1.CLICK        
+     DO CASE 
+        CASE KEY()='F01+F02+DTOS(F03)'         
+             SELECT E06.F01,;           
+                    E06.F02,;
+                    E06.F03,;
+                    E06.F04,;
+                    E06.F05,;
+                    E06.F07,;     
+                    E06.F09,;                                                      
+                    B01.F02,;
+                    A14.F02;
+             FROM E06,B01,A14 WHERE B01.F01=E06.F02 AND A14.F01=E06.F05 AND E06.F01>=THISFORM.TEXT1.VALUE AND E06.F01<=THISFORM.TEXT2.VALUE;
+             ORDER BY E06.F01,E06.F03 NOWAIT
+             IF _TALLY >0
+                REPORT FORM ALLTRIM(INT_116)+'E06A' TO PRINTER PROMPT PREVIEW 
+*               REPORT FORM D08A TO PRINT PROMPT        
+                FLG='1'    
+             ENDIF  
+        CASE KEY()='DTOS(F03)+F01'   
+             SELECT E06.F01,;
+             E06.F02,;
+             E06.F03,;
+             E06.F04,;
+             E06.F05,;
+             E06.F07,;     
+             E06.F09,;                                               
+             B01.F02,;
+             A14.F02;
+             FROM E06,B01,A14 WHERE  B01.F01=E06.F02 AND A14.F01=E06.F05 AND E06.F03>=THISFORM.TEXT1.VALUE AND E06.F03<=THISFORM.TEXT2.VALUE;
+             ORDER BY E06.F03,E06.F01 NOWAIT
+             IF _TALLY >0
+                REPORT FORM ALLTRIM(INT_116)+'E06B' TO PRINTER PROMPT PREVIEW 
+*                REPORT FORM D08B TO PRINT PROMPT        
+                FLG='1'    
+             ENDIF             
+        CASE KEY()='F05+DTOS(F03)'   
+             SELECT E06.F01,;
+             E06.F02,;
+             E06.F03,;
+             E06.F04,;
+             E06.F05,;
+             E06.F07,;                   
+             E06.F09,;                                 
+             B01.F02,;
+             A14.F02;
+             FROM E06,B01,A14 WHERE B01.F01=E06.F02 AND A14.F01=E06.F05 AND E06.F05>=THISFORM.TEXT1.VALUE AND E06.F05<=THISFORM.TEXT2.VALUE;
+             ORDER BY E06.F05,E06.F03 NOWAIT
+             IF _TALLY >0
+                REPORT FORM ALLTRIM(INT_116)+'E06C' TO PRINTER PROMPT PREVIEW 
+*               REPORT FORM D08C TO PRINT PROMPT        
+                FLG='1'    
+             ENDIF                   
+        CASE KEY()='F02+DTOS(F03)'   
+             SELECT E06.F01,;
+             E06.F02,;
+             E06.F03,;
+             E06.F04,;
+             E06.F05,;
+             E06.F07,; 
+             E06.F09,;                   
+             B01.F02,;
+             A14.F02;
+             FROM E06,B01,A14 WHERE B01.F01=E06.F02 AND A14.F01=E06.F05 AND E06.F02>=THISFORM.TEXT1.VALUE AND E06.F02<=THISFORM.TEXT2.VALUE;
+             ORDER BY E06.F02,E06.F03 NOWAIT
+             IF _TALLY >0
+                REPORT FORM ALLTRIM(INT_116)+'E06D' TO PRINTER PROMPT PREVIEW 
+*               REPORT FORM D08D TO PRINT PROMPT        
+                FLG='1'    
+             ENDI F                       
+        CASE KEY()='F07+DTOS(F03)'   
+             SELECT E06.F01,;
+             E06.F02,;
+             E06.F03,;
+             E06.F04,;
+             E06.F05,;
+             E06.F07,;     
+             E06.F09,;                                               
+             B01.F02,;
+             A14.F02;
+             FROM E06,B01,A14 WHERE B01.F01=E06.F02 AND A14.F01=E06.F05 AND E06.F07>=THISFORM.TEXT1.VALUE AND E06.F07<=THISFORM.TEXT2.VALUE;
+             ORDER BY E06.F02,E06.F03 NOWAIT
+             IF _TALLY >0
+                REPORT FORM ALLTRIM(INT_116)+'E06E' TO PRINTER PROMPT PREVIEW 
+*               REPORT FORM D08E TO PRINT PROMPT        
+                FLG='1'    
+             ENDIF                                                     
+       ENDCASE  
+       THISFORM.RELEASE 
+  ENDPROC
+  PROCEDURE CMND2.CLICK
+      FLG='1'   
+      THISFORM.RELEASE
+  ENDPROC      
+ENDDEFINE 

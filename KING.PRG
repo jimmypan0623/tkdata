@@ -1,0 +1,18 @@
+CLOSE ALL
+CLEAR ALL
+SELECT 0
+USE D10
+SET ORDER TO 2
+GO TOP
+DO WHILE !EOF()
+   KK1=F02
+   DO WHILE F02=KK1
+      
+      SKIP
+      IF F02=KK1
+         DELETE
+     
+      ENDIF      
+   ENDDO 
+   
+ENDDO

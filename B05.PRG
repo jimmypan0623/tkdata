@@ -1,0 +1,3318 @@
+***程式名稱:出貨退回/折讓單
+close all
+clear 
+PO_NO=''
+FLG='0'
+FCH=''
+CHK=''
+CHK_STR=''
+FILTER_KEY=''
+R=0
+QTY=0
+TQTY=0
+AREA1='B05_1'
+AREA2='B05'
+HD1='B004 '
+HD2='BD'
+HD3='出貨退回單'
+IF !USED('A09')
+   SELE 0
+   USE A09
+ELSE
+   SELE A09
+ENDIF
+SET ORDER TO 1
+IF !USED('A23')
+    SELE 0
+    USE A23
+ELSE 
+   SELE A23
+ENDIF
+SET ORDER TO 1     
+A24='A24'+LEFT(DTOS(DATE()),6)     &&單號暫存檔
+IF !USED('&A24')
+   SELE 0
+   USE (A24) ALIA A24
+ELSE
+   SELE A24
+ENDIF
+SET ORDER TO 1      
+B25='B25'+LEFT(DTOS(DATE()),6)    &&部門別月報表
+IF !USED('&B25')
+   SELE 0
+   USE (B25) ALIA B25
+ELSE
+   SELE B25
+ENDIF
+SET ORDER TO 1      
+B26='B26'+LEFT(DTOS(DATE()),6)   &&庫存異動記錄
+IF !USED('&B26')
+   SELE 0
+   USE (B26) ALIA B26
+ELSE
+   SELE B26
+ENDIF
+SET ORDER TO 1      
+B39='B39'+LEFT(DTOS(DATE()),6)   &&未過帳單據查詢檔
+IF !USED('&B39')
+   SELE 0
+   USE (B39) ALIA B39
+ELSE
+   SELE B39
+ENDIF
+SET ORDER TO 1      
+IF !USED('E08')
+   SELECT 0
+   USE E08
+ELSE
+   SELECT E08
+ENDIF   
+SET ORDER TO E083
+IF !USED('C09')
+   SELECT 0
+   USE C09   
+ELSE
+  SELECT C09
+ENDIF
+SET ORDER TO 1                  
+C10='C10'+LEFT(DTOS(DATE()),6)   &&出貨日報表檔
+IF !USED('&C10')
+   SELE 0
+   USE (C10) ALIA C10
+ELSE
+   SELE C10
+ENDIF
+SET ORDER TO 1                  
+IF !USED('C06')                  &&出貨紀錄檔   
+   SELE 0
+   USE C06
+ELSE
+   SELE C06
+ENDIF
+SET ORDER TO 1      
+C13='C13'+LEFT(DTOS(DATE()),6)   &&應收帳款對帳單檔
+IF !USED('&C13')
+   SELE 0
+   USE (C13) ALIA C13
+ELSE
+   SELE C13
+ENDIF
+K24='K24'+LEFT(DTOS(DATE()),6)   &&發票明細檔表頭
+K241='K241'+LEFT(DTOS(DATE()),6)   
+K242='K242'+LEFT(DTOS(DATE()),6)  
+IF !USED('&K24')
+   SELE 0
+   USE (K24) ALIA K24
+ELSE
+   SELE K24
+ENDIF
+SET ORDER TO K241  
+K25='K25'+LEFT(DTOS(DATE()),6)   &&發票明細檔
+K251='K251'+LEFT(DTOS(DATE()),6)   
+IF !USED('&K25')
+   SELE 0
+   USE (K25) ALIA K25
+ELSE
+   SELE K25
+ENDIF
+SET ORDER TO K251  
+****          
+SELE A23
+SET ORDER TO 1
+SEEK LEFT(DTOS(DATE()),6)+'01'
+SKIP
+IF !EOF()
+   C1C='C13'+LEFT(DTOS(A23.F01),6)     &&下個月的應收帳款明細檔
+   IF !USED('&C1C')
+      SELE 0
+      USE (C1C) ALIA C1C
+   ELSE
+      SELE C1C
+   ENDIF
+   SET ORDER TO 1
+   K2D='K24'+LEFT(DTOS(A23.F01),6)     &&下個月的發票明細檔表頭
+   IF !USED('&K2D')
+      SELE 0
+      USE (K2D) ALIA K2D
+   ELSE
+      SELE K2D
+   ENDIF
+   SET ORDER TO 1       
+   K2E='K25'+LEFT(DTOS(A23.F01),6)     &&下個月的發票明細檔
+   IF !USED('&K2E')
+      SELE 0
+      USE (K2E) ALIA K2E
+   ELSE
+      SELE K2E
+   ENDIF
+   SET ORDER TO 1   
+ELSE
+   IF !USED('C1C')                    &&應收帳款明細月結暫存檔
+      SELE 0
+      USE C1C ALIA C1C
+   ELSE
+      SELE C1C
+   ENDIF
+   SET ORDER TO 1
+   IF !USED('K2D')                    &&發票明細月結暫存檔表頭
+      SELE 0
+      USE K2D ALIA K2D
+   ELSE
+      SELE K2D
+   ENDIF
+   SET ORDER TO 1     
+   IF !USED('K2E')                    &&發票明細月結暫存檔
+      SELE 0
+      USE K2E ALIA K2E
+   ELSE
+      SELE K2E
+   ENDIF
+   SET ORDER TO 1   
+ENDIF   
+***
+SET ORDER TO 1
+IF !USED('C00')                  &&幣別檔
+   SELE 0
+   USE C00
+ELSE
+   SELE C00
+ENDIF
+SET ORDER TO 1      
+IF ! USED('A01')
+   SELE 0
+   USE A01 INDE A01
+ELSE
+   SELE A01
+ENDIF      
+SET ORDER TO A01
+IF !USED('A02')
+   SELE 0
+   USE A02 INDE A02
+ELSE
+   SELE A02
+ENDIF
+SET ORDER TO A021      
+SEEK sys_oper+'B05'
+IF !USED('A14')
+   SELE 0
+   USE A14
+ELSE 
+   SELE A14
+ENDIF
+SET FILTER TO F04='*' AND F13='*'
+SET ORDER TO 1     
+
+IF !USED('B01')
+   SELE 0
+   USE B01 INDE B01
+ELSE
+   SELE B01
+ENDIF
+SET ORDER TO 1     
+IF !USED('B11')
+   SELE 0
+   USE B11 
+ELSE
+   SELE B11
+ENDIF
+SET ORDER TO B111  
+IF !USED('C01')
+   SELE 0
+   USE C01 INDE C01
+ELSE
+   SELE C01
+ENDIF
+SET ORDER TO C011
+IF !USED('C05')
+   SELE 0   
+   USE C05
+ELSE
+   SELE C05
+ENDIF
+SET ORDER TO C054
+IF !USED('C03')
+   SELE 0
+   USE C03 INDE C03
+ELSE
+   SELE C03
+ENDIF
+SET ORDER TO C031
+if !used('C04')
+   SELE 0
+   USE C04 INDE C04
+ELSE
+   SELE C04
+ENDIF
+SET ORDER TO C041      
+B05='B05'+LEFT(DTOS(DATE()),6)
+B051='B051'+LEFT(DTOS(DATE()),6)
+IF !USED('&B05')
+   SELE 0
+   USE (B05) ALIA B05
+ELSE
+   SELE B05
+ENDIF
+SET ORDER TO 1      
+SET RELA TO F03 INTO B01
+CREATE CURSOR B05_1;
+(F01 C(10),F02 C(2),F05 C(5),F08 C(7),F10 C(5),F12 C(1),F13 C(17),F14 D(8),F20 C(10),F21 C(15),F22 C(2),F23 C(1),F24 C(1),F90 C(17))
+INDE ON F01 TAG B05_11
+INDE ON F10+F01 TAG B05_12
+INDE ON F05+F02 TAG B05_13
+SELE F01,F02,F05,F08,F10,F12,F13,F14,F20,F21,F22,F23,F24,F90 FROM B05 GROUP BY F01 ORDER BY F01 INTO CURSOR B05_2
+SELE B05_2
+GO TOP
+DO WHILE !EOF()
+   SELE B05_1
+   APPEND BLANK
+   REPLACE  F01 WITH B05_2.F01
+   REPLACE  F02 WITH B05_2.F02
+   REPLACE  F05 WITH B05_2.F05
+   REPLACE  F08 WITH B05_2.F08
+   REPLACE  F10 WITH B05_2.F10
+   REPLACE  F12 WITH B05_2.F12
+   REPLACE  F13 WITH B05_2.F13
+   REPLACE  F14 WITH B05_2.F14   
+   REPLACE  F20 WITH B05_2.F20
+   REPLACE  F21 WITH B05_2.F21
+   REPLACE  F22 WITH B05_2.F22
+   REPLACE  F23 WITH B05_2.F23
+   REPLACE  F24 WITH B05_2.F24
+   REPLACE  F90 WITH B05_2.F90
+   SELECT  B05_2
+   SKIP   
+ENDDO
+SELE B05_2
+USE   
+SELE B05_1
+SET ORDER TO 1
+SET RELA TO F10 INTO C01
+SET RELA TO F05 INTO A14 ADDI
+B05form=createobject("tkB05")
+B05form.show  
+define class tkB05 as form
+  caption='B05.出貨退回/折讓單'
+*!*	  autocenter=.t.
+  controlbox=.F.
+  BORDERSTYLE=1  
+  MAXBUTTON=.F.
+  MINBUTTON=.F.
+  MOVABLE=.F.
+  CLOSABLE=.F.
+  controlcount=57
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*550
+  showtips=.t.
+  showwindow=1
+  WIDTH=INT_015*789
+  windowtype=1
+  NAME='TKB05'
+  add object shape1 as shape1 with;
+      autocenter=.t.
+  ADD OBJECT LBL_REC AS LBL_REC WITH;
+      AUTOCENTER =.T.
+  ADD OBJECT REC_COUNT AS REC_COUNT  with;
+      caption=str(reccount())        
+  add object shape2 as shape2 with;
+      autocenter=.t.
+  add object shape3 as shape3 with;
+      autocenter=.t.
+  ADD OBJECT PAGEFRAME1 AS PAGEFRAME WITH;
+      LEFT=INT_015*236,;
+      WIDTH=INT_015*540,;
+      HEIGHT=INT_015*204,;
+      FONTSIZE=INT_015*9,;
+      PAGECOUNT=2,;
+      TABSTRETCH=1,;
+      ACTIVEPAGE=1,;
+      VISIBLE=.T.,;
+      PAGE1.NAME='PAGE1',;
+      PAGE1.VISIBLE=.T.,;
+      PAGE1.CAPTION='表頭資料',;
+      PAGE2.NAME='PAGE2',;
+      PAGE2.VISIBLE=.T.,;
+      PAGE2.CAPTION='表身詳細資料內容'   
+  ADD OBJECT KEY_LIST AS KEY_LIST WITH;
+      autocenter=.t.,;
+      WIDTH=INT_015*130
+  ADD OBJECT MTH_LIST AS MTH_LIST WITH;
+      autocenter=.t.
+  ADD OBJECT grid1 AS grid1 WITH;
+      columncount=5,;            
+      RECORDSOURCE='B05_1',;      
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;      
+      COLUMN3.NAME='COLUMN3',;      
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5'      
+  ADD OBJECT grid2 AS grid2 WITH;
+      columncount=7,;            
+      RECORDSOURCE='B05',; 
+      LINKMASTER='B05_1',;
+      RELATIONALEXPR='F01',;
+      childorder=B051,;  
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3',;
+      COLUMN4.NAME='COLUMN4',;
+      COLUMN5.NAME='COLUMN5',;
+      COLUMN6.NAME='COLUMN6',;
+      COLUMN7.NAME='COLUMN7'
+  ADD OBJECT CMDGROUP AS CMDGROUP WITH;
+      AUTOSIZE=.T.              
+  ADD OBJECT ORPGROUP AS ORPGROUP WITH;    
+      AUTOSIZE=.T.
+  ADD OBJECT SHRGROUP AS SHRGROUP WITH;
+      TOP=INT_015*173,;
+      LEFT=INT_015*558          
+  ADD OBJECT ANS_BOTT AS COMMANDBUTTON WITH;
+      TOP=INT_015*490,;
+      LEFT=INT_015*15,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;      
+      FONTSIZE=INT_015*9,;
+      CAPTION='\<A.過帳',;
+      NAME='ANS_BOTT'                  
+  PROCEDURE PAGEFRAME1.PAGE1.INIT     
+     THIS.ADDOBJECT('LBLF01','LABEL')
+     WITH THIS.LBLF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*13
+          .WIDTH=INT_015*50
+          .CAPTION='退回單號'          
+     ENDWITH
+     THIS.ADDOBJECT('LBLDIS','LABEL')
+     WITH THIS.LBLDIS
+          .VISIBLE=.T.
+          .LEFT=INT_015*145
+          .TOP=INT_015*13
+          .AUTOSIZE=.T.
+     ENDWITH     
+     THIS.ADDOBJECT('LBLF10','LABEL')
+     WITH THIS.LBLF10
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*38
+         .WIDTH=INT_015*50
+         .CAPTION='客戶編號'
+     ENDWITH
+     THIS.ADDOBJECT('LBLF101','LABEL')
+     WITH THIS.LBLF101
+         .VISIBLE=.T.
+         .LEFT=INT_015*115
+         .TOP=INT_015*38
+         .AUTOSIZE=.T.
+     ENDWITH     
+     THIS.ADDOBJECT('LBLF05','LABEL')     
+     WITH THIS.LBLF05
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*63
+          .WIDTH=INT_015*50  
+          .CAPTION='存放部門'
+     ENDWITH            
+     THIS.ADDOBJECT('LBLF051','LABEL')     
+     WITH THIS.LBLF051
+          .VISIBLE=.T.
+          .LEFT=INT_015*115
+          .TOP=INT_015*63
+          .AUTOSIZE=.T.
+     ENDWITH                      
+     THIS.ADDOBJECT('LBLF14','LABEL')     
+     WITH THIS.LBLF14
+          .VISIBLE=.T.
+          .LEFT=INT_015*14
+          .TOP=INT_015*88
+          .WIDTH=INT_015*50  
+          .CAPTION='補貨日期'
+     ENDWITH                 
+     THIS.ADDOBJECT('LBLF20','LABEL')
+     WITH THIS.LBLF20
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*113
+         .WIDTH=INT_015*50
+         .CAPTION='發票號碼'
+     ENDWITH
+     THIS.ADDOBJECT('LBLF221','LABEL')
+     WITH THIS.LBLF221
+         .VISIBLE=.T.
+         .LEFT=INT_015*147
+         .TOP=INT_015*113
+         .AUTOSIZE=.T.
+         .CAPTION=''
+     ENDWITH          
+     THIS.ADDOBJECT('LBLF231','LABEL')
+     WITH THIS.LBLF231
+         .VISIBLE=.T.
+         .LEFT=INT_015*265
+         .TOP=INT_015*113
+         .AUTOSIZE=.T.
+         .CAPTION=''
+     ENDWITH         
+     THIS.ADDOBJECT('LBLF21','LABEL')
+     WITH THIS.LBLF21
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*138
+         .WIDTH=INT_015*50
+         .CAPTION='報單編號'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF02','LABEL')
+     WITH THIS.LBLF02
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*13
+         .WIDTH=INT_015*50
+         .CAPTION='退貨日期'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF08','Label')
+     WITH THIS.LBLF08
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*38
+         .WIDTH=INT_015*50
+         .CAPTION='原出貨月'         
+     ENDWITH     	     
+          THIS.ADDOBJECT('LBLTTL3','LABEL')
+     WITH THIS.LBLTTL3
+         .VISIBLE=(A02.F10='*')
+         .LEFT=INT_015*365
+         .TOP=INT_015*63
+         .WIDTH=INT_015*63
+         .CAPTION='原幣別總計'
+     ENDWITH              
+     THIS.ADDOBJECT('LBLTTL31','LABEL')
+     WITH THIS.LBLTTL31
+         .VISIBLE=(A02.F10='*')
+         .LEFT=INT_015*429
+         .TOP=INT_015*63
+         .AUTOSIZE=.T.
+     ENDWITH                        
+     THIS.ADDOBJECT('LBLTTL1','LABEL')
+     WITH THIS.LBLTTL1
+         .VISIBLE=(A02.F10='*')
+         .LEFT=INT_015*365
+         .TOP=INT_015*88
+         .WIDTH=INT_015*63
+         .CAPTION='本幣別總計'
+     ENDWITH              
+     THIS.ADDOBJECT('LBLTTL11','LABEL')
+     WITH THIS.LBLTTL11
+         .VISIBLE=(A02.F10='*')
+         .LEFT=INT_015*429
+         .TOP=INT_015*88
+         .AUTOSIZE=.T.
+     ENDWITH             
+     THIS.ADDOBJECT('LBLF12','LABEL')
+     WITH THIS.LBLF12
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*113
+         .WIDTH=INT_015*50
+         .CAPTION='過  帳  碼'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF121','LABEL')
+     WITH THIS.LBLF121
+         .VISIBLE=.T.
+         .LEFT=INT_015*419
+         .TOP=INT_015*113
+         .AUTOSIZE=.T.
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF13','LABEL')
+     WITH THIS.LBLF13
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*138
+         .WIDTH=INT_015*50
+         .CAPTION='安全資料'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF131','LABEL')
+     WITH THIS.LBLF131
+         .VISIBLE=.T.
+         .LEFT=INT_015*419
+         .TOP=INT_015*138
+         .AUTOSIZE=.T.
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF90','LABEL')
+     WITH THIS.LBLF90
+         .VISIBLE=.T.
+         .LEFT=INT_015*368
+         .TOP=INT_015*163
+         .WIDTH=INT_015*50
+         .CAPTION='確認人員'
+     ENDWITH    
+     THIS.ADDOBJECT('LBLF901','LABEL')
+     WITH THIS.LBLF901
+         .VISIBLE=.T.
+         .LEFT=INT_015*419
+         .TOP=INT_015*163
+         .AUTOSIZE=.T.
+     ENDWITH         
+     THIS.ADDOBJECT('TXTF01','TEXTBOX')          
+     WITH THIS.TXTF01
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*9
+          .WIDTH=INT_015*81
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+     ENDWITH
+     THIS.ADDOBJECT('DIS_TYPE','DIS_TYPE')        
+     THIS.ADDOBJECT('TXTF10','TXTF10')          
+     WITH THIS.TXTF10
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*34
+          .WIDTH=INT_015*49
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=5
+     ENDWITH             
+     THIS.ADDOBJECT('TXTF05','TXTF05')          
+     WITH THIS.TXTF05
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*59
+          .WIDTH=INT_015*49
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=5
+     ENDWITH        
+     THIS.ADDOBJECT('TXTF14','TEXTBOX')          
+     WITH THIS.TXTF14
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*84
+          .WIDTH=INT_015*70
+          .HEIGHT=INT_015*25
+     ENDWITH             
+     THIS.ADDOBJECT('TXTF20','TXTF20')          
+     WITH THIS.TXTF20
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*109
+          .WIDTH=INT_015*81
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=10
+     ENDWITH
+     THIS.ADDOBJECT('INV_TYPE','INV_TYPE')     
+     THIS.ADDOBJECT('TAX_TYPE','TAX_TYPE')                                   
+     THIS.ADDOBJECT('TXTF21','TEXTBOX')          
+     WITH THIS.TXTF21
+          .VISIBLE=.T.
+          .LEFT=INT_015*64
+          .TOP=INT_015*134
+          .WIDTH=INT_015*140
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=15
+     ENDWITH      
+     THIS.ADDOBJECT('TXTF02','TEXTBOX')          
+     WITH THIS.TXTF02
+          .VISIBLE=.T.
+          .LEFT=INT_015*418
+          .TOP=INT_015*9
+          .WIDTH=INT_015*40
+          .HEIGHT=INT_015*25
+          .MAXLENGTH=2
+     ENDWITH        
+	THIS.ADDOBJECT('TXTF08','TEXTBOX')
+	WITH THIS.TXTF08
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*418
+	     .TOP=INT_015*33
+	     .WIDTH=INT_015*60
+	     .HEIGHT=INT_015*25
+	     .INPUTMASK='####/##'
+	     .NAME='TXTF08'	    
+	ENDWITH     	     
+  ENDPROC   
+  PROCEDURE PAGEFRAME1.PAGE2.INIT
+	THIS.ADDOBJECT('LBLF03','LABEL')
+	WITH THIS.LBLF03  
+	     .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*18
+	     .WIDTH=INT_015*50
+         .CAPTION='料品編號'
+    ENDWITH  
+    THIS.ADDOBJECT('LBLF031','LABEL')
+    WITH THIS.LBLF031
+         .VISIBLE=.T.
+         .LEFT=INT_015*327
+	     .TOP=INT_015*18
+	     .autosize=.t.
+	ENDWITH     
+    THIS.ADDOBJECT('LBLF11','LABEL')
+    WITH THIS.LBLF11
+         .VISIBLE=.T.
+	     .LEFT=INT_015*14
+	     .TOP=INT_015*43
+	     .WIDTH=INT_015*50
+	     .CAPTION='訂單編號'
+	ENDWITH     
+    THIS.ADDOBJECT('LBLF04','Label')
+    WITH THIS.LBLF04
+         .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*68
+         .WIDTH=INT_015*50
+         .CAPTION='計價數量'         
+    ENDWITH     
+    THIS.ADDOBJECT('LBLF15','LABEL')
+    WITH THIS.LBLF15
+         .VISIBLE=.T.    
+         .LEFT=INT_015*14
+         .TOP=INT_015*93
+         .WIDTH=INT_015*50
+         .CAPTION='無價數量'       
+    ENDWITH    
+    THIS.ADDOBJECT('LBLF07','LABEL')
+    WITH THIS.LBLF07
+         .VISIBLE=.T.           
+         .LEFT=INT_015*14
+         .TOP=INT_015*118
+         .WIDTH=INT_015*50
+         .CAPTION='備註資料'
+    ENDWITH             
+    THIS.ADDOBJECT('LBLF79','LABEL')
+    WITH THIS.LBLF79
+         .VISIBLE=INT_029       
+         .LEFT=INT_015*14
+         .TOP=INT_015*143
+         .WIDTH=INT_015*50
+         .CAPTION='實際料號'
+    ENDWITH             
+    THIS.ADDOBJECT('LBLF16','LABEL')    
+    WITH THIS.LBLF16
+         .VISIBLE=.F.           
+         .LEFT=INT_015*328
+         .TOP=INT_015*43
+         .WIDTH=INT_015*50
+         .CAPTION='幣        別'
+    ENDWITH     
+    THIS.ADDOBJECT('LBLF18','LABEL')    
+    WITH THIS.LBLF18
+         .VISIBLE=.F.           
+         .LEFT=INT_015*328
+         .TOP=INT_015*68
+         .WIDTH=INT_015*50
+         .CAPTION='匯        率'
+    ENDWITH         
+    THIS.ADDOBJECT('LBLF17','LABEL')      
+    WITH THIS.LBLF17
+         .VISIBLE=.F.       
+         .LEFT=INT_015*328
+         .TOP=INT_015*93
+         .WIDTH=INT_015*50
+         .CAPTION='單        價'
+    ENDWITH     
+    THIS.ADDOBJECT('LBLF13','LABEL')
+    WITH THIS.LBLF13
+        .VISIBLE=.T.           
+        .LEFT=INT_015*328
+        .TOP=INT_015*143
+        .WIDTH=INT_015*50
+        .CAPTION='安全資料'         
+    ENDWITH    
+    THIS.ADDOBJECT('LBLF131','LABEL')
+    WITH THIS.LBLF131
+        .VISIBLE=.T.           
+        .LEFT=INT_015*380
+        .TOP=INT_015*143
+        .AUTOSIZE=.T.
+    ENDWITH    
+	THIS.ADDOBJECT('TXTF03','TXTF03')
+	WITH THIS.TXTF03      
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*65
+	     .TOP=INT_015*14
+	     .WIDTH=INT_015*261
+	     .HEIGHT=INT_015*25
+	     .MAXLENGTH=43
+	     .NAME='TXTF03'  
+	ENDWITH     
+	THIS.ADDOBJECT('TXTF11','TXTF11')
+	WITH THIS.TXTF11      
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*65
+	     .TOP=INT_015*39
+	     .WIDTH=INT_015*119
+	     .HEIGHT=INT_015*25
+	     .MAXLENGTH=10
+	     .NAME='TXTF11'  
+	ENDWITH     
+	THIS.ADDOBJECT('TXTF04','TEXTBOX')
+	WITH THIS.TXTF04
+	     .VISIBLE=.T.
+	     .LEFT=INT_015*65
+	     .TOP=INT_015*64
+	     .WIDTH=INT_015*100
+	     .HEIGHT=INT_015*25
+	     .INPUTMASK='999999999999'
+	     .NAME='TXTF04'	    
+	ENDWITH     
+    THIS.ADDOBJECT('TXTF15','TEXTBOX')
+    WITH THIS.TXTF15
+         .VISIBLE=.T.           
+         .LEFT=INT_015*65
+         .TOP=INT_015*89
+         .WIDTH=INT_015*100
+         .HEIGHT=INT_015*25
+         .INPUTMASK='999999999999'
+         .NAME='TXTF15'
+    ENDWITH     
+    THIS.ADDOBJECT('TXTF07','TEXTBOX')
+    WITH THIS.TXTF07
+         .VISIBLE=.T.           
+         .LEFT=INT_015*65
+         .TOP=INT_015*114
+         .WIDTH=INT_015*257
+         .HEIGHT=INT_015*25
+         .MAXLENGTH=40
+         .NAME='TXTF07'
+    ENDWITH         
+
+    THIS.ADDOBJECT('TXTF16','TEXTBOX')
+    WITH THIS.TXTF16
+         .VISIBLE=.F.           
+         .LEFT=INT_015*379
+         .TOP=INT_015*39
+         .WIDTH=INT_015*49         
+         .HEIGHT=INT_015*25
+         .MAXLENGTH=4
+         .NAME='TXTF16'                            
+    ENDWITH         
+    THIS.ADDOBJECT('CRCY','CRCY')
+    THIS.ADDOBJECT('TXTF18','TEXTBOX')
+    WITH THIS.TXTF18
+         .VISIBLE=.F.           
+         .LEFT=INT_015*379
+         .TOP=INT_015*64
+         .WIDTH=INT_015*100
+         .HEIGHT=INT_015*25
+         .INPUTMASK='9999.999999'
+         .NAME='TXTF18'                            
+    ENDWITH         
+    THIS.ADDOBJECT('TXTF17','TEXTBOX')
+    WITH THIS.TXTF17
+         .VISIBLE=.F.           
+         .LEFT=INT_015*379
+         .TOP=INT_015*89
+         .WIDTH=INT_015*100
+         .HEIGHT=INT_015*25
+         .INPUTMASK='9999999.999999'
+         .NAME='TXTF17'                            
+    ENDWITH
+    THIS.ADDOBJECT('LBLFLT','LABEL')
+    WITH THIS.LBLFLT
+         .VISIBLE=.F.           
+         .LEFT=INT_015*328
+         .TOP=INT_015*118
+         .WIDTH=INT_015*50
+         .CAPTION='金額小計'
+    ENDWITH  
+    THIS.ADDOBJECT('LBLFLT1','LABEL')    
+    WITH THIS.LBLFLT1
+         .VISIBLE=.F.           
+         .LEFT=INT_015*379
+         .TOP=INT_015*118
+         .AUTOSIZE=.T.
+    ENDWITH              
+    THIS.ADDOBJECT('TXTF79','TXTF79')
+    WITH THIS.TXTF79
+         .VISIBLE=INT_029        
+         .LEFT=INT_015*65
+         .TOP=INT_015*139
+         .WIDTH=INT_015*261
+         .HEIGHT=INT_015*25
+         .MAXLENGTH=43
+         .NAME='TXTF79'
+    ENDWITH         
+  ENDPROC       
+  PROCEDURE PAGEFRAME1.PAGE1.activate
+     R=0
+          SELE B05_1     
+     IF THISFORM.SHRGROUP.VISIBLE=.F.
+        THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(B05_1.F12<>'2',RGB(255,0,0),'')","COLUMN")         
+        THISFORM.GRID1.ENABLED=.T.   
+        THISFORM.GRID1.SETFOCUS   
+        THISFORM.KEY_LIST.ENABLED=.T.
+        THISFORM.MTH_LIST.ENABLED=.T.
+     ELSE
+       THISFORM.KEY_LIST.ENABLED=.F.   
+       THISFORM.MTH_LIST.ENABLED=.F.   
+     ENDIF                
+    IF THISFORM.GRID1.ACTIVEROW=0 .AND. thisform.SHRGROUP.ENABLED=.F.
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+        THISFORM.ANS_BOTT.ENABLED=.F.
+        THISFORM.PAGEFRAME1.PAGE1.SETALL('VALUE','','TEXTBOX')        
+        THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE=''        
+        THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE1.TXTF21.VALUE=''        
+        THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF101.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF121.CAPTION=''   
+        THISFORM.PAGEFRAME1.PAGE1.LBLF131.CAPTION=''  
+        THISFORM.PAGEFRAME1.PAGE1.LBLF221.CAPTION=''   
+        THISFORM.PAGEFRAME1.PAGE1.LBLF231.CAPTION=''    
+        THISFORM.PAGEFRAME1.PAGE1.LBLF901.CAPTION=''       
+        THISFORM.PAGEFRAME1.PAGE1.LBLTTL11.CAPTION='' 
+        THISFORM.PAGEFRAME1.PAGE1.LBLTTL31.CAPTION=''     
+        THISFORM.PAGEFRAME1.PAGE1.LBLDIS.CAPTION=''                
+        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.      
+     ELSE
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  .AND. B05_1.F12<>'2' &&判斷有無修改的權限
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   .AND. B05_1.F12<>'2' &&判斷有無刪除的權限
+        THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)    &&判斷有無列印的權限  
+        THISFORM.ANS_BOTT.ENABLED=IIF(B05_1.F12='2',.F.,.T.) .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED
+        THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.
+     ENDIF   
+     THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.);
+     AND !IIF(SEEK(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),'A23','A231'),A23.F07,.F.) AND !IIF(SEEK(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),'A23','A231'),A23.F14,.F.)
+  ENDPROC
+  PROCEDURE PAGEFRAME1.PAGE2.activate
+       SELE B05
+     IF THISFORM.SHRGROUP.ENABLED=.F.
+        THISFORM.GRID2.READONLY=.T.   
+        THISFORM.GRID2.SETFOCUS   
+     ENDIF     
+     IF THISFORM.GRID2.ACTIVEROW=0 .and. thisform.SHRGROUP.ENABLED=.F.
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.F.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+        THISFORM.ANS_BOTT.ENABLED=.F.
+        THISFORM.PAGEFRAME1.PAGE2.SETALL('VALUE','','TEXTBOX')
+        THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.LBLFLT1.CAPTION='0'
+     ELSE
+        THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.T.      
+        THISFORM.CMDGROUP.UP_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.NEXT_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.END_BOTT.ENABLED=.T.
+        THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+        THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) .AND. B05.F12<>'2'  &&判斷有無修改的權限
+        THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  .AND. B05.F12<>'2' &&判斷有無刪除的權限
+        THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)  &&&&判斷有無列印的權限  
+         IF     A02.F10='*' &&判斷有無查看單價的權限
+	        THISFORM.PAGEFRAME1.PAGE2.LBLF16.VISIBLE=.T.
+	        THISFORM.PAGEFRAME1.PAGE2.TXTF16.VISIBLE=.T.
+	        THISFORM.PAGEFRAME1.PAGE2.LBLF17.VISIBLE=.T.
+	        THISFORM.PAGEFRAME1.PAGE2.TXTF17.VISIBLE=.T.
+	        THISFORM.PAGEFRAME1.PAGE2.LBLF18.VISIBLE=.T.
+	        THISFORM.PAGEFRAME1.PAGE2.TXTF18.VISIBLE=.T.
+	        THISFORM.PAGEFRAME1.PAGE2.LBLFLT.VISIBLE=.T.
+	        THISFORM.PAGEFRAME1.PAGE2.LBLFLT1.VISIBLE=.T.
+	 ENDIF       
+        THISFORM.ANS_BOTT.ENABLED=IIF(B05.F12='2',.F.,.T.) .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED
+     ENDIF   
+     R=RECNO('&AREA1')
+     THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(RECNO('&AREA1')=R,RGB(255,255,0),'')","COLUMN")
+     THISFORM.GRID1.ENABLED=.F.     
+     THISFORM.ORPGROUP.NEW_BOTT.ENABLED=IIF(A02.F04='*',.T.,.F.)   .AND. B05_1.F12<>'2' &&判斷有無新增的權限
+     THISFORM.KEY_LIST.ENABLED=.F.     
+     THISFORM.MTH_LIST.ENABLED=.F.     
+  ENDPROC   
+  
+  PROC INIT       
+       thisform.setall('height',INT_015*25,'textbox')
+       thisform.setall('height',INT_015*17,'label')
+       thisform.setall('FONTSIZE',INT_015*9,'textbox')
+       thisform.setall('FONTSIZE',INT_015*9,'label')       
+       THISFORM.SETALL('READONLY',.T.,'TEXTBOX')
+       THISFORM.SHRGROUP.VISIBLE=.F.
+       THISFORM.SHRGROUP.ENABLED=.F.
+       thisform.GRID1.setall('FONTSIZE',INT_015*9,'COLUMN')
+       thisform.GRID1.setall('FONTSIZE',INT_015*9,'HEADER')          
+       THISFORM.GRID1.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID2.BACKCOLOR=IIF(SEEK(sys_oper,'A01'),IIF(A01.F11=0,10009146,A01.F11),10009146)
+       THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='出貨退回單號'
+       THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='客戶編號'
+       THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='客戶簡稱'
+       THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='出貨部門'
+       THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='部門名稱'
+       THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B05_1.F01'
+       THISFORM.GRID1.COLUMN2.CONTROLSOURCE='B05_1.F10'
+       THISFORM.GRID1.COLUMN3.CONTROLSOURCE='C01.F05'
+       THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B05_1.F05'
+       THISFORM.GRID1.COLUMN5.CONTROLSOURCE='A14.F02'
+       THISFORM.GRID1.COLUMN1.WIDTH=INT_015*81
+       THISFORM.GRID1.COLUMN2.WIDTH=INT_015*49
+       THISFORM.GRID1.COLUMN3.WIDTH=INT_015*60
+       THISFORM.GRID1.COLUMN4.WIDTH=INT_015*49
+       THISFORM.GRID1.COLUMN5.WIDTH=INT_015*58
+       THISFORM.GRID1.SETALL("DYNAMICBACKCOLOR","IIF(B05_1.F12<>'2',RGB(255,0,0),'')","COLUMN")         
+       thisform.GRID2.setall('FONTSIZE',INT_015*9,'COLUMN')
+       thisform.GRID2.setall('FONTSIZE',INT_015*9,'HEADER')        
+       THISFORM.grid2.COLUMN1.HEADER1.CAPTION='料品編號'
+       THISFORM.GRID2.COLUMN2.HEADER1.CAPTION=IIF(INT_029,'實際料號','品名規格')
+       THISFORM.grid2.COLUMN3.HEADER1.CAPTION='訂單編號'
+	   THISFORM.grid2.COLUMN4.HEADER1.CAPTION='計價數量'
+	   THISFORM.grid2.COLUMN5.HEADER1.CAPTION='無價數量'
+	   THISFORM.grid2.COLUMN6.HEADER1.CAPTION='備註說明'
+	   THISFORM.grid2.COLUMN7.HEADER1.CAPTION='安全資料'
+	   THISFORM.GRID2.LINKMASTER='B05_1'
+       THISFORM.GRID2.RELATIONALEXPR='F01'
+	   THISFORM.grid2.COLUMN1.CONTROLSOURCE='B05.F03'
+	   THISFORM.GRID2.COLUMN2.CONTROLSOURCE="IIF(INT_029,B05.F79,B01.F02)"
+	   THISFORM.grid2.COLUMN3.CONTROLSOURCE='B05.F11'
+	   THISFORM.grid2.COLUMN4.CONTROLSOURCE='B05.F04'
+	   THISFORM.grid2.COLUMN5.CONTROLSOURCE='B05.F15'
+	   THISFORM.grid2.COLUMN6.CONTROLSOURCE='B05.F07'
+	   THISFORM.grid2.COLUMN7.CONTROLSOURCE='B05.F13'
+	   THISFORM.GRID2.SETALL("DYNAMICBACKCOLOR","IIF(B05.F03!=B05.F79,RGB(107,79,175),'')","COLUMN")   
+	   THISFORM.grid2.COLUMN1.WIDTH=INT_015*149
+	   THISFORM.GRID2.COLUMN2.WIDTH=INT_015*149
+       THISFORM.grid2.COLUMN3.WIDTH=INT_015*100
+       THISFORM.GRID2.COLUMN4.WIDTH=INT_015*100
+       THISFORM.GRID2.COLUMN5.WIDTH=INT_015*100
+       THISFORM.GRID2.COLUMN6.WIDTH=INT_015*100
+       THISFORM.GRID2.COLUMN7.WIDTH=INT_015*135
+       THISFORM.grid1.READONLY=.T.      
+       THISFORM.grid2.READONLY=.T.            
+       THISFORM.grid1.SETFOCUS
+       IF THISFORM.GRID1.ACTIVEROW=0
+          THISFORM.CMDGROUP.ENABLED=.F.
+          THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+          THISFORM.ANS_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.ENABLED=.T.      
+          THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) .AND. B05_1.F12<>'2'  &&判斷有無修改的權限
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  .AND. B05_1.F12<>'2' &&判斷有無刪除的權限
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限       
+          THISFORM.ANS_BOTT.ENABLED=IIF(B05_1.F12='2',.F.,.T.)  .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED
+       ENDIF          
+       THISFORM.KEY_LIST.DISPLAYVALUE='依退回單號排列'      
+       JK='退回單號'
+       SELE B05_1
+       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=B05_1.F01
+  ENDPROC               
+  PROC KEY_LIST.INIT 
+       with this 
+           .additem('依退回單號排列')
+           .additem('依客戶編號排列')
+           .additem('依收貨部門排列')
+       endwith      
+  ENDPROC 
+  PROC KEY_LIST.INTERACTIVECHANGE                 
+       SELE B05_1 
+       DO CASE
+          CASE THIS.DISPLAYVALUE='依退回單號排列'
+               set order to 1 
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='退回單號'
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B05_1.F01'
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*81
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='客戶編號'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='B05_1.F10'
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*49
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='客戶簡稱'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='C01.F05'
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='收貨部門'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B05_1.F05'
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*49               
+               THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='部門名稱'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*58                              
+   
+          CASE THIS.DISPLAYVALUE='依客戶編號排列'
+               set order to 2
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='客戶編號'
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B05_1.F10'
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*49
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='客戶簡稱'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='C01.F05'
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*60
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='退回單號'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='B05_1.F01'
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*81                                                   
+               THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='收貨部門'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B05_1.F05'
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*49  
+               THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='部門名稱'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*58                 
+          CASE THIS.DISPLAYVALUE='依收貨部門排列'
+               set order to 3
+               THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='收貨部門'
+               THISFORM.GRID1.COLUMN1.CONTROLSOURCE='B05_1.F05'
+               THISFORM.GRID1.COLUMN1.WIDTH=INT_015*49
+               THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='部門名稱'
+               THISFORM.GRID1.COLUMN2.CONTROLSOURCE='A14.F02'
+               THISFORM.GRID1.COLUMN2.WIDTH=INT_015*58
+               THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='退回單號'
+               THISFORM.GRID1.COLUMN3.CONTROLSOURCE='B05_1.F01'
+               THISFORM.GRID1.COLUMN3.WIDTH=INT_015*81               
+               THISFORM.GRID1.COLUMN4.HEADER1.CAPTION='客戶編號'
+               THISFORM.GRID1.COLUMN4.CONTROLSOURCE='B05_1.F10'
+               THISFORM.GRID1.COLUMN4.WIDTH=INT_015*49                  
+               THISFORM.GRID1.COLUMN5.HEADER1.CAPTION='客戶簡稱'
+               THISFORM.GRID1.COLUMN5.CONTROLSOURCE='C01.F05'
+               THISFORM.GRID1.COLUMN5.WIDTH=INT_015*60                                                             
+       ENDCASE 
+       COD=SYS(21)
+       THISFORM.grid1.SETFOCUS
+  ENDPROC      
+  PROC MTH_LIST.INTERACTIVECHANGE
+       THISFORM.GRID1.RECORDSOURCE=''
+       THISFORM.GRID2.RECORDSOURCE=''
+       THISFORM.GRID2.LINKMASTER=''
+       THISFORM.GRID2.RELATIONALEXPR=''
+       THISFORM.GRID2.childorder=''
+
+       SELE A24
+       USE
+       A24='A24'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&A24')
+          SELE 0
+          USE (A24) ALIA A24
+       ELSE
+          SELE A24
+       ENDIF
+       SET ORDER TO 1             
+       SELE B25
+       USE
+       B25='B25'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&B25')
+          SELE 0
+          USE (B25) ALIA B25
+       ELSE
+          SELE B25
+       ENDIF
+       SET ORDER TO 1                    
+       SELE B26
+       USE
+       B26='B26'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&B26')
+          SELE 0
+          USE (B26) ALIA B26
+       ELSE
+          SELE B26
+       ENDIF
+       SET ORDER TO 1                           
+       SELE B39
+       USE
+       B39='B39'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&B39')
+          SELE 0
+          USE (B39) ALIA B39
+       ELSE
+          SELE B39
+       ENDIF
+       SET ORDER TO 1           
+       SELE C10
+       USE
+       C10='C10'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&C10')
+          SELE 0
+          USE (C10) ALIA C10
+       ELSE
+          SELE C10
+       ENDIF
+       SET ORDER TO 1                             
+       SELE C1C
+       USE
+       SELE K2D
+       USE        
+       SELE K2E
+       USE                            
+       SELE C13
+       USE
+       C13='C13'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&C13')
+          SELE 0
+          USE (C13) ALIA C13
+       ELSE
+          SELE C13
+       ENDIF
+       SET ORDER TO 1       
+       SELECT K24
+       USE
+	K24='K24'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)  &&發票明細檔表頭
+	K241='K241'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)   
+	K242='K242'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)  
+	IF !USED('&K24')
+	   SELE 0
+	   USE (K24) ALIA K24
+	ELSE
+	   SELE K24
+	ENDIF
+	SET ORDER TO K241        
+       SELE K25
+       USE
+       K25='K25'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       K251='K251'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&K25')
+          SELE 0
+          USE (K25) ALIA K25
+       ELSE
+          SELE K25
+       ENDIF
+       SET ORDER TO K251
+       ***
+       SELE A23
+       SET ORDER TO 1
+       SEEK DTOS(CTOD(THIS.DISPLAYVALUE+'/01'))
+       SKIP
+       IF !EOF()
+          C1C='C13'+LEFT(DTOS(A23.F01),6)     &&下個月的應收帳款明細檔
+          IF !USED('&C1C')
+             SELE 0
+             USE (C1C) ALIA C1C
+          ELSE
+             SELE C1C
+          ENDIF
+          SET ORDER TO 1
+          K2D='K24'+LEFT(DTOS(A23.F01),6)     &&下個月的發票明細檔表頭
+          IF !USED('&K2D')
+             SELE 0
+             USE (K2D) ALIA K2D
+          ELSE
+             SELE K2D
+          ENDIF
+          SET ORDER TO 1          
+          K2E='K25'+LEFT(DTOS(A23.F01),6)     &&下個月的發票明細檔
+          IF !USED('&K2E')
+             SELE 0
+             USE (K2E) ALIA K2E
+          ELSE
+             SELE K2E
+          ENDIF
+          SET ORDER TO 1   
+       ELSE
+          IF !USED('C1C')                    &&應收帳款明細月結暫存檔
+             SELE 0
+             USE C1C ALIA C1C
+          ELSE
+             SELE C1C
+          ENDIF
+          SET ORDER TO 1
+          IF !USED('K2D')                    &&發票明細月結暫存檔表頭
+             SELE 0
+             USE K2D ALIA K2D
+          ELSE
+             SELE K2D
+          ENDIF
+          SET ORDER TO 1           
+          IF !USED('K2E')                    &&發票明細月結暫存檔
+             SELE 0
+             USE K2E ALIA K2E
+          ELSE
+             SELE K2E
+          ENDIF
+          SET ORDER TO 1   
+       ENDIF          
+      **** 
+       SELE B05
+       set rela off into b01
+       SET RELA OFF INTO B05_1
+       USE
+       SELE B05_1
+       set rela off into c01
+       set rela off into a14
+       USE
+       B05='B05'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       B051='B051'+LEFT(DTOS(CTOD(THIS.DISPLAYVALUE+'/01')),6)
+       IF !USED('&B05')
+          SELE 0
+          USE (B05) ALIA B05
+       ELSE
+          SELE B05
+       ENDIF
+       SET ORDER TO 1      
+       SET RELA TO F03 INTO B01
+       CREATE CURSOR B05_1;
+       (F01 C(10),F02 C(2),F05 C(5),F08 C(7),F10 C(5),F12 C(1),F13 C(17),F14 D(8),F20 C(10),F21 C(15),F22 C(2),F23 C(1),F24 C(1),F90 C(17))
+       INDE ON F01 TAG B05_11
+       INDE ON F10+F01 TAG B05_12
+       INDE ON F05+F02 TAG B05_13
+       SELE F01,F02,F05,F08,F10,F12,F13,F14,F20,F21,F22,F23,F24,F90 FROM B05 GROUP BY F01 ORDER BY F01 INTO CURSOR B05_2
+       SELE B05_2
+       GO TOP
+       DO WHILE !EOF()
+          SELE B05_1
+          APPEND BLANK
+          REPLACE  F01 WITH B05_2.F01
+          REPLACE  F02 WITH B05_2.F02
+          REPLACE  F05 WITH B05_2.F05
+          REPLACE  F08 WITH B05_2.F08          
+          REPLACE  F10 WITH B05_2.F10
+          REPLACE  F12 WITH B05_2.F12
+          REPLACE  F13 WITH B05_2.F13
+          REPLACE  F14 WITH B05_2.F14
+          REPLACE  F20 WITH B05_2.F20
+          REPLACE  F21 WITH B05_2.F21
+          REPLACE  F22 WITH B05_2.F22
+          REPLACE  F23 WITH B05_2.F23
+          REPLACE  F24 WITH B05_2.F24
+          REPLACE  F90 WITH B05_2.F90
+          SELE B05_2
+          SKIP
+       ENDDO
+       SELE B05_2
+       USE   
+       SELE B05_1
+       SET ORDER TO 1
+       SET RELA TO F10 INTO C01
+       SET RELA TO F05 INTO A14 ADDI       
+       THISFORM.GRID1.RECORDSOURCE='B05_1'
+       THISFORM.GRID2.RECORDSOURCE='B05'
+	   THISFORM.GRID2.LINKMASTER='B05_1'
+       THISFORM.GRID2.RELATIONALEXPR='F01'      
+       THISFORM.GRID2.CHILDORDER=B051  
+	   THISFORM.grid2.COLUMN1.CONTROLSOURCE='B05.F03'
+	   THISFORM.grid2.COLUMN2.CONTROLSOURCE='IIF(INT_029,B05.F79,B01.F02)'
+	   THISFORM.grid2.COLUMN3.CONTROLSOURCE='B05.F11'
+	   THISFORM.grid2.COLUMN4.CONTROLSOURCE='B05.F04'
+	   THISFORM.grid2.COLUMN5.CONTROLSOURCE='B05.F15'
+	   THISFORM.grid2.COLUMN6.CONTROLSOURCE='B05.F07'
+	   THISFORM.grid2.COLUMN7.CONTROLSOURCE='B05.F13'            
+       THISFORM.KEY_LIST.INTERACTIVECHANGE
+	   THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+	   THISFORM.REFRESH
+	   thisform.grid1.setfocus        
+       IF THISFORM.GRID1.ACTIVEROW=0
+          THISFORM.CMDGROUP.ENABLED=.F.
+          THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+          THISFORM.ANS_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.ENABLED=.T.      
+          THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) .AND. B05_1.F12<>'2'  &&判斷有無修改的權限
+          THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  .AND. B05_1.F12<>'2' &&判斷有無刪除的權限
+          THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限    
+          THISFORM.ANS_BOTT.ENABLED=IIF(B05_1.F12='2',.F.,.T.)  .AND. IIF(A02.F11='*',.T.,.F.)  .AND. !THISFORM.SHRGROUP.ENABLED               
+       ENDIF          
+*!*	       THISFORM.KEY_LIST.DISPLAYVALUE='依出貨退回單號排列'      
+*!*	       JK='訂單編號'
+*!*	       SELE B05_1
+*!*	       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=B05_1.F01	   
+*       THISFORM.REFRESH       
+  ENDPROC
+  PROC grid1.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex
+       THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=B05_1.F01
+       THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=B05_1.F10
+       THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=B05_1.F05
+       THISFORM.PAGEFRAME1.PAGE1.LBLF101.CAPTION=C01.F04
+       THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION=A14.F02
+       THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE=B05_1.F14
+       THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE=B05_1.F20
+       THISFORM.PAGEFRAME1.PAGE1.TXTF21.VALUE=B05_1.F21       
+       THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE=B05_1.F02
+       THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE=B05_1.F08       
+       THISFORM.PAGEFRAME1.PAGE1.lblF121.caption=B05_1.F12
+       THISFORM.PAGEFRAME1.PAGE1.lblF131.caption=B05_1.F13
+       THISFORM.PAGEFRAME1.PAGE1.lblF901.caption=B05_1.F90
+       THISFORM.PAGEFRAME1.PAGE1.lblf221.caption=IIF(B05_1.F22='33','三聯式',IIF(B05_1.F22='34','二聯式',''))
+       THISFORM.PAGEFRAME1.PAGE1.lblf231.caption=IIF(B05_1.F23='1','應稅',IIF(B05_1.F23='2','零稅',IIF(B05_1.F23='3','免稅','')))
+       THISFORM.PAGEFRAME1.PAGE1.LBLDIS.CAPTION=IIF(B05_1.F24='2','折讓','退貨')
+       THISFORM.PAGEFRAME1.PAGE1.LBLTTL11.CAPTION=TRANSFORM(TTL1(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE),'@R 9999999999.99')
+       THISFORM.PAGEFRAME1.PAGE1.LBLTTL31.CAPTION=TRANSFORM(TTL3(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE),'@R 9999999999.99')
+       THISFORM.PAGEFRAME1.PAGE1.LBLF121.BACKCOLOR=IIF(B05_1.F12='2',RGB(0,255,0),RGB(255,0,0))
+       THISFORM.PAGEFRAME1.PAGE1.LBLF121.CAPTION=IIF(B05_1.F12='2','    已過帳    ','    未過帳    ')       
+       THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.) .AND. B05_1.F12<>'2'  &&判斷有無修改的權限
+       THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)  .AND. B05_1.F12<>'2' &&判斷有無刪除的權限
+       THISFORM.ANS_BOTT.ENABLED=IIF(B05_1.F12='2',.F.,.T.) .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED         
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       JK=THIS.COLUMN1.HEADER1.CAPTION  
+       IF THIS.ACTIVEROW=0
+          THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
+       ELSE
+          THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.T.
+       ENDIF   
+       CHK=''     
+*       thisform.refresh
+  ENDPROC     
+  PROC grid2.AFTERROWCOLCHANGE
+       LPARAMETERS nColIndex
+       THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=B05.F03
+       THISFORM.PAGEFRAME1.PAGE2.LBLF031.CAPTION=B01.F02
+       THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=B05.F11       
+       THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=B05.F04
+       THISFORM.PAGEFRAME1.PAGE2.TXTF07.VALUE=B05.F07       
+       THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE=B05.F15
+       THISFORM.PAGEFRAME1.PAGE2.TXTF07.VALUE=B05.F07
+       THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE=B05.F16
+       THISFORM.PAGEFRAME1.PAGE2.TXTF18.VALUE=B05.F18       
+       THISFORM.PAGEFRAME1.PAGE2.TXTF17.VALUE=B05.F17
+       THISFORM.PAGEFRAME1.PAGE2.TXTF79.VALUE=B05.F79     
+       THISFORM.PAGEFRAME1.PAGE2.LBLFLT1.CAPTION=TRANSFORM(ROUND(F04*F17*F18,INT_069),'99999999999.99')
+       THISFORM.PAGEFRAME1.PAGE2.LBLF131.CAPTION=F13       
+       FCH=THISFORM.ACTIVECONTROL.NAME
+       JK=THIS.COLUMN1.HEADER1.CAPTION
+       CHK=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+       if thisform.pageframe1.activepage=1
+          thisform. CMDGROUP.SEEK_BOTT.ENABLED=.F.
+       ENDIF   
+*       thisform.refresh
+  ENDPROC 
+  PROCEDURE ORPGROUP.NEW_BOTT.CLICK    
+    THISFORM.KEY_LIST.ENABLED=.F. 
+    THISFORM.MTH_LIST.ENABLED=.F. 
+    THISFORM.ANS_BOTT.ENABLED=.F.
+    IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1       
+       THISFORM.GRID2.RECORDSOURCE=''
+       THISFORM.GRID2.CHILDORDER=''
+       THISFORM.PAGEFRAME1.PAGE1.SETALL('READONLY',.F.,'TEXTBOX')     &&處理表頭新增
+       THISFORM.GRID1.ENABLED=.F.   
+       THISFORM.GRID2.ENABLED=.F.   
+          HD='B004 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+          DO ODR_CRT &&執行主程式單據編號
+          THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=PO_NO
+          THISFORM.PAGEFRAME1.PAGE1.TXTF01.REFRESH
+          thisform.PAGEFRAME1.PAGE1.txtf01.readonly=.t.
+          THISFORM.PAGEFRAME1.PAGE1.TXTF10.SETFOCUS
+          THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+          THISFORM.PAGEFRAME1.PAGE1.TXTF05.READONLY=.F.
+          THISFORM.PAGEFRAME1.PAGE1.TXTF10.READONLY=.F.        
+          THISFORM.PAGEFRAME1.PAGE1.TXTF20.READONLY=.F.  
+          THISFORM.PAGEFRAME1.PAGE1.DIS_TYPE.VISIBLE=.T.     
+          THISFORM.PAGEFRAME1.PAGE1.DIS_TYPE.VALUE=1       
+          THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=INT_086
+          THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE=THISFORM.MTH_LIST.DISPLAYVALUE                       
+          THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE=''
+          THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE=CTOD('')
+          THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE=''
+         IF INT_060=.F.
+             THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VISIBLE=.T.
+             THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VISIBLE=.T.
+             THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VALUE=1
+             THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VALUE=1             
+         ENDIF
+        THISFORM.PAGEFRAME1.PAGE1.TXTF21.VALUE=''                
+        THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE=RIGHT(DTOS(DATE()),2)
+        THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION=IIF(SEEK(INT_086,'A14'),A14.F02,'')
+        THISFORM.PAGEFRAME1.PAGE1.LBLF101.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF121.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLF131.CAPTION=''   
+        THISFORM.PAGEFRAME1.PAGE1.LBLF221.CAPTION=''   
+        THISFORM.PAGEFRAME1.PAGE1.LBLF231.CAPTION=''   
+        THISFORM.PAGEFRAME1.PAGE1.LBLF901.CAPTION=''
+        THISFORM.PAGEFRAME1.PAGE1.LBLTTL11.CAPTION=''         
+        THISFORM.PAGEFRAME1.PAGE1.LBLTTL31.CAPTION=''  
+        THISFORM.PAGEFRAME1.PAGE1.LBLDIS.CAPTION=''                
+     ELSE
+        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.              &&處理表身新增
+        THISFORM.GRID2.ENABLED=.F.   
+        THISFORM.PAGEFRAME1.PAGE2.SETALL('READONLY',.F.,'TEXTBOX')     
+        THISFORM.PAGEFRAME1.PAGE2.CRCY.VISIBLE=IIF(A02.F10='*',IIF(A02.F08='*',.T.,.F.),.F.)
+        THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE=INT_011
+        THISFORM.PAGEFRAME1.PAGE2.CRCY.ENABLED=IIF(A02.F10='*',IIF(A02.F08='*',.T.,.F.),.F.)
+        THISFORM.PAGEFRAME1.PAGE2.TXTF16.READONLY=IIF(A02.F08='*',.F.,.T.)
+        THISFORM.PAGEFRAME1.PAGE2.TXTF17.READONLY=IIF(A02.F08='*',.F.,.T.)   
+        THISFORM.PAGEFRAME1.PAGE2.TXTF18.READONLY=IIF(A02.F08='*',.F.,.T.)
+        THISFORM.PAGEFRAME1.PAGE2.TXTF03.READONLY=.F.
+        THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+        THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=''          
+        THISFORM.PAGEFRAME1.PAGE2.lblF031.caption=''   
+        THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=0
+        THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE=0
+        THISFORM.PAGEFRAME1.PAGE2.TXTF11.READONLY=.F.
+        THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF07.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF79.VALUE=''
+        THISFORM.PAGEFRAME1.PAGE2.TXTF17.VALUE=0
+        THISFORM.PAGEFRAME1.PAGE2.TXTF18.VALUE=1
+        THISFORM.PAGEFRAME1.PAGE2.LBLFLT1.CAPTION=TRANSFORM(0,'999999999999')
+        THISFORM.PAGEFRAME1.PAGE2.LBLF131.CAPTION=''               
+        THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE=THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE                
+     ENDIF   
+
+  ENDPROC  
+  PROCEDURE ORPGROUP.EDIT_BOTT.CLICK
+     THISFORM.KEY_LIST.ENABLED=.F. 
+     THISFORM.MTH_LIST.ENABLED=.F. 
+     THISFORM.ANS_BOTT.ENABLED=.F.
+     THISFORM.GRID1.ENABLED=.F.   
+     THISFORM.GRID2.ENABLED=.F.   
+     IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+        SELE B05_1
+        PO_NO=B05_1.F01
+        SELE RECNO() FROM B05 WHERE B05.F01=PO_NO AND F12<>'2' INTO ARRAY BK1
+        JJ1=''                
+        IF _TALLY>0                   
+           FOR I= 1 TO ALEN(BK1)
+               JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+           ENDFOR  
+           KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')
+           RLOCK(KK1,'B05')
+           LL1=RLOCK(KK1,'B05')
+        ELSE 
+           =MESSAGEBOX('此單據已由別的工作站過帳中無法修改!',0+64,'提示訊息視窗')
+           SELE B05_1           
+           UNLOCK ALL
+           REPL F12 WITH '2'
+           THISFORM.SHRGROUP.ABANDON_BOTT.CLICK   
+        ENDIF   
+        IF LL1 =.T.
+           THISFORM.PAGEFRAME1.PAGE1.SETALL('READONLY',.F.,'TEXTBOX')     &&處理表頭修改
+           THISFORM.PAGEFRAME1.PAGE1.TXTF01.READONLY=.T.
+           THISFORM.PAGEFRAME1.PAGE1.TXTF05.READONLY=.F.
+           THISFORM.PAGEFRAME1.PAGE1.TXTF08.READONLY=.T.         
+           THISFORM.PAGEFRAME1.PAGE1.TXTF14.READONLY=IIF(B05_1.F24='1',.F.,.T.)  
+           THISFORM.PAGEFRAME1.PAGE1.TXTF20.READONLY=.F.
+           IF LEN(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE))=10 OR INT_060=.F.  &&如果有發票號碼或預設不帶入發票管理
+              THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VISIBLE=.T.
+              THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VALUE=IIF(F22='33',1,2)
+              THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VISIBLE=.T.          
+              THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VALUE=VAL(F23)                                            
+           ENDIF              
+           THISFORM.PAGEFRAME1.PAGE2.ENABLED=.F.
+           THISFORM.PAGEFRAME1.PAGE1.TXTF05.SETFOCUS
+        ELSE 
+           DO file_impact
+           UNLOCK ALL
+           THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+        endif   
+     ELSE                     
+        THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.    
+        SELE B05                                                      &&處理表身修改
+        SELE RECNO() FROM C04 WHERE F03=B05.F11 AND F04=B05.F03 INTO ARRAY BK1
+        JJ1=''                
+        IF _TALLY>0                   
+           FOR I= 1 TO ALEN(BK1)
+               JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+           ENDFOR  
+           KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')
+           RLOCK(KK1,'C04')
+           LL1=RLOCK(KK1,'C04')
+        ELSE
+           LL1=.T.   
+        ENDIF 
+        IF RLOCK('B05') .AND. LL1=.T.                                            
+           THISFORM.PAGEFRAME1.PAGE2.SETALL('READONLY',.F.,'TEXTBOX') 
+           THISFORM.PAGEFRAME1.PAGE2.CRCY.VISIBLE=IIF(A02.F10='*',IIF(A02.F08='*',.T.,.F.),.F.)           
+           THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE=THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE
+           THISFORM.PAGEFRAME1.PAGE2.CRCY.ENABLED=IIF(A02.F10='*',IIF(A02.F08='*',.T.,.F.),.F.)         
+           THISFORM.PAGEFRAME1.PAGE2.TXTF79.READONLY=.F.
+           THISFORM.PAGEFRAME1.PAGE2.TXTF17.READONLY=IIF(A02.F08='*',.F.,.T.)   
+           THISFORM.PAGEFRAME1.PAGE2.TXTF18.READONLY=IIF(A02.F08='*',.F.,.T.)           
+           THISFORM.PAGEFRAME1.PAGE2.TXTF04.SETFOCUS
+        ELSE  
+           DO file_impact 
+           unlock all
+           THISFORM.SHRGROUP.ABANDON_BOTT.CLICK           
+       endif        
+     ENDIF   
+     RELEASE ALL LIKE BK*
+  endproc    
+  PROC ORPGROUP.DEL_BOTT.CLICK                    &&刪除資料程序
+       IF messagebox('是否確定要刪除此筆資料',4+32+256,'請確認') = 6	        
+          if ALIA()='B05_1'           &&刪除整張訂單
+             SELE B05_1             
+                PO_NO=B05_1.F01
+                SELE RECNO() FROM B05 WHERE B05.F01=PO_NO  AND B05.F12<>'2' INTO ARRAY BK1              
+                JJ1=''                
+                IF _TALLY>0   
+                   FOR I= 1 TO ALEN(BK1)
+                       JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+                   ENDFOR    
+                   KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')              
+                   RLOCK(KK1,'B05')
+                   LL1=RLOCK(KK1,'B05')
+                ELSE
+                   LL1=.T.   
+                ENDIF                   
+                SELE RECNO() FROM C04 WHERE F03+F04=ANY (SELE F11+F03 FROM B05 WHERE F01=PO_NO) INTO ARRAY BK2              
+                JJ2=''                
+                IF _TALLY>0   
+                   FOR I= 1 TO ALEN(BK2)
+                       JJ2=JJ2+ALLTRIM(STR(BK2(I)))+','
+                   ENDFOR    
+                   KK2=STUFF(JJ2,RAT(',',JJ2,1),1,'')              
+                   RLOCK(KK2,'C04')
+                   LL2=RLOCK(KK2,'C04')
+                ELSE
+                   LL2=.T.   
+                ENDIF                   
+                IF LL1 .AND. LL2 
+                   IF LEN(ALLTRIM(JJ1))>0 
+                      SELE B05
+                      FOR I= 1 TO ALEN(BK1)
+                          GO BK1(I) 
+                          SELE C04
+                          SEEK B05.F11+B05.F03
+                          IF FOUND() .AND. B05_1.F24='1'
+                             REPL F24 WITH F24+(B05.F04+B05.F15)*(-1)
+                          ENDIF    
+                          SELE B05
+                      ENDFOR                      
+                   ELSE
+                      =MESSAGEBOX('此張單據已由別的工作站過帳中,無法刪除!',0+64,'提示訊息視窗')
+                      SELE B05_1
+                      REPL F12 WITH '2'
+                      UNLOCK ALL
+                      RETURN   
+                   ENDIF    
+                   DELE FROM B05 WHERE B05.F01=PO_NO
+                   SELE B39                     &&刪除未過帳單據紀錄
+                   SEEK A02.F03+B05_1.F01                   
+                   IF FOUND()
+                      DELE
+                   ENDIF   
+                   SELE B05_1
+                   DELE
+                   UNLOCK ALL
+                   IF  SUBSTR(PO_NO,3,4)=SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+                       HD='B004 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)+PO_NO
+                       DO ODR_RJT
+                  ENDIF  
+                ELSE
+                   DO file_impact                  
+                ENDIF             
+             THISFORM.GRID1.SETFOCUS
+             IF THISFORM.GRID1.ACTIVEROW=0
+                THISFORM.CMDGROUP.ENABLED=.F.
+                THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+                THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.               
+                THISFORM.ORPGROUP.PNT_BOTT.ENABLED=.F.
+                THISFORM.ANS_BOTT.ENABLED=.F.
+             ELSE      
+                THISFORM.CMDGROUP.ENABLED=.T.
+                THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(A02.F05='*',.T.,.F.)  .AND. B05_1.F12<>'2' &&判斷有無修改的權限
+                THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(A02.F06='*',.T.,.F.)   .AND. B05_1.F12<>'2' &&判斷有無刪除的權限
+                THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(A02.F07='*',.T.,.F.)   &&判斷有無列印的權限
+                THISFORM.ANS_BOTT.ENABLED=IIF(B05_1.F12='2',.F.,.T.) .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED                
+             ENDIF     
+          ELSE        
+              SELE B05                                                      &&刪除單筆資料       
+                SELE C04
+                SEEK B05.F11+B05.F03
+                IF FOUND()
+                   RLOCK()
+                   LL1=RLOCK()
+                ELSE
+                   LL1=.T.   
+                ENDIF  
+                 IF RLOCK('B05') .AND. LL1=.T.         
+                     SELE C04
+                     SEEK B05.F11+B05.F03
+                     IF FOUND() .AND. B05_1.F24='1'
+                        REPL F24 WITH F24+(B05.F04+B05.F15)*(-1)
+                     ENDIF                       
+                     SELE B05
+                     DELE
+                     SKIP -1
+                     IF BOF()
+                        GO TOP
+                     ENDIF   
+                  ELSE
+                    DO file_impact                  
+                  ENDIF     
+              THISFORM.GRID2.SETFOCUS
+              IF THISFORM.GRID2.ACTIVEROW=0         &&如果單身被刪空
+                 SELE B39                           &&刪除未過帳單據紀錄       
+                 SEEK A02.F03+B05_1.F01
+                 IF FOUND()
+                    DELE
+                 ENDIF                    
+                 SELE B05_1                        
+                 PO_NO=B05_1.F01                    
+                 DELE                               &&連表頭也要刪除
+                 IF SUBSTR(PO_NO,3,4)=SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)
+                    HD='B004 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)+PO_NO
+                    DO ODR_RJT
+                 ENDIF
+                 SELE B05_1
+                 SKIP -1
+                 IF BOF()
+                    GO TOP
+                 ENDIF   
+                 THISFORM.PAGEFRAME1.ACTIVEPAGE=1 
+                 THISFORM.REFRESH          
+              ENDIF
+          ENDIF
+       ENDIF
+       RELEASE ALL LIKE BK*   
+  ENDPROC  
+  PROCEDURE SHRGROUP.SHURE1_BOTT.CLICK               &&新增確認
+    IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+         THISFORM.GRID2.RECORDSOURCE='B05'
+       THISFORM.GRID2.CHILDORDER=B051
+	   THISFORM.grid2.COLUMN1.CONTROLSOURCE='B05.F03'
+	   THISFORM.grid2.COLUMN2.CONTROLSOURCE='IIF(INT_029,B05.F79,B01.F02)'
+	   THISFORM.grid2.COLUMN3.CONTROLSOURCE='B05.F11'
+	   THISFORM.grid2.COLUMN4.CONTROLSOURCE='B05.F04'
+	   THISFORM.grid2.COLUMN5.CONTROLSOURCE='B05.F15'
+	   THISFORM.grid2.COLUMN6.CONTROLSOURCE='B05.F07'
+	   THISFORM.grid2.COLUMN7.CONTROLSOURCE='B05.F13'       
+       SELE B05_1 
+       COD=SYS(21)
+       SET ORDER TO 1
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE,'B05')=.T.  &&如果單號重覆
+          SELECT MAX(F01) FROM B05 INTO ARRAY GB NOWAIT
+          HD='B004 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)+THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+          DO ODR_RPT
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE=PO_NO
+		  THISFORM.PAGEFRAME1.PAGE1.TXTF01.REFRESH                           
+       ENDIF 
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE,'C01')=.F. .OR. EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE)
+          =MESSAGEBOX('客戶基本主檔中無此編號請先建立!',0+48,'提示訊息視窗')
+          THISFORM.PAGEFRAME1.PAGE1.TXTF10.SETFOCUS
+          SET ORDER TO &COD
+          RETURN            
+       ENDIF
+       SELE RECNO() FROM C04 WHERE F02=THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE AND F09-F24>0 INTO ARRAY RC1
+       IF _TALLY=0       
+          =MESSAGEBOX('此客戶已無出貨紀錄故不能輸入出貨退回單',0+48,'提示訊息視窗')
+          THISFORM.PAGEFRAME1.PAGE1.TXTF10.SETFOCUS                          
+          SET ORDER TO &COD
+          RETURN                           
+       ENDIF   
+       IF THISFORM.PAGEFRAME1.PAGE1.DIS_TYPE.VALUE=2 AND LEN(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE))<10 AND INT_060=.T.
+          =MESSAGEBOX('發票號碼輸入錯誤!',0+48,'提示訊息視窗')
+          THISFORM.PAGEFRAME1.PAGE1.TXTF20.SETFOCUS
+          SET ORDER TO &COD
+          RETURN
+       ENDIF       
+       IF THISFORM.PAGEFRAME1.PAGE1.DIS_TYPE.VALUE=1  &&如果不為折讓
+          IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE,'A14')=.F. .OR. EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+             =MESSAGEBOX('工作部門主檔中無此編號請先建立!',0+48,'提示訊息視窗')
+             THISFORM.PAGEFRAME1.PAGE1.TXTF05.SETFOCUS
+             SET ORDER TO &COD
+             RETURN            
+          ENDIF       
+          IF EMPTY(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/'+THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE))          
+             =MESSAGEBOX('退貨日期輸入錯誤!',0+48,'提示訊息視窗') 
+             THISFORM.PAGEFRAME1.PAGE1.TXTF02.SETFOCUS
+             SET ORDER TO &COD          
+             RETURN
+          ENDIF   
+          IF EMPTY(CTOD(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE)+'/01')) OR SEEK(DTOS(CTOD(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE)+'/01')),'A23')=.F. OR ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE)>THISFORM.KEY_LIST.DISPLAYVALUE
+             =MESSAGEBOX('原出貨月份輸入錯誤',0+48,'提示訊息視窗')
+             THISFORM.PAGEFRAME1.PAGE1.TXTF08.SETFOCUS
+             SET ORDER TO &COD
+             RETURN
+          ENDIF                    
+          IF EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE)
+             if messagebox('無補貨日期是否將此張單據內容計入取消量?',4+32+256,'請確認') <> 6	        
+                THISFORM.PAGEFRAME1.PAGE1.TXTF14.SETFOCUS
+                SET ORDER TO &COD          
+                RETURN
+             ENDIF 
+          ENDIF                      
+       ENDIF   
+       SELE B05_1          
+       APPEND BLANK
+       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+       REPLACE F02 WITH PADL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE),2,'0')
+       REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+       REPLACE F08 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE
+       REPLACE F10 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE
+       REPLACE F13 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+       REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE
+       REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE    
+       IF LEN(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE))=10
+          REPL F22 WITH IIF(THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VALUE=1,'33','34')
+          REPL F23 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VALUE))
+       ELSE 
+          REPL F22 WITH ''
+          REPL F23 WITH ''          
+       ENDIF            
+       REPLACE F21 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF21.VALUE
+       REPLACE F24 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.DIS_TYPE.VALUE))
+       SEEK THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+       SET ORDER TO &COD
+       SELE B39
+       APPEND BLANK
+       REPL F01 WITH A02.F03
+       REPL F02 WITH B05_1.F01
+       REPL F03 WITH B05_1.F02
+       REPL F04 WITH B05_1.F10
+       REPL F07 WITH B05_1.F05
+       REPL F09 WITH B05_1.F14
+       THISFORM.PAGEFRAME1.PAGE1.ENABLED=.F.
+       THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.  
+       THISFORM.PAGEFRAME1.ACTIVEPAGE=2
+       THISFORM.ORPGROUP.NEW_BOTT.CLICK
+       THISFORM.REFRESH
+    ELSE                           &&表身新增確認
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'B01')=.F.
+          =MESSAGEBOX('物料基本主檔中無此料號!',0+48,'提示訊息視窗')          
+          THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+          RETURN
+       ENDIF   
+       KP='C10'+LEFT(DTOS(CTOD(THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE+'/01')),6)       
+       SELE RECNO() FROM C04 WHERE F02=THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE AND F09-F24>0;
+       AND F03=THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE AND F04=THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE;
+       AND F03+F04=ANY(SELE F05+F03 FROM &KP WHERE LEFT(F04,2)='BC') INTO ARRAY RC1 NOWAIT
+       IF _TALLY=0       
+          =MESSAGEBOX(THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE+'無此筆料號出貨紀錄',0+48,'提示訊息視窗')
+          THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=''
+          THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=''
+          THISFORM.PAGEFRAME1.PAGE2.TXTF17.VALUE=0
+          THISFORM.PAGEFRAME1.PAGE2.TXTF03.REFRESH
+          THISFORM.PAGEFRAME1.PAGE2.TXTF11.REFRESH
+          THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+          
+          THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS                          
+          RETURN                           
+       ENDIF                 
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE;
+          +THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE,'B05')=.T. 
+          =MESSAGEBOX('此訂單號碼及料號在此張出貨退回單重複!',0+48,'提示訊息視窗')
+          THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=''
+          THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=''
+          THISFORM.PAGEFRAME1.PAGE2.TXTF03.REFRESH
+          THISFORM.PAGEFRAME1.PAGE2.TXTF11.REFRESH
+          THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+          RETURN            
+       ENDIF           
+       IF THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE>;
+          IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),;
+          C04.F09-C04.F24-C04.F19,0)
+          =MESSAGEBOX('計價量不得大於已出貨數量';
+          +ALLTRIM(STR(IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),;
+          C04.F09-C04.F24-C04.F19,0))),0+48,'提示訊息視窗')
+          THISFORM.PAGEFRAME1.PAGE2.TXTF04.SETFOCUS
+          RETURN
+       ENDIF          
+       IF THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE>;
+          IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),C04.F09-C04.F24,0)
+          =MESSAGEBOX('無價量不得大於未出貨數量';
+          +ALLTRIM(STR(IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),C04.F09-C04.F24,0))),0+48,'提示訊息視窗')
+          THISFORM.PAGEFRAME1.PAGE2.TXTF15.SETFOCUS
+          RETURN
+       ENDIF        
+       IF B05_1.F24='1'         &&如果不為折讓
+          SELE C04
+          SEEK THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE
+          IF FOUND()
+             IF RLOCK()
+                REPLACE F24 WITH F24+(THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE)
+             ELSE
+                DO file_impact
+               RETURN  
+            ENDIF   
+          ENDIF   
+       ENDIF   
+       SELE B05
+       APPEND BLANK
+       LOCK()     
+       REPLACE F01 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE
+       REPLACE F02 WITH PADL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE),2,'0')
+       REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE
+       REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE
+       REPLACE F05 WITH B05_1.F05
+       REPLACE F10 WITH B05_1.F10
+       REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE
+       REPLACE F13 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+       REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF07.VALUE
+       REPLACE F08 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE
+       REPLACE F14 WITH B05_1.F14
+       REPLACE F15 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE          
+       REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE
+       REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF17.VALUE          
+       REPLACE F18 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF18.VALUE     
+       REPLACE F79 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF79.VALUE               
+       REPLACE F20 WITH B05_1.F20
+       REPLACE F21 WITH B05_1.F21
+       REPLACE F22 WITH B05_1.F22
+       REPLACE F23 WITH B05_1.F23
+       REPLACE F24 WITH B05_1.F24
+       UNLOCK ALL         
+       seek thisform.pageframe1.page1.txtf01.value+thisform.pageframe1.page2.txtf03.value+thisform.pageframe1.page2.txtF11.value                                    
+       thisform.grid2.enabled=.t.
+       thisform.grid2.setfocus  
+       THISFORM.ORPGROUP.NEW_BOTT.CLICK      
+     ENDIF  
+  ENDPROC
+  PROCEDURE SHRGROUP.SHURE2_BOTT.CLICK                          &&修改確認
+     IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+       IF B05_1.F24='1'   &&如果不為折讓
+          IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE,'A14')=.F. .OR. EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE)
+             =MESSAGEBOX('工作部門主檔中無此編號請先建立!',0+64,'提示訊息視窗')
+             THISFORM.PAGEFRAME1.PAGE1.TXTF05.SETFOCUS
+             RETURN            
+          ENDIF            
+          IF EMPTY(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/'+THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE))          
+             =MESSAGEBOX('退貨日期輸入錯誤!',0+64,'提示訊息視窗') 
+             THISFORM.PAGEFRAME1.PAGE1.TXTF02.SETFOCUS
+             RETURN
+          ENDIF                   
+
+           IF EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE)
+              if messagebox('無補貨日期是否將此張單據內容計入取消量?',4+32+256,'請確認') <> 6	        
+                 THISFORM.PAGEFRAME1.PAGE1.TXTF14.SETFOCUS
+                 RETURN
+              ENDIF 
+           ENDIF                              
+        ENDIF   
+       IF B05_1.F24='2' .AND. (EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE) .OR. LEN(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE))<10) .AND. INT_060=.T.
+          =MESSAGEBOX('發票號碼必須正確輸入!',0+64,'提示訊息視窗') 
+          THISFORM.PAGEFRAME1.PAGE1.TXTF20.SETFOCUS            
+          RETURN       
+       ENDIF           
+           SELE B05
+           SEEK B05_1.F01
+           IF FOUND()
+              DO WHILE F01=B05_1.F01
+                 REPL F02 WITH PADL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE),2,'0')
+                 REPL F05 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+                 REPL F08 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE                 
+                 REPL F13 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')  
+                 REPL F14 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE               
+                 REPL F20 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE
+                 IF LEN(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE))=10 OR INT_060=.F.   &&如果有發票號碼或預設不帶入發票管理
+                    REPL F22 WITH IIF(THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VALUE=1,'33','34')
+                    REPL F23 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VALUE))  
+                 ELSE
+                    REPL F22 WITH ''
+                    REPL F23 WITH ''    
+                ENDIF                 
+                 REPL F21 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF21.VALUE
+                 SKIP
+              ENDDO    
+           ENDIF        
+           SELE B05_1
+           REPLACE F02 WITH PADL(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF02.VALUE),2,'0')
+           REPLACE F05 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE
+           REPLACE F08 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE
+           REPLACE F14 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE                          
+           REPLACE F20 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE
+           REPLACE F21 WITH THISFORM.PAGEFRAME1.PAGE1.TXTF21.VALUE                      
+           REPLACE F13 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+           IF LEN(ALLTRIM(THISFORM.PAGEFRAME1.PAGE1.TXTF20.VALUE))=10  OR INT_060=.F.   &&如果有發票號碼或預設不帶入發票管理
+               REPLACE  F22 WITH IIF(THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VALUE=1,'33','34')
+               REPLACE  F23 WITH ALLTRIM(STR(THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VALUE))
+           ELSE
+              REPLACE  F22 WITH ''
+              REPLACE  F23 WITH ''   
+           ENDIF                              
+           UNLOCK ALL    
+     ELSE                                                        &&表身修改確認     
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'B01')=.F.
+          =MESSAGEBOX('物料基本主檔中無此料號!',0+48,'提示訊息視窗')          
+          THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+          RETURN
+       ENDIF   
+       IF THISFORM.PAGEFRAME1.PAGE2.TXTF79.VALUE<>THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE
+          IF SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF79.VALUE,'B01')=.F.
+            =MESSAGEBOX('物料基本主檔中無此料號!',0+48,'提示訊息視窗')          
+            THISFORM.PAGEFRAME1.PAGE2.TXTF79.SETFOCUS
+            RETURN
+       ENDIF   
+       ENDIF
+       IF THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE<>B05.F03+B05.F11
+          IF SEEK(THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE;
+             +THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE,'B05')=.T.            
+             =MESSAGEBOX('此訂單號碼及料號在此張出貨退回單重複!',0+48,'提示訊息視窗')
+             THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+             RETURN            
+           ENDIF    
+       ENDIF           
+       IF SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04')=.F.             
+          =MESSAGEBOX('無此筆訂單紀錄!',0+64,'提示訊息視窗')
+          THISFORM.PAGEFRAME1.PAGE2.TXTF03.SETFOCUS
+          RETURN
+       ENDIF   
+       IF THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE>;
+          IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),;
+          C04.F09-C04.F24-C04.F19+B05.F04,0)
+          =MESSAGEBOX('計價量不得大於計價已出貨數量';
+          +ALLTRIM(STR(IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),;
+          C04.F09-C04.F24-C04.F19+B05.F04,0))),0+48,'提示訊息視窗')
+          THISFORM.PAGEFRAME1.PAGE2.TXTF04.SETFOCUS
+          RETURN
+       ENDIF          
+       IF THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE>;
+          IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),;
+          C04.F19,0)
+          =MESSAGEBOX('無價量不得大於無價已出貨數量';
+          +ALLTRIM(STR(IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),;
+          C04.F19,0))),0+48,'提示訊息視窗')
+          THISFORM.PAGEFRAME1.PAGE2.TXTF15.SETFOCUS
+          RETURN
+       ENDIF         
+       
+           IF B05_1.F24='1'  &&如果不為折讓        
+             SELE C04                                                              &&將訂單檔回復成為輸入前之狀態
+             SEEK B05.F11+B05.F03
+             IF FOUND() 
+                REPLACE F24 WITH F24+(B05.F04+B05.F15)*(-1)
+             ENDIF   
+           ENDIF  
+           SELE B05                    
+           REPLACE F03 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE
+           REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE
+           REPLACE F11 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE           
+           REPLACE F13 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')                      
+           REPLACE F07 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF07.VALUE
+           REPLACE F15 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE
+           REPLACE F16 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE
+           REPLACE F17 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF17.VALUE
+           REPLACE F18 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF18.VALUE           
+           REPLACE F79 WITH THISFORM.PAGEFRAME1.PAGE2.TXTF79.VALUE
+           
+           IF B05_1.F24='1'  &&如果不為折讓
+              SELE C04                                                                 &&寫回訂單檔    
+              SEEK B05.F11+B05.F03
+              IF FOUND() 
+                 REPLACE F24 WITH F24+(B05.F04+B05.F15)
+              ENDIF                    
+           ENDIF   
+    ENDIF   
+    THISFORM.SHRGROUP.ABANDON_BOTT.CLICK    
+  ENDPROC   
+  procedure SHRGROUP.ABANDON_BOTT.CLICK
+      THISFORM.SHRGROUP.ENABLED=.F.
+      THISFORM.SHRGROUP.VISIBLE=.F.      
+      THISFORM.ORPGROUP.ENABLED=.T.
+      THISFORM.ORPGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.CMDGROUP.ENABLED=.T.
+      THISFORM.CMDGROUP.SETALL('ENABLED',.T.,'COMMANDBUTTON')
+      THISFORM.CMDGROUP.SETALL('FORECOLOR',RGB(0,0,0),'COMMANDBUTTON')
+      THISFORM.SETALL('READONLY',.T.,'TEXTBOX')  
+      THISFORM.PAGEFRAME1.PAGE1.SETALL('READONLY',.T.,'TEXTBOX')  
+      THISFORM.PAGEFRAME1.PAGE2.SETALL('READONLY',.T.,'TEXTBOX')  
+      THISFORM.PAGEFRAME1.PAGE1.TXTF05.READONLY=.T.
+      THISFORM.PAGEFRAME1.PAGE1.TXTF10.READONLY=.T.
+      THISFORM.PAGEFRAME1.PAGE1.TXTF20.READONLY=.T.  
+      THISFORM.PAGEFRAME1.PAGE2.TXTF03.READONLY=.T.   
+      THISFORM.PAGEFRAME1.PAGE2.TXTF11.READONLY=.T.    
+      THISFORM.PAGEFRAME1.PAGE2.TXTF04.READONLY=.T.
+      THISFORM.PAGEFRAME1.PAGE2.TXTF79.READONLY=.T.
+      THISFORM.PAGEFRAME1.PAGE1.DIS_TYPE.VISIBLE=.F.
+      THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VISIBLE=.F.
+      THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VISIBLE=.F.  
+      THISFORM.PAGEFRAME1.PAGE2.CRCY.VISIBLE=.F.
+      THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=''
+      THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION=''
+      THISFORM.PAGEFRAME1.PAGE1.ENABLED=.T.
+      THISFORM.PAGEFRAME1.PAGE2.ENABLED=.T.
+      IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1   
+          THISFORM.grid1.ENABLED=.T.
+          THISFORM.grid2.ENABLED=.T.
+         THISFORM.GRID1.SETFOCUS
+         THISFORM.KEY_LIST.ENABLED=.T.
+         THISFORM.MTH_LIST.ENABLED=.T.      
+      ELSE
+          THISFORM.grid1.ENABLED=.F.
+          THISFORM.grid2.ENABLED=.T.
+         THISFORM.GRID2.SETFOCUS
+         IF THISFORM.GRID2.ACTIVEROW=0
+            HD='B004 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)+PO_NO
+            DO ODR_RJT
+            SELE B39
+            SEEK A02.F03+B05_1.F01
+            SET ORDER TO 1
+            IF FOUND()
+               DELE            
+            ENDIF   
+            SELE B05_1
+            DELE
+            THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+            THISFORM.REFRESH  
+         ELSE
+            SELE B39
+            SET ORDER TO 1
+            SEEK A02.F03+B05_1.F01 
+            IF FOUND()
+               REPL F08 WITH B05.F11            
+            ENDIF   
+         ENDIF   
+      ENDIF       
+      UNLOCK ALL
+      THISFORM.ANS_BOTT.ENABLED=IIF(B05_1.F12='2',.F.,.T.) .AND. IIF(A02.F11='*',.T.,.F.) .AND. !THISFORM.SHRGROUP.ENABLED              
+  ENDPROC
+  PROCEDURE SHRGROUP.FINISH_BOTT.CLICK
+      IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+         IF THISFORM.GRID2.RECORDSOURCE<>'B05'
+            THISFORM.GRID2.RECORDSOURCE='B05'
+            THISFORM.GRID2.CHILDORDER=B051
+  	        THISFORM.grid2.COLUMN1.CONTROLSOURCE='B05.F03'
+	        THISFORM.grid2.COLUMN2.CONTROLSOURCE='IIF(INT_029,B05.F79,B01.F02)'
+	        THISFORM.grid2.COLUMN3.CONTROLSOURCE='B05.F11'
+	        THISFORM.grid2.COLUMN4.CONTROLSOURCE='B05.F04'
+	        THISFORM.grid2.COLUMN5.CONTROLSOURCE='B05.F15'
+	        THISFORM.grid2.COLUMN6.CONTROLSOURCE='B05.F07'
+	        THISFORM.grid2.COLUMN7.CONTROLSOURCE='B05.F13'         
+	     ENDIF   
+            HD='B004 '+SUBSTR(DTOS(CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/01')),3,4)+PO_NO
+            DO ODR_RJT
+         SELE B05_1
+         DO CASE 
+            CASE THISFORM.KEY_LIST.DISPLAYVALUE='依退回單號排列'
+                 SET ORDER TO 1
+            CASE THISFORM.KEY_LIST.DISPLAYVALUE='依客戶邊號排列'
+                 SET ORDER TO 2
+            CASE THISFORM.KEY_LIST.DISPLAYVALUE='依出貨部門排列'
+                 SET ORDER TO 3
+         ENDCASE   
+       ENDIF  
+       THISFORM.SHRGROUP.ABANDON_BOTT.CLICK
+  ENDPROC     
+  PROC ANS_BOTT.CLICK     &&過帳程序  
+       if messagebox('是否確認資料無誤可以過帳?',4+32+256,'請確認') = 6	            
+          SELE RECNO() FROM B05 WHERE B05.F01=B05_1.F01  AND F12<>'2' INTO ARRAY BK1              
+               JJ1=''                
+               IF _TALLY>0   
+                  FOR I= 1 TO ALEN(BK1)
+                      JJ1=JJ1+ALLTRIM(STR(BK1(I)))+','
+                  ENDFOR    
+                  KK1=STUFF(JJ1,RAT(',',JJ1,1),1,'')              
+                  RLOCK(KK1,'B05')
+                  LL1=RLOCK(KK1,'B05')
+               ELSE
+                  LL1=.T.   
+               ENDIF                   
+               SELE RECNO() FROM C04 WHERE F03+F04=ANY (SELE F11+F03 FROM B05 WHERE F01=B05_1.F01) INTO ARRAY BK2              
+               JJ2=''                
+               IF _TALLY>0   
+                  FOR I= 1 TO ALEN(BK2)
+                      JJ2=JJ2+ALLTRIM(STR(BK2(I)))+','
+                  ENDFOR    
+                  KK2=STUFF(JJ2,RAT(',',JJ2,1),1,'')              
+                  RLOCK(KK2,'C04')
+                  LL2=RLOCK(KK2,'C04')
+               ELSE
+                  LL2=.T.   
+               ENDIF                   
+               SELE RECNO() FROM C03 WHERE F02=ANY (SELE F11 FROM B05 WHERE F01=B05_1.F01) INTO ARRAY BK3
+               JJ3=''
+               IF _TALLY>0   
+                  FOR I= 1 TO ALEN(BK3)
+                      JJ3=JJ3+ALLTRIM(STR(BK3(I)))+','
+                  ENDFOR    
+                  KK3=STUFF(JJ3,RAT(',',JJ3,1),1,'')              
+                  RLOCK(KK3,'C03')
+                  LL3=RLOCK(KK3,'C03')
+               ELSE
+                  LL3=.T.   
+               ENDIF     
+               SELE RECNO() FROM C01 WHERE F01=B05_1.F10 INTO ARRAY BK4
+               JJ4=''
+               IF _TALLY>0   
+                  FOR I= 1 TO ALEN(BK4)
+                      JJ4=JJ4+ALLTRIM(STR(BK4(I)))+','
+                  ENDFOR    
+                  KK4=STUFF(JJ4,RAT(',',JJ4,1),1,'')              
+                  RLOCK(KK4,'C01')
+                  LL4=RLOCK(KK4,'C01')
+               ELSE
+                  LL4=.T.   
+               ENDIF                   
+               IF LL1 .AND. LL2 .AND. LL3 .AND. LL4 =.T. 
+                  IF LEN(ALLTRIM(JJ1))>0 
+                     SELE B05
+                     TQTY=0
+                      FTTL=0
+                     FOR I= 1 TO ALEN(BK1)                      
+                         GO BK1(I) 
+                         TQTY=TQTY+IIF(F18=1,ROUND(F04*F17,INT_069),ROUND(F04*F17*F18,INT_069))
+                         FTTL=FTTL+ROUND(F04*F17,2)	&&外幣金額小計
+                         SELE B01                                            &&物料基本主檔
+                         SEEK B05.F79
+                         IF FOUND()
+                            IF !EMPTY(F98) AND B05.F24='1'                         &&如果不是虛擬料號而且是退貨才做庫存運算
+                               SELE B11                                            &&部門庫存明細檔 
+                               SEEK B05.F05+B05.F79+IIF(INT_028 AND B01.F98<>'A  ',B05.F10,SPACE(5))
+                               IF FOUND()
+                                  REPL F04 WITH F04+(B05.F04+B05.F15)
+                                  IF F04=0
+                                     DELE
+                                  ELSE   
+                                     IF F05<CTOD((THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B05.F02))
+                                        REPL F05 WITH CTOD((THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B05.F02))
+                                     ENDIF
+                                  ENDIF   
+                               ELSE
+                                  APPEND BLANK
+                                  REPL F01 WITH B05.F05
+                                  REPL F03 WITH B05.F79
+                                  REPL F04 WITH (B05.F04+B05.F15)       
+                                  REPLACE F06 WITH B05.F11 + SPACE(2) +  B05.F10  + SPACE(2) +  IIF(SEEK(B05.F10 ,'C01'),C01.F05,"")
+                                  REPL F05 WITH CTOD((THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B05.F02))
+                                  IF INT_028 AND B01.F98<>'A  '
+                                     REPLACE F08 WITH B05.F10
+                                  ENDIF
+                               ENDIF   
+                               SELE B25                                             &&分部門庫存月報表 
+                               SEEK B05.F05+B05.F79
+                               IF FOUND()
+                                  REPL F07 WITH F07+B05.F04+B05.F15
+                                  REPL F15 WITH F15+(B05.F04+B05.F15)
+                               ELSE
+                                  APPEND BLANK
+                                  REPL F01 WITH B05.F05
+                                  REPL F02 WITH B05.F79
+                                  REPL F07 WITH B05.F04+B05.F15
+                                  REPL F15 WITH (B05.F04+B05.F15)                                                 
+                               ENDIF   
+                               SELE B26                                            &&庫存異動紀錄
+                               APPEND BLANK
+                               REPL F01 WITH B05.F79
+                               REPL F02 WITH B05.F05
+                               REPL F03 WITH B05.F02
+                               REPL F04 WITH (B05.F04+B05.F15)
+                               REPL F06 WITH 'D'
+                               REPL F07 WITH B05.F01
+                               REPL F08 WITH '訂'+B05.F11                              
+                            ENDIF
+                         ENDIF   
+                         IF !EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE)    &&如果需要補貨
+                             SELE C05                                            &&加入出貨計劃
+                             SET ORDER TO C054                 
+                             SEEK B05.F11+B05.F03+DTOS(B05.F14)
+                             IF FOUND()
+                                REPLACE F04 WITH F04+(B05.F04+B05.F15)
+                             ELSE
+                                APPEND BLANK
+                                REPLACE  F01 WITH B05.F11
+                                REPLACE  F02 WITH B05.F03
+                                REPLACE  F03 WITH B05.F14
+                                REPLACE  F04 WITH B05.F04+B05.F15
+                                REPLACE  F06 WITH B05.F10
+                                REPLACE  F07 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+                                REPLACE  F08 WITH IIF(SEEK(F01,'C03'),C03.F07,'')                              
+                                REPLACE F15 WITH '1'           
+                             ENDIF
+                             SELECT E08     &&預期結餘要扣除
+                             SEEK B05.F03
+                             IF FOUND()
+                                REPLACE F20 WITH F20+(B05.F04+B05.F15)*(-1)
+                             ELSE
+                                SELECT E08
+                                APPEND BLANK
+                                REPLACE F01 WITH B05.F14
+                                REPLACE F02 WITH B05.F03
+                                REPLACE F20 WITH (B05.F04+B05.F15)*(-1)
+                             ENDIF        
+                         ENDIF                                 
+                         IF B05.F24='1'    &&如果不為折讓
+                            SELE C04           &&訂單表身
+                            SEEK B05.F11+B05.F03
+                            IF FOUND()
+                               REPL F09 WITH F09+(B05.F04+B05.F15)*(-1)
+                               REPL F24 WITH F24+(B05.F04+B05.F15)*(-1)
+                               REPL F18 WITH F18+B05.F04*(-1)
+                               REPL F19 WITH F19+B05.F15*(-1)
+                               IF EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE)
+                                  REPL F21 WITH F21+B05.F04+B05.F15
+                               ELSE
+                                  REPL F10 WITH F10+(B05.F04+B05.F15)           
+                               ENDIF
+                            ENDIF    
+                            SELE C06         &&出貨紀錄
+                            APPEND BLANK
+                            REPL F01 WITH B05.F11
+                            REPL F02 WITH B05.F03
+                            REPL F03 WITH CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B05.F02)
+                            REPL F04 WITH B05.F01
+                            REPL F05 WITH (B05.F04+B05.F15)*(-1)
+                            IF EMPTY(THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE)  &&若無補貨日記入訂單取消紀錄
+                               SELECT C09
+                               APPEND BLANK
+                               REPLACE F01 WITH B05.F11
+                               REPLACE F02 WITH B05.F03
+                               REPLACE F03 WITH CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B05.F02)
+                               REPLACE F04 WITH B05.F01
+                               REPLACE F05 WITH B05.F04
+                               REPLACE F06 WITH B05.F10 &&客戶編號
+                               REPLACE F07 WITH IIF(SEEK (B05.F11,'C03'),C03.F14,'')   &&客戶單號
+                               REPLACE F08 WITH B05.F07
+                               REPLACE F09 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')                               
+                            ENDIF   
+                         ENDIF                            
+                         SELE C10         &&出貨日報表
+                         APPEND BLANK
+                         REPL F01 WITH B05.F02
+                         REPL F02 WITH B05.F10
+                         REPL F03 WITH B05.F03
+                         REPL F04 WITH B05.F01
+                         REPL F05 WITH B05.F11
+                         REPL F06 WITH INT_011
+                         REPL F07 WITH IIF(B05.F18=1,B05.F04*B05.F17,B05.F04*B05.F17*B05.F18)/(B05.F04+B05.F15)/IIF(B05.F22>'33' .AND. B05.F23='1',1+INT_002/100,1)
+                         REPL F08 WITH (B05.F04+B05.F15)*(-1)
+                         REPL F09 WITH IIF(SEEK(C10.F02,'C01'),C01.F05,'')
+                         REPL F10 WITH  IIF(SEEK(C10.F02,'C01'),C01.F18,'')
+                         REPL F11 WITH  IIF(SEEK(C10.F10,'A01'),A01.F03,'')
+                         REPL F12 WITH  IIF(SEEK(C10.F02,'C01'),IIF(EMPTY(C01.F33),C10.F10,C01.F33),"")
+                         REPL F13 WITH  IIF(SEEK(C10.F12,'A01'),A01.F03,'')
+                         REPL F14 WITH  IIF(SEEK(C10.F02,'C01'),C01.F23,'')
+                         REPL F15 WITH  IIF(SEEK(C10.F14,'A01'),A01.F03,'')     
+                         REPLACE F16 WITH IIF(SEEK(B05.F11,'C03'),C03.F14,'')   
+                         REPLACE F17 WITH IIF(SEEK(B05.F11+B05.F03,'C04','C041'),C04.F13+C04.F17,'')
+                         REPLACE F79 WITH B05.F79
+                         IF B05.F02<=IIF(SEEK(B05.F10,'C01'),C01.F17,'')
+                            SELE C13         &&應收帳款明細
+                         ELSE
+                            SELE C1C       &&應收帳款到下個月或暫存檔
+                         ENDIF                               
+                         APPEND BLANK
+                         REPL F01 WITH CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B05.F02)
+                         REPL F02 WITH B05.F01
+                         REPL F03 WITH B05.F10
+                         REPL F04 WITH B05.F11
+                         REPL F05 WITH B05.F03
+                         REPL F06 WITH (B05.F04+B05.F15)*(-1)
+                         REPL F07 WITH (B05.F04*B05.F17)/(B05.F04+B05.F15)
+                         REPL F08 WITH IIF(B05.F18=1,ROUND(B05.F04*B05.F17,INT_069),ROUND(B05.F04*B05.F17*B05.F18,INT_069))*(-1)
+                         REPL F09 WITH IIF(SEEK(B05.F10,'C01'),C01.F15,'1')  &&結帳方式
+                         REPL F12 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+                         REPL F13 WITH B05.F16
+                         REPL F14 WITH B05.F18
+                         REPL F15 WITH IIF(SEEK(B05.F11,'C03'),'訂單:'+C03.F14,'')+IIF(SEEK(B05.F11+B05.F03,'C04'),'品號:'+C04.F17,'')+IIF(!EMPTY(B05.F20),'發票:'+B05.F20,'')+' '+IIF(B05.F24='2','折讓','')
+                         REPLACE F16 WITH ICASE(B05.F23='2','00',B05.F23='3','09',B05.F23='1' AND B05.F22='33','03',B05.F23='1' AND B05.F22='34','02','06')                         
+                         REPL F17 WITH B05.F20                         
+                         REPL F18 WITH IIF(B05_1.F24='2','03','')                         
+                         REPL F19 WITH  sys_oper
+                         REPLACE F79 WITH B05.F79    
+                         SELE B05
+                         CHK_NAME=B05.F13
+                         REPL F12 WITH '2'              
+                               
+                         REPL F90 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+                    ENDFOR   
+                    IF LEN(ALLTRIM(B05_1.F20))=10  AND INT_060=.T.        &&如果有發票號碼且預設帶入發票管理
+                       IF B05_1.F23='1' .AND. B05_1.F22='33'                 &&且應稅且為三聯式發票再加入應收帳款中 
+                          IF B05.F02<=IIF(SEEK(B05.F10,'C01'),C01.F17,'')
+                             SELE C13         &&應收帳款明細
+                          ELSE
+                             SELE C1C       &&應收帳款到下個月或暫存檔
+                          ENDIF                          
+                          APPEND BLANK
+                          REPL F01 WITH CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B05_1.F02)
+                          REPL F02 WITH B05_1.F01
+                          REPL F03 WITH B05_1.F10
+                          REPL F04 WITH '稅額'
+                          REPL F05 WITH '發票:'+B05_1.F20
+                          REPL F06 WITH 1*(-1)
+                          REPL F07 WITH ROUND(TQTY*INT_002/100,INT_069)
+                          REPL F08 WITH ROUND(TQTY*INT_002/100,INT_069)*(-1)
+                          REPL F09 WITH IIF(SEEK(B05_1.F10,'C01'),C01.F15,'1')
+                          REPL F12 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+                          REPL F13 WITH INT_011
+                          REPL F14 WITH 1                         
+                          REPL F17 WITH B05_1.F20
+                          REPL F18 WITH IIF(B05_1.F24='2','03','')
+                          REPL F19 WITH  IIF(SEEK(B05.F11,'C03'),C03.F07,'')
+                       ENDIF
+                       IF B05_1.F02<=IIF(SEEK(B05_1.F10,'C01'),C01.F17,'')
+                          SELE K25         &&發票明細檔
+                       ELSE
+                          SELE K2E       &&發票明細到下個月或暫存檔
+                       ENDIF                          
+                       APPEND BLANK
+                       REPL F01 WITH B05_1.F22
+                       IF B05_1.F02<=IIF(SEEK(B05_1.F10,'C01'),C01.F17,'')
+                          REPL F02 WITH B05.F02
+                          REPL F19 WITH THISFORM.MTH_LIST.DISPLAYVALUE 
+                       ELSE
+                          REPL F02 WITH '01'
+                          LON1=PADL(ALLTRIM(STR(VAL(RIGHT(THISFORM.MTH_LIST.DISPLAYVALUE,2))+1)),2,'0')
+                          LON2=IIF(LON1>'12',PADL(ALLTRIM(STR(VAL(RIGHT(THISFORM.MTH_LIST.DISPLAYVALUE,4))+1)),4,'0')+'/01',LEFT(THISFORM.MTH_LIST.DISPLAYVALUE,5)+LON1)
+                          REPLACE F19 WITH LON2
+                       ENDIF                                                                  
+                       REPL F03 WITH B05_1.F10                                &&客戶編號
+                       REPL F04 WITH IIF(SEEK(B05.F10,'C01'),C01.F10,'')      &&統一編號          
+                       REPL F06 WITH B05_1.F21                              &&報單號碼         
+                       REPL F07 WITH B05_1.F20                                &&發票號碼
+                       REPL F09 WITH B05_1.F23                                &&課稅別 
+                       REPL F10 WITH ROUND(TQTY*INT_002/100,INT_069)*IIF(F09='1',1,0)*(-1) &&營業稅額
+                       IF F01='33'
+                          REPL F08 WITH TQTY*(-1)
+                          REPL F12 WITH F08+F10
+                       ELSE
+                          REPL F12 WITH TQTY*(-1)
+                          REPL F08 WITH F12-F10                       
+                       ENDIF   
+                       REPL F13 WITH IIF(B05_1.F24='2','03','')   &&若為折讓則顯示'03'
+                       REPL F15 WITH B05_1.F01+IIF(B01.F97='Y','製品','商品')
+                       REPL F16 WITH '1'
+                       REPL F17 WITH IIF(B05_1.F24='2','03','')
+                       REPL F18 WITH '01'
+                       REPL F20 WITH ALLTRIM(B05.F07)
+                       REPL F21 WITH B05.F16
+                       REPL F22 WITH B05.F18
+                       REPL F23 WITH FTTL                       
+                       REPL F24 WITH ALLTRIM(CHK_NAME)
+                       *******以類別分類
+                       IF B05_1.F02<=IIF(SEEK(B05_1.F10,'C01'),C01.F17,'')
+                          SELE K24         &&發票明細檔
+                       ELSE
+                          SELE K2D       &&發票明細到下個月或暫存檔
+                       ENDIF                          
+                       SET ORDER TO 1
+                       SEEK B05_1.F22
+                       IF FOUND()      
+                           REPLACE F04 WITH F04+(ROUND(TQTY*INT_002/100,INT_069)*IIF(B05_1.F23='1',1,0)*(-1)) &&營業稅額
+                           IF B05_1.F22='33'                                            
+                               REPLACE F03 WITH F03+TQTY*(-1)        	    &&銷售金額
+                               REPLACE F05 WITH F05+((TQTY*(-1))+(ROUND(TQTY*INT_002/100,INT_069)*IIF(B05_1.F23='1',1,0)*(-1)))   &&發票總額
+                           ELSE
+                               REPLACE F05 WITH F05+(TQTY*(-1))		    &&發票總額
+                               REPLACE F03 WITH F03+((TQTY*(-1))-(ROUND(TQTY*INT_002/100,INT_069)*IIF(B05_1.F23='1',1,0)*(-1)))    &&銷售金額
+                           ENDIF               
+                           DO CASE
+                                  CASE  B05_1.F23='1'
+                          		      REPLACE F06 WITH F06+1    &&應稅張數
+                          	  CASE  B05_1.F23='2'
+                          	 	      REPLACE F07 WITH F07+1    &&零稅張數
+                          	  CASE  B05_1.F23='3'	      
+                          	  	      REPLACE F08 WITH F08+1   &&免稅張數
+                           ENDCASE		     
+                       ELSE
+                           APPEND BLANK 
+                           REPLACE F01 WITH B05_1.F22
+                           REPLACE F04 WITH ROUND(TQTY*INT_002/100,INT_069)*IIF(B05_1.F23='1',1,0)*(-1) &&營業稅額
+                           IF B05_1.F22='33'                                            
+                               REPLACE F03 WITH TQTY*(-1)        	   &&銷售金額
+                               REPLACE F05 WITH F03+F04   &&發票總額
+                           ELSE
+                               REPLACE F05 WITH TQTY*(-1)		   &&發票總額
+                               REPLACE F03 WITH F05-F04    &&銷售金額
+                           ENDIF               
+                           DO CASE
+                                  CASE  B05_1.F23='1'
+                          		      REPLACE F06 WITH 1    &&應稅張數
+                          	  CASE  B05_1.F23='2'
+                          	 	      REPLACE F07 WITH 1    &&零稅張數
+                          	  CASE  B05_1.F23='3'	      
+                          	  	      REPLACE F08 WITH 1   &&免稅張數
+                           ENDCASE	
+                        ENDIF  
+                        *********以對象編號分類
+                        SET ORDER TO 2
+                        SEEK B05_1.F10
+                        IF FOUND()      
+                           REPLACE F04 WITH F04+(ROUND(TQTY*INT_002/100,INT_069)*IIF(B05_1.F23='1',1,0)*(-1)) &&營業稅額
+                           IF B05_1.F22='33'                                            
+                               REPLACE F03 WITH F03+TQTY*(-1)        	    &&銷售金額
+                               REPLACE F05 WITH F05+((TQTY*(-1))+(ROUND(TQTY*INT_002/100,INT_069)*IIF(B05_1.F23='1',1,0)*(-1)))   &&發票總額
+                           ELSE
+                               REPLACE F05 WITH F05+(TQTY*(-1))		    &&發票總額
+                               REPLACE F03 WITH F03+((TQTY*(-1))-(ROUND(TQTY*INT_002/100,INT_069)*IIF(B05_1.F23='1',1,0)*(-1)))    &&銷售金額
+                           ENDIF             
+                            DO CASE
+                                  CASE  B05_1.F23='1'
+                          		      REPLACE F06 WITH F06+1    &&應稅張數
+                          	  CASE  B05_1.F23='2'
+                          	 	      REPLACE F07 WITH F07+1    &&零稅張數
+                          	  CASE  B05_1.F23='3'	      
+                          	  	      REPLACE F08 WITH F08+1   &&免稅張數
+                            ENDCASE	
+                        ELSE
+                            APPEND BLANK 
+                            REPLACE F02 WITH B05_1.F10
+                            REPLACE F04 WITH ROUND(TQTY*INT_002/100,INT_069)*IIF(B05_1.F23='1',1,0)*(-1) &&營業稅額
+                            IF B05_1.F22='33'                                            
+                                REPLACE F03 WITH TQTY*(-1)        	   &&銷售金額
+                                REPLACE F05 WITH F03+F04   &&發票總額
+                            ELSE
+                                REPLACE F05 WITH TQTY*(-1)		   &&發票總額
+                                REPLACE F03 WITH F05-F04    &&銷售金額
+                            ENDIF               
+                            DO CASE
+                                   CASE  B05_1.F23='1'
+                          	 	      REPLACE F06 WITH 1    &&應稅張數
+                          	   CASE  B05_1.F23='2'
+                          	 	      REPLACE F07 WITH 1    &&零稅張數
+                          	   CASE  B05_1.F23='3'	      
+                          	  	      REPLACE F08 WITH 1   &&免稅張數
+                            ENDCASE
+                        ENDIF                      
+                       *****        
+                    ENDIF                                                                      
+                    SELE C01                     &&客戶基本主檔
+                    SEEK B05_1.F10
+                    IF FOUND()
+                       IF F16<CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B05_1.F02)
+                          REPL F16 WITH CTOD(THISFORM.MTH_LIST.DISPLAYVALUE+'/'+B05_1.F02)
+                      ENDIF   
+                    ENDIF                    
+                    SELE B39                    &&未過帳庫存單據查詢檔
+                    SEEK A02.F03+B05_1.F01
+                    IF FOUND()
+                       DELE
+                    ENDIF                                             
+                    SELE B05_1
+                    REPL F12 WITH '2'
+                    REPL F90 WITH DTCX(DATE())+IIF(SEEK(sys_oper,'A01'),A01.F03,'')
+                  ELSE
+                     =MESSAGEBOX('此單據已由別的工作站過帳完成',0+64,'提示訊息視窗')
+                     SELE B05_1
+                     REPL F12 WITH '2'
+                  ENDIF           
+                  THIS.ENABLED=.F.
+                  THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
+                  THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.             
+                  UNLOCK ALL
+                  IF THISFORM.PAGEFRAME1.ACTIVEPAGE=1
+                     THISFORM.GRID1.SETFOCUS
+                  ELSE
+                      THISFORM.GRID2.SETFOCUS
+                      THISFORM.ORPGROUP.NEW_BOTT.ENABLED=.F.
+                  ENDIF
+                  THISFORM.REFRESH
+               ELSE
+                  DO file_impact
+                  unlock all
+                 return
+                ENDIF   
+           unlock all
+           RELEASE ALL LIKE BK*
+       ENDIF    
+  ENDPROC
+enddefine    
+
+***********************************************列印程序
+PROCEDURE PNT_PRC  
+     HK=IIF(INT_012=2,LEFT(DTOC(A23.F01),5),ALLTRIM(STR(VAL(LEFT(DTOS(A23.F01),4))-1911))+SUBSTR(DTOC(A23.F01),3,3))
+     PNT_CHOOSE=CREATEOBJECT("PNT_CHOOSE")  
+     PNT_CHOOSE.SHOW    
+*     IF _tally >0
+*!*		      REPORT FORM ALLTRIM(INT_116)+'B05' PREVIEW
+
+*         report form ALLTRIM(INT_116)+'B05' to print prompt 
+*!*	         SELECT CRD_NT
+*!*	         USE         
+*     ENDIF  
+     CLEAR
+ENDPROC
+***********************************************列印選項
+DEFINE CLASS PNT_CHOOSE AS FORM
+       AUTOCENTER=.T.
+   CAPTION='請選擇欲列印之報表'
+   TOP=INT_015*180
+   LEFT=INT_015*220          
+   FONTSIZE=INT_015*9
+   HEIGHT=INT_015*170
+   WIDTH=INT_015*280
+   FONTSIZE=INT_015*9
+   MOVABLE=.F.
+   MAXBUTTON=.F.
+   MINBUTTON=.F.      
+   CONTROLBOX=.F.
+   BORDERSTYLE=2
+   SHOWTIPS=.T.
+   SHOWWINDOW=1
+   WINDOWTYPE=1
+   NAME='PNT_CHOOSE'
+  ADD OBJECT PNT_OPTION AS OPTIONGROUP WITH;
+      LEFT=INT_015*40,;
+      TOP=INT_015*10,;
+      HEIGHT=INT_015*80,;    
+      WIDTH=INT_015*190,;      
+      BUTTONCOUNT=3,;
+      OPTION1.CAPTION='只印出貨退回/CREDIT NOTE',;
+      OPTION1.FONTSIZE=INT_015*9,;
+      OPTION1.LEFT=INT_015*4,;
+      OPTION1.TOP=INT_015*3,;
+      OPTION1.AUTOSIZE=.T.,;
+      OPTION2.CAPTION='只印銷貨退回或折讓證明單',;
+      OPTION2.FONTSIZE=INT_015*9,;
+      OPTION2.LEFT=INT_015*4,;
+      OPTION2.TOP=INT_015*28,;
+      OPTION2.AUTOSIZE=.T.,;      
+      OPTION3.CAPTION='全部',;
+      OPTION3.FONTSIZE=INT_015*9,;
+      OPTION3.LEFT=INT_015*4,;
+      OPTION3.TOP=INT_015*53,;
+      OPTION3.AUTOSIZE=.T.,;      
+      NAME='PNT_OPTION'
+   ADD OBJECT CMND1 AS COMMANDBUTTON WITH;
+       LEFT=INT_015*60,;    
+       HEIGHT=INT_015*25,;   
+       TOP=INT_015*140,;  
+       WIDTH=INT_015*50,;
+       CAPTION='\<Y.執  行',;
+       TOOLTIPTEXT='確認所輸入的範圍鍵值!快速鍵->ALT+Y',;
+       NAME='CMND1'
+   ADD OBJECT CMND2 AS COMMANDBUTTON WITH;
+       LEFT=INT_015*130,;
+       TOP=INT_015*140,;
+       HEIGHT=INT_015*25,;
+       WIDTH=INT_015*50,;
+       CAPTION='\<C.取  消',;
+       TOOLTIPTEXT='取消作業!快速鍵->ALT+C',;
+       NAME='CMND2'   
+   PROCEDURE INIT 
+      
+      THISFORM.SETALL('FONTSIZE',INT_015*9,'COMMANDBUTTON') 
+      THISFORM.SETALL('MOUSEPOINTER',99,'COMMANDBUTTON')
+      THISFORM.SETALL('MOUSEICON','BMPS\harrow.CUR','COMMANDBUTTON')          
+                     
+      THISFORM.PNT_OPTION.VALUE=1                
+      IF !EMPTY(B05_1.F20) AND B05_1.F01<>B05_1.F20
+         THISFORM.PNT_OPTION.OPTION2.FONTSTRIKETHRU=.F.
+         THISFORM.PNT_OPTION.OPTION3.FONTSTRIKETHRU=.F.
+         THISFORM.PNT_OPTION.ENABLED=.T.               
+      ELSE
+         THISFORM.PNT_OPTION.OPTION2.FONTSTRIKETHRU=.T.
+         THISFORM.PNT_OPTION.OPTION3.FONTSTRIKETHRU=.T.
+         THISFORM.PNT_OPTION.ENABLED=.F.
+      ENDIF          
+   ENDPROC             
+   PROCEDURE CMND1.CLICK
+            
+                  IF THISFORM.PNT_OPTION.VALUE<>2
+                     LK=B05_1.F01     
+                     SELECT B05
+                     CALCULATE SUM(F04*F17*F18) TO TMP1 FOR F01=LK
+                                         
+                     CALCULATE SUM(F04*F17) TO SUM_ACC FOR F01=LK          
+                     TOAL=KMP(ROUND(SUM_ACC,2))
+                     SELECT B05.F01,;
+                     B05.F02,;
+                     B05.F03,;
+                     B05.F04,;
+                     B05.F07,;
+                     B05.F08,;
+                     B05.F10,;
+                     B05.F11,;
+                     B05.F14,;                    
+                     B05.F15,;
+                     B05.F16,;
+                     B05.F17,;
+                     B05.F18,;
+                     B05.F21,;
+                     B05.F22,;
+                     B05.F23,;           
+                     B05.F24,;
+                     B05.F20,;
+                     C01.F04,;
+                     C01.F06,;
+                     C01.F07,;
+                     C01.F10,;
+                     C01.F12,;
+                     C01.F13,;
+                     C03.F14,;
+                     C04.F17,;
+                     B01.F02,;
+                     B01.F04;            
+                     FROM B05,C01,C03,C04,B01 WHERE B05.F01=LK AND C01.F01=B05.F10 AND C03.F02=B05.F11 AND C04.F03=B05.F11 AND C04.F04=B05.F03;
+                     AND B01.F01=B05.F03 ORDER BY B05.F03 NOWAIT
+*                 REPORT FORM ALLTRIM(INT_116)+'B05' PREVIEW         
+                     IF _TALLY>0
+	                     REPORT FORM ALLTRIM(INT_116)+'B05' TO PRINT PROMPT 
+	                     IF B05.F16<>INT_011 &&出口
+                           *REPORT FORM ALLTRIM(INT_116)+'DEBIT_NOTE' TO PRINT PROMPT
+                          if messagebox('是否同時列印 CREDIT NOTE?',4+32+256,'請確認') = 6	
+                             REPORT FORM ALLTRIM(INT_116)+'CREDIT_NTE' PREVIEW           
+                          ENDIF   
+                        ENDIF   
+	                 ENDIF    
+                  ENDIF
+                 
+                  IF THISFORM.PNT_OPTION.VALUE<>1 
+                     LK=B05_1.F01   
+                     
+                     SELECT B05
+                     
+                     
+                     SELECT B05.F01,;
+                     B05.F02,;
+                     B05.F03,;
+                     B05.F04,;
+                     B05.F08,;
+                     B05.F10,;
+                     B05.F16,;
+                     B05.F17,;
+                     B05.F18,;
+                     B05.F22,;
+                     B05.F23,;           
+                     B05.F24,;
+                     B05.F20,;    
+                     C04.F17;                                       
+                     FROM B05,C04 WHERE B05.F01=LK  AND C04.F03=B05.F11 AND C04.F04=B05.F03;
+                     INTO CURSOR CRD_NT ORDER BY B05.F03 NOWAIT
+                     IF _TALLY>0                  
+                        TMP1=0
+                        TMP2=0   
+                        RCNT=0
+                        TCNT=_TALLY
+                        SELECT CRD_NT 
+                        GO TOP
+                        DO WHILE .T.
+                           CREATE CURSOR CRD_DB (F01 C(1),F02 C(3),F03 C(2),F04 C(2),F05 C(10),F06 C(43),F07 N(11),F08 N(14,6),F09 N(14),F10 N(10),F11 C(1))
+                           SELECT CRD_NT  
+                           DO WHILE !EOF() 
+                              TCNT=TCNT-1
+                              MMT=LEFT(DTOS(CTOD(CRD_NT.F08+'/01')),6)                                
+                              KBE='K25'+MMT
+                              IF KBE=K25
+                                 SELECT K25
+                              ELSE
+                                 IF !USED('KBE')
+                                     SELECT 0
+                                     USE (KBE) ALIAS KBE
+                                 ELSE
+                                     SELECT KBE
+                                 ENDIF
+                                 SET ORDER TO 1                                                
+                              ENDIF              
+                              SEEK CRD_NT.F20
+                              IF FOUND()                
+                                 DT_SQ=F02          
+                                 RCNT=RCNT+1
+                                 SELECT CRD_DB
+                                 APPEND BLANK
+                                 REPLACE F01 WITH IIF(CRD_NT.F22='33','3','2')
+                                 REPLACE F02 WITH SUBSTR(CRD_NT.F08,2,3)
+                                 REPLACE F03 WITH RIGHT(CRD_NT.F08,2)
+                                 REPLACE F04 WITH DT_SQ 
+                                 REPLACE F05 WITH CRD_NT.F20                              
+                                 REPLACE F06 WITH IIF(IIF(SEEK(B05_1.F10,'C01'),C01.F42,'')='1',CRD_NT.F03,CRD_NT.F17_B)
+                                 REPLACE F07 WITH CRD_NT.F04
+                                 REPLACE F08 WITH CRD_NT.F17_A*CRD_NT.F18                                 
+                                 REPLACE F09 WITH ROUND(IIF(CRD_NT.F22='34' AND CRD_NT.F23='1',F07*F08/(1+INT_002/100),F07*F08),0)
+                                 REPLACE F10 WITH ROUND(ICASE(CRD_NT.F22='34' AND CRD_NT.F23='1',F07*F08-F09,CRD_NT.F22='33' AND CRD_NT.F23='1',F09*INT_002/100,0),0)
+                                 REPLACE F11 WITH CRD_NT.F23                
+                               
+                                 TMP1=TMP1+F09
+                                 TMP2=TMP2+F10
+                                 IF USED('KBE')
+                                    SELECT KBE
+                                    USE
+                                 ENDIF              
+                              ENDIF
+                              SELECT CRD_NT
+                              SKIP
+                              IF RCNT=5
+                                 EXIT
+                              ENDIF   
+                           ENDDO
+                              VENDOR_NAME=IIF(SEEK(B05_1.F10,'C01'),C01.F04,'')
+                              VENDOR_NO=IIF(SEEK(B05_1.F10,'C01'),C01.F10,'')
+                              VENDOR_ADD=IIF(SEEK(B05_1.F10,'C01'),C01.F06,'')
+                              DT=B05_1.F02
+                              SELECT CRD_DB
+                              IF RCNT<5
+                                 FOR I=1 TO 5-RCNT
+                                    APPEND BLANK
+                                 ENDFOR                             
+                              ENDIF
+                             
+                              GO TOP
+*!*	                              FOR I=1 TO 4
+*!*	                                  TMNT=ICASE(I=1,'第一聯：交付原銷貨人作為發生銷貨退回或折讓當月（期）銷項稅額之扣減憑證並依規定申報。';
+*!*	                                 ,I=2,'第二聯：交付原銷貨人作為記帳憑證';
+*!*	                                 ,I=3,'第三聯：由進貨人作為進項稅額之扣抵憑證。';
+*!*	                                 ,'第四聯：由進貨人作為記帳憑證')
+                                 
+ 	                             REPORT FORM ALLTRIM(INT_116)+'CREDIT_NOT' PREVIEW               
+ *                             REPORT FORM ALLTRIM(INT_116)+'CREDIT_NOT' TO PRINT   
+*!*	                             ENDFOR 
+                         
+                           SELECT CRD_DB
+                           USE
+                           TMP1=0
+                           TMP2=0
+                           RCNT=0
+                           IF TCNT=0
+                              EXIT
+                           ENDIF           
+                        ENDDO
+                        SELECT CRD_NT
+                        USE
+                    ENDIF  
+                    
+                  ENDIF          
+           
+            THISFORM.CMND2.CLICK
+   ENDPROC
+   PROCEDURE CMND2.CLICK               
+       THISFORM.RELEASE        
+   ENDPROC         
+ENDDEFINE
+************************************************特殊輸入欄位的設定----料號
+DEFINE CLASS TXTF03 AS TEXTBOX
+  READONLY=.T.
+  MAXLENGTH=43
+  FONTSIZE=INT_015*9
+  PROCEDURE INTERACTIVECHANGE
+    IF AT('?',ALLTRIM(THIS.VALUE))<>0
+       KP='C10'+LEFT(DTOS(CTOD(THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE+'/01')),6)           
+       DO CASE
+          CASE AT('?',ALLTRIM(THIS.VALUE))>1 .AND. EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE))                   
+               SELECT F03,F04,F09,F24 FROM C04  INTO CURSOR OPT; 
+               ORDER BY F03 DESC WHERE F02=THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE; 
+               AND LEFT(F04,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1);    
+               AND C04.F09-C04.F24>0 AND F03+F04=ANY(SELE F05+F03 FROM &KP WHERE LEFT(F04,2)='BC')
+          CASE AT('?',ALLTRIM(THIS.VALUE))>1 .AND. !EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE))                   
+               SELECT F03,F04,F09,F24 FROM C04 INTO CURSOR OPT; 
+               ORDER BY F03 DESC WHERE F02=THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE; 
+               AND LEFT(F02,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1);    
+               AND C04.F09-C04.F24>0 AND F03=THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE;
+               AND F03+F04=ANY(SELE F05+F03 FROM &KP WHERE LEFT(F04,2)='BC')
+          CASE AT('?',ALLTRIM(THIS.VALUE))=1 .AND. EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE))                   
+               SELECT F03,F04,F09,F24 FROM C04 INTO CURSOR OPT ORDER BY F03 DESC WHERE F02=THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE;
+               AND (C04.F09-C04.F24)>0 AND F03+F04=ANY(SELE F05+F03 FROM &KP WHERE LEFT(F04,2)='BC')
+          CASE AT('?',ALLTRIM(THIS.VALUE))=1 .AND. !EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE))                   
+               SELECT F03,F04,F09,F24 FROM C04 INTO CURSOR OPT ORDER BY F03 DESC WHERE F02=THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE;
+               AND (C04.F09-C04.F24)>0 AND F03=THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE;
+               AND F03+F04=ANY(SELE F05+F03 FROM &KP WHERE LEFT(F04,2)='BC')              
+       ENDCASE 
+       IF _TALLY>0  
+          OPT_SEEK=createobject("OPT_SEEK")  
+          OPT_SEEK.SHOW    
+          IF LEN(ALLTRIM(FLG))>1
+             THIS.VALUE=FLG
+             THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE=CHK_STR
+             THIS.REFRESH          
+             THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=IIF(SEEK(CHK_STR+FLG,'C04'),C04.F09-C04.F24-C04.F19,0)
+             THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE=IIF(SEEK(CHK_STR+FLG,'C04'),C04.F19,0)                 
+             THISFORM.PAGEFRAME1.PAGE2.TXTF11.REFRESH
+             THISFORM.PAGEFRAME1.PAGE2.TXTF04.REFRESH            
+             THISFORM.PAGEFRAME1.PAGE2.TXTF15.REFRESH                              
+             THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE=IIF(SEEK(CHK_STR+FLG,'C04'),C04.F06,'NT')
+             THISFORM.PAGEFRAME1.PAGE2.TXTF17.VALUE=IIF(SEEK(CHK_STR+FLG,'C04'),C04.F07,0)          
+             THISFORM.PAGEFRAME1.PAGE2.CRCY.REFRESH               
+             THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE=THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE             
+             THISFORM.PAGEFRAME1.PAGE2.TXTF18.VALUE=IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE,'C00'),C00.F02,1)            
+             FLG='0'           
+             CHK_STR=''
+          ENDIF          
+       ENDIF    
+    ELSE
+       IF !EMPTY(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE)
+          THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THIS.VALUE,'C04'),C04.F09-C04.F24+C04.F19,0)       
+          THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE=IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THIS.VALUE,'C04'),C04.F19,0)                           
+          THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE=IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THIS.VALUE,'C04'),C04.F06,'NT')          
+          THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE=THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE        
+          THISFORM.PAGEFRAME1.PAGE2.TXTF17.VALUE=IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF11.VALUE+THIS.VALUE,'C04'),C04.F07,0)                      
+          THISFORM.PAGEFRAME1.PAGE2.TXTF18.VALUE=IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE,'C00'),C00.F02,1)          
+       ENDIF          
+    ENDIF  
+       THISFORM.PAGEFRAME1.PAGE2.LBLF031.CAPTION=IIF(SEEK(THIS.VALUE,'B01'),B01.F02,'')   
+       THISFORM.PAGEFRAME1.PAGE2.TXTF79.VALUE=THIS.VALUE   
+  ENDPROC
+
+ENDDEFINE
+***************************************************特殊欄位-----------------訂單號碼
+DEFINE CLASS TXTF11 AS TEXTBOX
+  READONLY=.T.
+  MAXLENGTH=10
+  FONTSIZE=INT_015*9
+  PROCEDURE INTERACTIVECHANGE
+    IF AT('?',ALLTRIM(THIS.VALUE))<>0
+       KP='C10'+LEFT(DTOS(CTOD(THISFORM.PAGEFRAME1.PAGE1.TXTF08.VALUE+'/01')),6)               
+       DO CASE
+          CASE AT('?',ALLTRIM(THIS.VALUE))>1 .AND. EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE))                   
+               SELECT F03,F04,F09,F24 FROM C04 INTO CURSOR OQT; 
+               ORDER BY F03 DESC WHERE F02=THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE; 
+               AND LEFT(F03,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1);    
+               AND (C04.F09-C04.F24)>0 AND F03+F04=ANY(SELE F05+F03 FROM &KP WHERE LEFT(F04,2)='BC')
+          CASE AT('?',ALLTRIM(THIS.VALUE))>1 .AND. !EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE))                   
+               SELECT F03,F04,F09,F24 FROM C04 INTO CURSOR OQT; 
+               ORDER BY F03 DESC WHERE F020=THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE; 
+               AND LEFT(F01,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1);    
+               AND (C04.F09-C04.F24)>0 AND F04=THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE;
+               AND F03+F04=ANY(SELE F05+F03 FROM &KP WHERE LEFT(F04,2)='BC')                             
+          CASE AT('?',ALLTRIM(THIS.VALUE))=1 .AND. EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE))                   
+               SELECT F03,F04,F09,F24 FROM C04 INTO CURSOR OQT ORDER BY F03 DESC WHERE F02=THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE;
+               AND (C04.F09-C04.F24)>0 AND F03+F04=ANY(SELE F05+F03 FROM &KP WHERE LEFT(F04,2)='BC')
+          CASE AT('?',ALLTRIM(THIS.VALUE))=1 .AND. !EMPTY(ALLTRIM(THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE))                   
+               SELECT F03,F04,F09,F24 FROM C04 INTO CURSOR OQT ORDER BY F03 DESC WHERE F02=THISFORM.PAGEFRAME1.PAGE1.TXTF10.VALUE;
+               AND (C04.F09-C04.F24)>0 AND F04=THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE;
+               AND F03+F04=ANY(SELE F05+F03 FROM &KP WHERE LEFT(F04,2)='BC')              
+       ENDCASE 
+       IF _TALLY>0  
+          OQT_SEEK=createobject("OQT_SEEK")  
+          OQT_SEEK.SHOW    
+          IF LEN(ALLTRIM(FLG))>1
+             THIS.VALUE=FLG
+             THIS.REFRESH                    
+             THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=CHK_STR
+             THISFORM.PAGEFRAME1.PAGE2.TXTF79.VALUE=CHK_STR
+             THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=IIF(SEEK(FLG+CHK_STR,'C04'),C04.F09-C04.F24-C04.F19,0)
+             THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE=IIF(SEEK(FLG+CHK_STR,'C04'),C04.F19,0)                 
+             THISFORM.PAGEFRAME1.PAGE2.TXTF03.REFRESH
+             THISFORM.PAGEFRAME1.PAGE2.TXTF04.REFRESH            
+             THISFORM.PAGEFRAME1.PAGE2.TXTF15.REFRESH                              
+             THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE=IIF(SEEK(FLG+CHK_STR,'C04'),C04.F06,'NT')
+             THISFORM.PAGEFRAME1.PAGE2.TXTF17.VALUE=IIF(SEEK(FLG+CHK_STR,'C04'),C04.F07,0)          
+             THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE=THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE
+             THISFORM.PAGEFRAME1.PAGE2.TXTF18.VALUE=IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE,'C00'),C00.F02,1)          
+             FLG='0'           
+             CHK_STR=''
+          ENDIF   
+       ENDIF    
+    ELSE 
+       IF !EMPTY(THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE)
+          THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=IIF(SEEK(THIS.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),C04.F09-C04.F24-C04.F19,0)       
+          THISFORM.PAGEFRAME1.PAGE2.TXTF15.VALUE=IIF(SEEK(THIS.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),C04.F19,0)                           
+          THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE=IIF(SEEK(THIS.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),C04.F06,'NT')          
+          THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE=THISFORM.PAGEFRAME1.PAGE2.CRCY.DISPLAYVALUE        
+          THISFORM.PAGEFRAME1.PAGE2.TXTF17.VALUE=IIF(SEEK(THIS.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE,'C04'),C04.F07,0)                      
+          THISFORM.PAGEFRAME1.PAGE2.TXTF18.VALUE=IIF(SEEK(THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE,'C00'),C00.F02,1)          
+       ENDIF   
+    ENDIF  
+       THISFORM.PAGEFRAME1.PAGE2.LBLF031.CAPTION=IIF(SEEK(THISform.pageframe1.page2.txtf03.VALUE,'B01'),B01.F02,'')      
+  ENDPROC     
+ENDDEFINE
+****************************************************  &&實際料號
+DEFINE CLASS TXTF79 AS TEXTBOX
+      READONLY=.T.
+      MAXLENGTH=43
+  FONTSIZE=INT_015*9
+       PROCEDURE INTERACTIVECHANGE     
+       IF AT('?',ALLTRIM(THIS.VALUE))<>0
+          IF AT('?',ALLTRIM(THIS.VALUE))>1             
+             SELECT F01,F02 FROM B01 INTO CURSOR MTR ORDER BY F01 WHERE !EMPTY(F98) AND LEFT(F01,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1)    
+          ELSE
+             SELECT F01,F02 FROM B01 INTO CURSOR MTR ORDER BY F01 WHERE !EMPTY(F98)   
+          ENDIF        
+          IF _TALLY>0
+             MTR_SEEK=createobject("MTR_SEEK")  
+             MTR_SEEK.SHOW    
+             IF FLG<>'0' AND LEN(ALLTRIM(FLG))>1
+                THIS.VALUE=FLG
+                THIS.REFRESH  
+             ENDIF      
+                          
+          ENDIF                                     
+       ENDIF       
+   ENDPROC  
+ENDDEFINE   
+***************************************************特殊欄位------------------出貨部門
+DEFINE CLASS TXTF05 AS TEXTBOX
+  READONLY=.T.
+  MAXLENGTH=5 
+  FONTSIZE=INT_015*9
+  PROCEDURE INTERACTIVECHANGE
+    IF AT('?',ALLTRIM(THIS.VALUE))<>0
+       IF AT('?',ALLTRIM(THIS.VALUE))>1             
+          SELECT F01,F02 FROM A14 INTO CURSOR DEPART ORDER BY F01 WHERE LEFT(F01,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1) AND LEN(ALLTRIM(F01))=4 AND F04='*' AND F13='*'
+       ELSE
+          SELECT F01,F02 FROM A14 INTO CURSOR DEPART ORDER BY F01 WHERE LEN(ALLTRIM(F01))=4 AND F04='*' AND F13='*'
+       ENDIF   
+       IF _TALLY>0
+          DEPART_SEEK=createobject("DEPART_SEEK")  
+          DEPART_SEEK.SHOW    
+          THIS.VALUE=FLG
+          THIS.REFRESH
+          FLG='0'
+       ENDIF   
+    ENDIF   
+       THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION=IIF(SEEK(THIS.VALUE,'A14'),A14.F02,'')  
+  ENDPROC
+ENDDEFINE  
+***************************************************特殊輸入欄位設定-----------客戶
+DEFINE CLASS TXTF10 AS TEXTBOX
+  READONLY=.T.
+  MAXLENGTH=5
+  FONTSIZE=INT_015*9
+  PROCEDURE INTERACTIVECHANGE
+    IF AT('?',ALLTRIM(THIS.VALUE))<>0 
+       IF AT('?',ALLTRIM(THIS.VALUE))>1             
+          if empty(a02.f12)
+             SELECT F02,F01,F04 FROM C01 INTO CURSOR VDR ORDER BY F02 WHERE LEFT(F02,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1) and f18=sys_oper
+          else
+             SELECT F02,F01,F04 FROM C01 INTO CURSOR VDR ORDER BY F02 WHERE LEFT(F02,AT('?',THIS.VALUE)-1)=LEFT(THIS.VALUE,AT('?',THIS.VALUE)-1)
+          endif
+       ELSE
+          SELECT F02,F01,F04 FROM C01 INTO CURSOR VDR ORDER BY F02 
+       ENDIF
+       IF _TALLY>0          
+          VDR_SEEK=createobject("VDR_SEEK")  
+          VDR_SEEK.SHOW    
+          THIS.VALUE=FLG
+          THIS.REFRESH
+          FLG='0'        
+       ENDIF   
+    ELSE
+       IF LEN(ALLTRIM(THIS.VALUE))=4
+          SELECT F02,F01,F04 FROM C01 INTO CURSOR VDR ORDER BY F02 WHERE F02=ALLTRIM(THIS.VALUE)
+          DO CASE
+             CASE _TALLY=1
+                  THIS.VALUE=VDR.F01
+                  THIS.REFRESH
+             CASE _TALLY>1
+                  VDR_SEEK=createobject("VDR_SEEK")  
+                  VDR_SEEK.SHOW    
+                  THIS.VALUE=FLG
+                  THIS.REFRESH
+                  FLG='0'        
+          ENDCASE      
+       ENDIF    
+    ENDIF      
+       THISFORM.PAGEFRAME1.PAGE1.LBLF101.CAPTION=IIF(SEEK(THIS.VALUE,'C01'),C01.F04,'')  
+  ENDPROC
+ENDDEFINE
+*****************************************************************退貨或折讓
+DEFINE CLASS DIS_TYPE AS optiongroup
+   HEIGHT=INT_015*25
+   TOP=INT_015*9
+   LEFT=INT_015*145
+   HEIGHT=INT_015*25
+   WIDTH=INT_015*120
+   FONTSIZE=INT_015*9  
+   buttoncount=2
+   VALUE=1
+   NAME='DIS_TYPE'
+   OPTION1.CAPTION='退貨'
+   OPTION1.TOP=INT_015*5
+   OPTION1.WIDTH=INT_015*52
+   OPTION1.LEFT=INT_015*5
+   OPTION1.NAME='OPTION1'
+   OPTION2.CAPTION='折讓'
+   OPTION2.TOP=INT_015*5
+   OPTION2.WIDTH=INT_015*52
+   OPTION2.LEFT=INT_015*59
+   OPTION2.NAME='OPTION2'
+   PROC INTERACTIVECHANGE
+        IF THIS.VALUE=2    
+           THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=''
+           THISFORM.PAGEFRAME1.PAGE1.TXTF05.READONLY=.T.
+           THISFORM.PAGEFRAME1.PAGE1.TXTF14.VALUE=CTOD('')
+           THISFORM.PAGEFRAME1.PAGE1.TXTF14.READONLY=.T.
+           THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION=''
+        ELSE 
+           THISFORM.PAGEFRAME1.PAGE1.TXTF05.VALUE=INT_086
+           THISFORM.PAGEFRAME1.PAGE1.TXTF14.READONLY=.F.
+           THISFORM.PAGEFRAME1.PAGE1.TXTF05.READONLY=.F.      
+           THISFORM.PAGEFRAME1.PAGE1.LBLF051.CAPTION=IIF(SEEK(INT_086,'A14'),A14.F02,'')
+        ENDIF
+        THISFORM.PAGEFRAME1.PAGE1.TXTF10.SETFOCUS
+   ENDPROC     
+ENDDEFINE  
+******************************************************************特殊欄位設定--發票號碼
+DEFINE CLASS TXTF20 AS TEXTBOX
+       READONLY=.T.
+       MAXLENGTH=10
+       FONTSIZE=INT_015*9       
+       PROCEDURE INTERACTIVECHANGE
+           IF INT_060=.T.   &&如果預設要帶入發票管理
+               IF LEN(ALLTRIM(THIS.VALUE))=10
+                   THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VISIBLE=.T.
+                   THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VALUE=1
+                   THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VISIBLE=.T.
+                   THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VALUE=1
+               ELSE   
+                   THISFORM.PAGEFRAME1.PAGE1.INV_TYPE.VISIBLE=.F.
+                   THISFORM.PAGEFRAME1.PAGE1.TAX_TYPE.VISIBLE=.F.
+                   THISFORM.PAGEFRAME1.PAGE1.LBLF221.CAPTION=''
+                   THISFORM.PAGEFRAME1.PAGE1.LBLF231.CAPTION=''              
+               ENDIF   
+           ENDIF   
+       ENDPROC
+ENDDEFINE     
+*********************************************************************發票種類
+DEFINE CLASS INV_TYPE AS optiongroup
+  HEIGHT=INT_015*25
+  TOP=INT_015*109
+  LEFT=INT_015*145
+  HEIGHT=INT_015*25
+  WIDTH=INT_015*120
+  FONTSIZE=INT_015*9  
+  buttoncount=2
+  VALUE=1
+  NAME='INV_TYPE'
+  OPTION1.CAPTION='三聯式'
+  OPTION1.TOP=INT_015*5
+  OPTION1.WIDTH=INT_015*52
+  OPTION1.LEFT=INT_015*5
+  OPTION1.NAME='OPTION1'
+  OPTION2.CAPTION='二聯式'
+  OPTION2.TOP=INT_015*5
+  OPTION2.WIDTH=INT_015*52
+  OPTION2.LEFT=INT_015*59
+  OPTION2.NAME='OPTION2'
+  PROC INTERACTIVECHANGE
+ENDPROC     
+ENDDEFINE  
+*********************************************************************課稅別
+DEFINE CLASS TAX_TYPE AS COMBOBOX
+  HEIGHT=INT_015*25
+  AUTOSIZE=.T.
+  TOP=INT_015*109
+  LEFT=INT_015*265
+  FONTSIZE=INT_015*9  
+  BOUNDCOLUMN=1
+  COLUMNCOUNT=1
+  WIDTH=INT_015*50
+  ROWSOURCETYPE=1
+  VALUE=1
+  STYLE=2
+  NAME='TAX_TYPE'
+  PROCEDURE INIT
+     with this 
+          .additem('應稅')
+          .additem('零稅')          
+          .additem('免稅')          
+     endwith   
+  ENDPROC
+  PROCEDURE INTERACTIVECHANGE
+     DO CASE
+        CASE THIS.VALUE=1
+
+        CASE THIS.VALUE=2
+
+        CASE THIS.VALUE=3
+
+*     THISFORM.PAGEFRAME1.PAGE2.LBLF231.CAPTION=IIF(THIS.VALUE=1,'應稅',IIF(THIS.VALUE=2,'零稅','免稅'))
+     ENDCASE
+  ENDPROC
+ENDDEFINE  
+***************************************************幣別設定
+DEFINE CLASS CRCY AS COMBOBOX
+  HEIGHT=INT_015*25
+  AUTOSIZE=.T.
+  TOP=INT_015*39
+  LEFT=INT_015*379
+  BOUNDCOLUMN=1
+  COLUMNCOUNT=1
+  WIDTH=INT_015*84
+  FONTSIZE=INT_015*9
+  ROWSOURCETYPE=1
+  STYLE=2
+  NAME='CRCY'
+  PROCEDURE INIT
+    SELECT C00
+    GO TOP 
+    DO WHILE .NOT. EOF()
+       L=4-LEN(ALLTRIM(F01))
+       THIS.ADDITEM(F01)
+       SKIP
+    ENDDO
+  ENDPROC
+  PROCEDURE INTERACTIVECHANGE
+    THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE=THIS.DISPLAYVALUE
+    THISFORM.PAGEFRAME1.PAGE2.TXTF18.VALUE=IIF(SEEK(THIS.DISPLAYVALUE,'C00'),C00.F02,1)
+    THISFORM.PAGEFRAME1.PAGE2.TXTF16.REFRESH
+    THISFORM.PAGEFRAME1.PAGE2.TXTF18.REFRESH
+  ENDPROC
+ENDDEFINE  
+*********************************************************************已出明細----依料號排列搜尋
+define class OPT_SEEK as form
+  autocenter=.t.
+  caption='已出明細'
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*320
+  WIDTH=INT_015*522
+  FONTSIZE=INT_015*9
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  showwindow=1
+  windowtype=1
+  name='OPT_SEEK'
+  add object cmdgroup as cmdgroup with;      
+      TOP=INT_015*290,;
+      LEFT=INT_015*10
+  add object GRID1 as GRID with;          
+      AUTOCENTER=.T.,;
+      ALLOWCELLSELECTION=.F.,;
+      WIDTH=INT_015*522,;      
+      HEIGHT=INT_015*293,;      
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;
+      deletemark=.f.,;
+      READONLY=.T.,;
+      recordsourcetype=1,;
+      columncount=3,;            
+      NAME='GRID1',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;
+      COLUMN3.NAME='COLUMN3'          
+  add object cmnd1 as commandbutton with;
+      LEFT=INT_015*183,;
+      TOP=INT_015*295,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;
+      FONTSIZE=INT_015*9,;
+      caption='\<S.選取',;
+      TOOLTIPTEXT='選取此筆資料!快速鍵->ALT+S'
+      name='cmnd1'
+  add object cmnd2 as commandbutton with;
+      LEFT=INT_015*225,;
+      TOP=INT_015*295,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;
+      FONTSIZE=INT_015*9,;
+      caption='\<C.放棄',;
+      TOOLTIPTEXT='取消此作業畫面!快速鍵->ALT+C'
+      name='cmnd2'
+      procedure init 
+         AREA1='OPT' 
+        SELE OPT
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')         
+         THISFORM.GRID1.READONLY=.T. 
+         thisform.grid1.recordsource='OPT'
+         THISFORM.CMDGROUP.SEEK_BOTT.VISIBLE=.F.         
+         thisform.setall('readonly',.t.,'textbox')
+         THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='料        號'
+         THISFORM.GRID1.COLUMN1.WIDTH=INT_015*261
+         THISFORM.GRID1.COLUMN1.CONTROLSOURCE='OPT.F04'
+         THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='訂單號碼'
+         THISFORM.GRID1.COLUMN2.CONTROLSOURCE='OPT.F03'
+         THISFORM.GRID1.COLUMN2.WIDTH=INT_015*83
+         THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='已出數量'         
+         THISFORM.GRID1.COLUMN3.CONTROLSOURCE='OPT.F09-OPT.F24'
+         THISFORM.GRID1.COLUMN3.WIDTH=INT_015*74         
+         THISFORM.GRID1.SETFOCUS
+          IF THISFORM.GRID1.ACTIVEROW<>0 
+               THISFORM.GRID1.AFTERROWCOLCHANGE
+          ENDIF
+      ENDPROC
+      PROC GRID1.AFTERROWCOLCHANGE
+           LPARAMETERS XColIndex
+           FCH='GRID1'
+           FLG=OPT.F04         
+           CHK_STR=OPT.F03
+      ENDPROC 
+      procedure cmnd1.click            
+          AREA1='B05_1'
+          THISFORM.RELEASE                                            
+      endproc
+      procedure cmnd2.click
+          FLG='0'
+          CHK_STR=''
+          AREA1='B05_1'
+         thisform.release
+      endproc    
+enddefine            
+***************************************已出明細-------依訂單號碼排列搜尋
+define class OQT_SEEK as form
+  autocenter=.t.
+  caption='已出明細'
+  FONTSIZE=INT_015*9
+  HEIGHT=INT_015*320
+  WIDTH=INT_015*522
+  FONTSIZE=INT_015*9
+  CONTROLBOX=.F.
+  BORDERSTYLE=2
+  SHOWTIPS=.T.
+  showwindow=1
+  windowtype=1
+  name='OQT_SEEK'
+  add object cmdgroup as cmdgroup with;      
+      TOP=INT_015*290,;
+      LEFT=INT_015*10
+  add object GRID1 as GRID with;          
+      AUTOCENTER=.T.,;
+      ALLOWCELLSELECTION=.F.,;
+      WIDTH=INT_015*522,;      
+      HEIGHT=INT_015*293,;      
+      ROWHEIGHT=INT_015*18,;
+      HEADERHEIGHT=INT_015*19,;
+      deletemark=.f.,;
+      READONLY=.T.,;
+      recordsourcetype=1,;
+      columncount=3,;            
+      NAME='GRID1',;
+      COLUMN1.NAME='COLUMN1',;
+      COLUMN2.NAME='COLUMN2',;      
+      COLUMN3.NAME='COLUMN3'
+  add object cmnd1 as commandbutton with;
+      LEFT=INT_015*183,;
+      TOP=INT_015*295,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;
+      FONTSIZE=INT_015*9,;
+      caption='\<S.選取',;
+      TOOLTIPTEXT='選取此筆資料!快速鍵->ALT+S'
+      name='cmnd1'
+  add object cmnd2 as commandbutton with;
+      LEFT=INT_015*225,;
+      TOP=INT_015*295,;
+      HEIGHT=INT_015*25,;
+      WIDTH=INT_015*40,;
+      FONTSIZE=INT_015*9,;
+      caption='\<C.放棄',;
+      TOOLTIPTEXT='取消此作業畫面!快速鍵->ALT+C'
+      name='cmnd2'
+      procedure init 
+         AREA1='OQT' 
+         SELE OQT
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'COLUMN')
+         THISFORM.GRID1.SETALL('FONTSIZE',INT_015*9,'HEADER')        
+         THISFORM.GRID1.READONLY=.T. 
+         thisform.grid1.recordsource='OQT'
+         THISFORM.CMDGROUP.SEEK_BOTT.VISIBLE=.F.         
+         thisform.setall('readonly',.t.,'textbox')
+         THISFORM.GRID1.COLUMN1.HEADER1.CAPTION='訂單號碼'
+         THISFORM.GRID1.COLUMN1.CONTROLSOURCE='OQT.F03'
+         THISFORM.GRID1.COLUMN1.WIDTH=INT_015*83
+         THISFORM.GRID1.COLUMN2.HEADER1.CAPTION='料        號'
+         THISFORM.GRID1.COLUMN2.WIDTH=INT_015*261
+         THISFORM.GRID1.COLUMN2.CONTROLSOURCE='OQT.F04'         
+         THISFORM.GRID1.COLUMN3.HEADER1.CAPTION='已出數量'
+         THISFORM.GRID1.COLUMN3.CONTROLSOURCE='OQT.F09-OQT.F24'
+         THISFORM.GRID1.COLUMN3.WIDTH=INT_015*74
+         THISFORM.GRID1.SETFOCUS
+          IF THISFORM.GRID1.ACTIVEROW<>0 
+               THISFORM.GRID1.AFTERROWCOLCHANGE
+          ENDIF         
+      ENDPROC
+      PROC GRID1.AFTERROWCOLCHANGE
+           LPARAMETERS XColIndex
+           FCH='GRID1'
+           FLG=OQT.F03         
+           CHK_STR=OQT.F04
+      ENDPROC 
+      procedure cmnd1.click            
+          AREA1='B05_1'
+          THISFORM.RELEASE                                            
+      endproc
+      procedure cmnd2.click
+          FLG='0'
+          CHK_STR=''
+          AREA1='B05_1'
+         thisform.release
+      endproc    
+enddefine            
+
+*******************************************   計算該單出貨總金額
+FUNC TTL1
+     PARA BKK_NO
+     qt_od=0
+     sele B05
+     SEEK BKK_NO
+     IF FOUND()
+         DO WHILE F01=BKK_NO            
+                          
+                  qt_od=qt_od+ROUND(F04*f17*F18,0)
+                                                    
+                SKIP
+          ENDDO
+     ELSE
+       qt_od=0
+     ENDIF     
+     SELE B05_1
+     RETURN ROUND(qt_od,INT_069)
+*******************************************   計算該單出貨外幣金額
+FUNC TTL3
+     PARA BKK_NO
+     qt_od=0
+     sele B05
+     SEEK BKK_NO
+     IF FOUND()
+         DO WHILE F01=BKK_NO            
+                          
+                  qt_od=qt_od+ROUND(F04*F17,2)
+                                                    
+                SKIP
+          ENDDO
+     ELSE
+       qt_od=0
+     ENDIF     
+     SELE B05_1
+     RETURN ROUND(qt_od,2)     
