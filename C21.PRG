@@ -134,7 +134,7 @@ DEFINE CLASS TKC21 AS FORM
   ADD OBJECT PAGEFRAME1 AS PAGEFRAME WITH;
       LEFT=INT_015*236,;
       WIDTH=INT_015*540,;
-      HEIGHT=INT_015*240,;
+      HEIGHT=INT_015*265,;
       FONTSIZE=INT_015*9,;
       PAGECOUNT=2,;
       TABSTRETCH=1,;
@@ -155,8 +155,8 @@ DEFINE CLASS TKC21 AS FORM
       COLUMN2.NAME='COLUMN2',;      
       COLUMN3.NAME='COLUMN3'      
   ADD OBJECT GRID2 AS GRID2 WITH;
-      TOP=INT_015*242,;
-      HEIGHT=INT_015*278,;
+      TOP=INT_015*267,;
+      HEIGHT=INT_015*253,;
       COLUMNCOUNT=8,;            
       RECORDSOURCE='C27',;
       LINKMASTER='C26',;
@@ -499,20 +499,29 @@ DEFINE CLASS TKC21 AS FORM
          .LEFT=INT_015*14
          .TOP=INT_015*13
 	     .WIDTH=INT_015*50
-         .CAPTION='料號品名'
+         .CAPTION='料品編號'
     ENDWITH  
     THIS.ADDOBJECT('LBLF021','LABEL')
     WITH THIS.LBLF021
          .VISIBLE=.T.
-         .LEFT=INT_015*337
-	     .TOP=INT_015*13
-	     .AUTOSIZE=.T.
+         .LEFT=INT_015*65
+	     .TOP=INT_015*38
+	     .AUTOSIZE=.T.	    	    
 	ENDWITH     
+    THIS.ADDOBJECT('LBLF022','LABEL')
+	WITH THIS.LBLF022  
+	     .VISIBLE=.T.
+         .LEFT=INT_015*14
+         .TOP=INT_015*38
+	     .WIDTH=INT_015*50
+         .CAPTION='原始品名'
+    ENDWITH  
+
     THIS.ADDOBJECT('LBLF05','LABEL')
     WITH THIS.LBLF05
          .VISIBLE=.T.
 	     .LEFT=INT_015*14
-	     .TOP=INT_015*38
+	     .TOP=INT_015*63
 	     .WIDTH=INT_015*50
 	     .CAPTION='客戶品號'
 	ENDWITH     
@@ -520,7 +529,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF03
          .VISIBLE=.T.
          .LEFT=INT_015*14
-         .TOP=INT_015*63
+         .TOP=INT_015*88
          .WIDTH=INT_015*50
          .CAPTION='報價數量'         
     ENDWITH     
@@ -528,7 +537,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF14
          .VISIBLE=.T.
          .LEFT=INT_015*164
-         .TOP=INT_015*63
+         .TOP=INT_015*113
          .WIDTH=INT_015*50
          .CAPTION='前置天數'         
     ENDWITH         
@@ -536,7 +545,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF04
          .VISIBLE=.T.       
          .LEFT=INT_015*14
-         .TOP=INT_015*88
+         .TOP=INT_015*113
          .WIDTH=INT_015*50
          .CAPTION='本次報價'
     ENDWITH  
@@ -544,7 +553,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF041
          .VISIBLE=.T.       
          .LEFT=INT_015*150
-         .TOP=INT_015*88
+         .TOP=INT_015*113
          .BACKCOLOR=RGB(255,255,0)
          .AUTOSIZE=.T.
          .CAPTION=''
@@ -553,7 +562,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLTTL
          .VISIBLE=.T.           
          .LEFT=INT_015*14
-         .TOP=INT_015*113
+         .TOP=INT_015*138
          .WIDTH=INT_015*50
          .CAPTION='金額小計'
     ENDWITH  
@@ -561,14 +570,14 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLTTL1
          .VISIBLE=.T.           
          .LEFT=INT_015*66
-         .TOP=INT_015*113
+         .TOP=INT_015*138
          .AUTOSIZE=.T.
     ENDWITH         
     THIS.ADDOBJECT('LBLTRAT','LABEL')
     WITH THIS.LBLTRAT
          .VISIBLE=.T.  
          .LEFT=INT_015*128
-         .TOP=INT_015*113
+         .TOP=INT_015*138
          .WIDTH=INT_015*50
          .CAPTION=IIF(A02.F11='*','毛利率%','')
     ENDWITH  
@@ -576,14 +585,14 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLTRAT1
          .VISIBLE=.T.         
          .LEFT=INT_015*179
-         .TOP=INT_015*113         
+         .TOP=INT_015*138         
          .AUTOSIZE=.T.
     ENDWITH             
     THIS.ADDOBJECT('LBLF10','LABEL')
     WITH THIS.LBLF10
          .VISIBLE=.T.           
          .LEFT=INT_015*14
-         .TOP=INT_015*138
+         .TOP=INT_015*163
          .WIDTH=INT_015*50
          .CAPTION='是否特價'      
       ENDWITH         
@@ -591,7 +600,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF11
          .VISIBLE=.T.           
          .LEFT=INT_015*95
-         .TOP=INT_015*138
+         .TOP=INT_015*163
          .WIDTH=INT_015*50
          .CAPTION='特價原因'      
       ENDWITH               
@@ -599,7 +608,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF08
          .VISIBLE=.T.           
          .LEFT=INT_015*14
-         .TOP=INT_015*163
+         .TOP=INT_015*188
          .WIDTH=INT_015*50
          .CAPTION='其他備註'      
       ENDWITH     
@@ -607,7 +616,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF99
          .VISIBLE=.T.           
          .LEFT=INT_015*164
-         .TOP=INT_015*188
+         .TOP=INT_015*213
          .WIDTH=INT_015*50
          .CAPTION='安全資料'        
       ENDWITH          
@@ -615,7 +624,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF991
          .VISIBLE=.T.           
          .LEFT=INT_015*215
-         .TOP=INT_015*188
+         .TOP=INT_015*213
          .AUTOSIZE=.T.
          .CAPTION=''      
       ENDWITH              
@@ -623,7 +632,7 @@ DEFINE CLASS TKC21 AS FORM
       WITH THIS.LBLLST
          .VISIBLE=.T.           
          .LEFT=INT_015*414
-         .TOP=INT_015*188
+         .TOP=INT_015*213
          .WIDTH=INT_015*60
          .CAPTION='最後進貨日'        
       ENDWITH          
@@ -631,7 +640,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLLST1
          .VISIBLE=.T.           
          .LEFT=INT_015*477
-         .TOP=INT_015*188
+         .TOP=INT_015*213
          .AUTOSIZE=.T.
          .CAPTION=''      
       ENDWITH              
@@ -639,7 +648,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLTPE
          .VISIBLE=.T.           
          .LEFT=INT_015*310
-         .TOP=INT_015*188
+         .TOP=INT_015*213
          .AUTOSIZE=.T.
          .CAPTION=''      
       ENDWITH                    
@@ -647,7 +656,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF09
          .VISIBLE=.T.           
          .LEFT=INT_015*328
-         .TOP=INT_015*38
+         .TOP=INT_015*63
          .WIDTH=INT_015*50
          .CAPTION='包裝方式'                           
     ENDWITH         
@@ -655,7 +664,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF06
         .VISIBLE=.T.           
         .LEFT=INT_015*328
-        .TOP=INT_015*63
+        .TOP=INT_015*88
         .WIDTH=INT_015*50
         .CAPTION='包裝基量'         
     ENDWITH   
@@ -663,7 +672,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF12
          .VISIBLE=.T.           
          .LEFT=INT_015*328
-         .TOP=INT_015*88
+         .TOP=INT_015*113
          .WIDTH=INT_015*50
          .CAPTION='包裝數量'
     ENDWITH  
@@ -671,7 +680,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF07
          .VISIBLE=.T.           
          .LEFT=INT_015*328
-         .TOP=INT_015*113
+         .TOP=INT_015*138
          .WIDTH=INT_015*50
          .CAPTION='最少採購'
     ENDWITH            
@@ -679,7 +688,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF15
          .VISIBLE=.T.           
          .LEFT=INT_015*358
-         .TOP=INT_015*138
+         .TOP=INT_015*163
          .WIDTH=INT_015*50
          .CAPTION='有效期限'
     ENDWITH                
@@ -687,7 +696,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.LBLF17
          .VISIBLE=.T.           
          .LEFT=INT_015*14
-         .TOP=INT_015*188
+         .TOP=INT_015*213
          .WIDTH=INT_015*50
          .CAPTION='生效日期'
     ENDWITH                
@@ -711,11 +720,12 @@ DEFINE CLASS TKC21 AS FORM
 	     .MAXLENGTH=40
 	     .NAME='TXTF16'       
 	ENDWITH     
+	
 	THIS.ADDOBJECT('TXTF05','TEXTBOX')
 	WITH THIS.TXTF05
 	     .VISIBLE=.T.
 	     .LEFT=INT_015*65
-	     .TOP=INT_015*34
+	     .TOP=INT_015*59
 	     .WIDTH=INT_015*261
 	     .HEIGHT=INT_015*25
 	     .MAXLENGTH=30
@@ -725,7 +735,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF03
          .VISIBLE=.T.           
          .LEFT=INT_015*65
-         .TOP=INT_015*59
+         .TOP=INT_015*84
          .WIDTH=INT_015*80
          .INPUTMASK='99999999999'
          .NAME='TXTF03'
@@ -734,7 +744,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF14
          .VISIBLE=.T.           
          .LEFT=INT_015*215
-         .TOP=INT_015*59
+         .TOP=INT_015*84
          .WIDTH=INT_015*30
          .INPUTMASK='999'
          .NAME='TXTF14'
@@ -743,7 +753,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF04     
          .VISIBLE=.T.           
          .LEFT=INT_015*65
-         .TOP=INT_015*84
+         .TOP=INT_015*109
          .WIDTH=INT_015*80
          .INPUTMASK='9999999.999999'
          .NAME='TXTF04'
@@ -752,7 +762,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF10     
          .VISIBLE=.T.           
          .LEFT=INT_015*65
-         .TOP=INT_015*134
+         .TOP=INT_015*159
          .WIDTH=INT_015*20
          .MAXLENGTH=1
          .NAME='TXTF10'
@@ -761,7 +771,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF11 
          .VISIBLE=.T.
          .LEFT=INT_015*145
-         .TOP=INT_015*134
+         .TOP=INT_015*159
          .WIDTH=INT_015*200
          .MAXLENGTH=30
          .NAME='TXTF11'
@@ -769,7 +779,7 @@ DEFINE CLASS TKC21 AS FORM
     THIS.ADDOBJECT('CMB1','CMB1')
     WITH THIS.CMB1
          .LEFT=INT_015*344
-         .TOP=INT_015*134
+         .TOP=INT_015*159
          .HEIGHT=INT_015*25
          .NAME='CMB1'
     ENDWITH            
@@ -777,7 +787,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF08     
          .VISIBLE=.T.           
          .LEFT=INT_015*65
-         .TOP=INT_015*159
+         .TOP=INT_015*184
          .WIDTH=INT_015*465
          .MAXLENGTH=80
          .NAME='TXTF08'
@@ -786,7 +796,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF09     
          .VISIBLE=.T.           
          .LEFT=INT_015*378
-         .TOP=INT_015*34
+         .TOP=INT_015*59
          .WIDTH=INT_015*60
          .MAXLENGTH=8
          .NAME='TXTF09'
@@ -795,7 +805,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF06     
          .VISIBLE=.T.           
          .LEFT=INT_015*378
-         .TOP=INT_015*59
+         .TOP=INT_015*84
          .WIDTH=INT_015*80
          .INPUTMASK='9999999'
          .NAME='TXTF06'
@@ -804,7 +814,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF12     
          .VISIBLE=.T.           
          .LEFT=INT_015*378
-         .TOP=INT_015*84
+         .TOP=INT_015*109
          .WIDTH=INT_015*80
          .INPUTMASK='99999999999'
          .NAME='TXTF12'
@@ -813,7 +823,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF07     
          .VISIBLE=.T.           
          .LEFT=INT_015*378
-         .TOP=INT_015*109
+         .TOP=INT_015*134
          .WIDTH=INT_015*80
          .INPUTMASK='99999999999'
          .NAME='TXTF07'
@@ -822,7 +832,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF15    
          .VISIBLE=.T.           
          .LEFT=INT_015*408
-         .TOP=INT_015*134
+         .TOP=INT_015*159
          .WIDTH=INT_015*73
          .NAME='TXTF15'
     ENDWITH            
@@ -830,7 +840,7 @@ DEFINE CLASS TKC21 AS FORM
     WITH THIS.TXTF17   
          .VISIBLE=.T.           
          .LEFT=INT_015*65
-         .TOP=INT_015*184
+         .TOP=INT_015*209
          .WIDTH=INT_015*73
          .NAME='TXTF17'
     ENDWITH                
@@ -1098,7 +1108,7 @@ DEFINE CLASS TKC21 AS FORM
   PROC GRID2.AFTERROWCOLCHANGE
        LPARAMETERS NCOLINDEX
        THISFORM.PAGEFRAME1.PAGE2.TXTF02.VALUE=C27.F02  
-       *THISFORM.PAGEFRAME1.PAGE2.LBLF021.CAPTION=B01.F02       
+       THISFORM.PAGEFRAME1.PAGE2.LBLF021.CAPTION=B01.F02       
        THISFORM.PAGEFRAME1.PAGE2.TXTF03.VALUE=C27.F03
        THISFORM.PAGEFRAME1.PAGE2.TXTF14.VALUE=C27.F14
        THISFORM.PAGEFRAME1.PAGE2.TXTF04.VALUE=C27.F04
@@ -2863,7 +2873,7 @@ DEFINE CLASS TXTF02 AS TEXTBOX
           RETURN
        ENDIF
     ENDIF  
-       *THISFORM.PAGEFRAME1.PAGE2.LBLF021.CAPTION=IIF(SEEK(THIS.VALUE,'B01'),B01.F02,'') 
+       THISFORM.PAGEFRAME1.PAGE2.LBLF021.CAPTION=IIF(SEEK(THIS.VALUE,'B01'),B01.F02,'') 
        THISFORM.PAGEFRAME1.PAGE2.TXTF16.VALUE=IIF(SEEK(THIS.VALUE,'B01'),B01.F02,'')
        THISFORM.PAGEFRAME1.PAGE2.TXTF14.VALUE=IIF(SEEK(THIS.VALUE,'B01'),B01.F28+B01.F31,0) 
        THISFORM.PAGEFRAME1.PAGE2.TXTF09.VALUE=IIF(SEEK(THIS.VALUE,'C20'),C20.F02,'BAG')        
