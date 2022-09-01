@@ -1950,7 +1950,7 @@ ADD OBJECT DATA_OPTION AS OPTIONGROUP WITH;
 	                   RETURN
 	                ELSE
 	                  ON ERROR DO FILE_IMPACT
-	                  COPY TO (GCDELIMFILE) TYPE XLS
+	                  COPY TO (GCDELIMFILE) TYPE XL5
 	                  =MESSAGEBOX('儲存成功',0+64,'提示訊息視窗')
 	                ENDIF                    
                 ENDIF
