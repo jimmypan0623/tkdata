@@ -1,3 +1,16 @@
 #====忽略以下檔案=====
 icon28
-*.bak
+*.BAK
+*.tmp
+*.DBF
+*.CDX
+*.SCT
+*.SCX
+*.xls
+*.doc
+*.txt
+*.FXP
+*.pdf
+*.zip
+*.rar
+*.exe
