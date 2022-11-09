@@ -1416,8 +1416,8 @@ PROCEDURE ORPGROUP.EDIT_BOTT.CLICK
                      REPLACE F05 WITH C22.F04
                   ENDIF
                   REPLACE F04 WITH THISFORM.PAGEFRAME1.PAGE2.TXTFEX.VALUE
-               ELSE
-                  DELETE FROM C24 WHERE C24.F01=C22.F01 AND C24.F02=C23.F02 AND C24.F03=C23.F06   
+               ELSE                  
+                  DELETE FROM C24 WHERE C24.F01+C24.F02+C24.F03=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF02.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF06.VALUE
                ENDIF
                SELECT C23
           ELSE 
@@ -1433,11 +1433,11 @@ PROCEDURE ORPGROUP.DEL_BOTT.CLICK
       IF MESSAGEBOX('是否確定要刪除此筆之所有資料',4+32+256,'請確認')=6
          IF ALIA()='C22'           &&刪除整張訂單
            SELECT C22
-	   LOCK()
-	   IF  RLOCK()
-	        PO_NO=ALLTRIM(C22.F01)
-	        DELETE FROM C24 WHERE C24.F01=PO_NO
-	        DELETE FROM C23 WHERE C23.F01=PO_NO
+	       LOCK()
+	       IF  RLOCK()
+	           PO_NO=ALLTRIM(C22.F01)
+	           DELETE FROM C24 WHERE C24.F01=PO_NO
+	           DELETE FROM C23 WHERE C23.F01=PO_NO
 	       
       	        DELE
                 UNLOCK
@@ -1450,11 +1450,11 @@ PROCEDURE ORPGROUP.DEL_BOTT.CLICK
                     HD='C022 '+SUBSTR(DTOS(DATE()),3,4)+PO_NO
                     DO ODR_RJT
                 ENDIF  
-          ELSE
+           ELSE
                  DO FILE_IMPACT                  
-          ENDIF
-          THISFORM.GRID1.SETFOCUS
-          IF  THISFORM.GRID1.ACTIVEROW=0
+           ENDIF
+           THISFORM.GRID1.SETFOCUS
+           IF  THISFORM.GRID1.ACTIVEROW=0
                 THISFORM.SETALL('VALUE','','TEXTBOX')
                 THISFORM.CMDGROUP.TOP_BOTT.ENABLED=.F.      
                 THISFORM.CMDGROUP.UP_BOTT.ENABLED=.F.
@@ -1463,20 +1463,20 @@ PROCEDURE ORPGROUP.DEL_BOTT.CLICK
                 THISFORM.CMDGROUP.SEEK_BOTT.ENABLED=.F.
                 THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=.F.
                 THISFORM.ORPGROUP.DEL_BOTT.ENABLED=.F.
-         ELSE
+           ELSE
                 THISFORM.CMDGROUP.ENABLED=.T. 
                 THISFORM.ORPGROUP.EDIT_BOTT.ENABLED=IIF(GM='*',.T.,.F.)  &&判斷有無修改的權限
                 THISFORM.ORPGROUP.DEL_BOTT.ENABLED=IIF(GN='*',.T.,.F.)   &&判斷有無刪除的權限 
                 THISFORM.ORPGROUP.PNT_BOTT.ENABLED=IIF(GP='*',.T.,.F.)   &&判斷有無列印的權限     
-        ENDIF
-   ENDIF
-  ENDIF 
+           ENDIF
+         ENDIF
+      ENDIF 
  ELSE  &&刪除單筆資料
     IF  MESSAGEBOX('是否確定要刪除此料品編號之所有資料',4+32+256,'請確認')=6 
         SELE C23 
         LOCK()
         IF  RLOCK()
-            DELETE FROM C24 WHERE F01+F02+F03=C22.F01+C23.F02+C23.F06
+            DELETE FROM C24 WHERE C24.F01+C24.F02+C24.F03=THISFORM.PAGEFRAME1.PAGE1.TXTF01.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF02.VALUE+THISFORM.PAGEFRAME1.PAGE2.TXTF06.VALUE
             SELECT C23
              DELE
              UNLOCK
