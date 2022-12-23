@@ -1462,11 +1462,20 @@ ENDPROC
 		                      ENDDO			                      
 		           CASE KEY()='F01+F02+DTOS(F03)'   
 		                      FILE_NAME='D08 進貨計畫(資料範圍 '+ALLTRIM(THISFORM.TEXT1.VALUE)+'~'+ALLTRIM(THISFORM.TEXT2.VALUE)+' )'
-		                      SELECT D07.F01 採購單號,D07.F02 料號,B01.F02 品名規格,D07.F03 預定進貨日,D07.F04 進貨數量,D07.F05 廠商編號,D07_1.EXP_2 廠商名稱,;
-		                      D07.F07 採購用途,D07.F13+'(' + ALLTRIM(D07.F17) + ')' 運貨方式,IIF(D07.F09='1','已回覆','未回覆') 交期回覆,B01.F49 產地代號,P04.F04 幣別,P04.F05 單價,P04.F13 代號,D07.F08 安全資料 FROM D07,B01,D07_1,P04;
-		                      WHERE B01.F01=D07.F02 AND D07_1.F05=D07.F05 AND P04.F01+P04.F02=D07.F01+D07.F02 AND D07.F01>=THISFORM.TEXT1.VALUE AND D07.F01<=THISFORM.TEXT2.VALUE;
-		                      ORDER BY D07.F01,D07.F02,D07.F03 INTO CURSOR D08_TEMP  READWRITE     
-		                      ALTER TABLE D08_TEMP ADD  客戶品號 C(30,0)
+		                      IF A02.F10='*'
+		                         SELECT D07.F01 採購單號,D07.F02 料號,B01.F02 品名規格,D07.F03 預定進貨日,D07.F04 進貨數量,D07.F05 廠商編號,D07_1.EXP_2 廠商名稱,;
+		                         D07.F07 採購用途,D07.F13+'(' + ALLTRIM(D07.F17) + ')' 運貨方式,IIF(D07.F09='1','已回覆','未回覆') 交期回覆,B01.F49 產地代號,P04.F04 幣別,P04.F05 單價,P04.F13 代號,D07.F08 安全資料 FROM D07,B01,D07_1,P04;
+		                         WHERE B01.F01=D07.F02 AND D07_1.F05=D07.F05 AND P04.F01+P04.F02=D07.F01+D07.F02 AND D07.F01>=THISFORM.TEXT1.VALUE AND D07.F01<=THISFORM.TEXT2.VALUE;
+		                         ORDER BY D07.F01,D07.F02,D07.F03 INTO CURSOR D08_TEMP  READWRITE   
+		                         ALTER TABLE D08_TEMP ADD  客戶品號 C(30,0)  
+		                      ELSE
+		                          SELECT D07.F01 採購單號,D07.F02 料號,B01.F02 品名規格,D07.F03 預定進貨日,D07.F04 進貨數量,D07.F05 廠商編號,D07_1.EXP_2 廠商名稱,;
+		                         D07.F07 採購用途,D07.F13+'(' + ALLTRIM(D07.F17) + ')' 運貨方式,IIF(D07.F09='1','已回覆','未回覆') 交期回覆,B01.F49 產地代號,P04.F13 代號,D07.F08 安全資料 FROM D07,B01,D07_1,P04;
+		                         WHERE B01.F01=D07.F02 AND D07_1.F05=D07.F05 AND P04.F01+P04.F02=D07.F01+D07.F02 AND D07.F01>=THISFORM.TEXT1.VALUE AND D07.F01<=THISFORM.TEXT2.VALUE;
+		                         ORDER BY D07.F01,D07.F02,D07.F03 INTO CURSOR D08_TEMP  READWRITE     
+		                         ALTER TABLE D08_TEMP ADD  客戶品號 C(30,0)
+		                      ENDIF
+		                       
 		                      SELECT D08_TEMP
 		                      GO TOP
 		                      DO WHILE !EOF()
@@ -1476,11 +1485,19 @@ ENDPROC
 		                      ENDDO			                           
 		           CASE KEY()='F02+DTOS(F03)'   
 		                      FILE_NAME='D08 進貨計畫(資料範圍 '+ALLTRIM(THISFORM.TEXT1.VALUE)+'~'+ALLTRIM(THISFORM.TEXT2.VALUE)+' )'		                     
-		                      SELECT D07.F01 採購單號,D07.F02 料號,B01.F02 品名規格,D07.F03 預定進貨日,D07.F04 進貨數量,D07.F05 廠商編號,D07_1.EXP_2 廠商名稱,;
-		                      D07.F07 採購用途,D07.F13+'(' + ALLTRIM(D07.F17) + ')' 運貨方式,IIF(D07.F09='1','已回覆','未回覆') 交期回覆,B01.F49 產地代號,P04.F04 幣別,P04.F05 單價,P04.F13 代號,D07.F08 安全資料 FROM D07,B01,D07_1,P04;
-		                      WHERE B01.F01=D07.F02 AND D07_1.F05=D07.F05 AND P04.F01+P04.F02=D07.F01+D07.F02 AND D07.F02>=THISFORM.TEXT1.VALUE AND D07.F02<=THISFORM.TEXT2.VALUE;
-		                      ORDER BY D07.F02,D07.F03 INTO CURSOR D08_TEMP READWRITE		                   		                         		                   
-		                      ALTER TABLE D08_TEMP ADD  客戶品號 C(30,0)		                      		                      		                      
+		                      IF A02.F10='*'
+		                         SELECT D07.F01 採購單號,D07.F02 料號,B01.F02 品名規格,D07.F03 預定進貨日,D07.F04 進貨數量,D07.F05 廠商編號,D07_1.EXP_2 廠商名稱,;
+		                         D07.F07 採購用途,D07.F13+'(' + ALLTRIM(D07.F17) + ')' 運貨方式,IIF(D07.F09='1','已回覆','未回覆') 交期回覆,B01.F49 產地代號,P04.F04 幣別,P04.F05 單價,P04.F13 代號,D07.F08 安全資料 FROM D07,B01,D07_1,P04;
+		                         WHERE B01.F01=D07.F02 AND D07_1.F05=D07.F05 AND P04.F01+P04.F02=D07.F01+D07.F02 AND D07.F02>=THISFORM.TEXT1.VALUE AND D07.F02<=THISFORM.TEXT2.VALUE;
+		                         ORDER BY D07.F02,D07.F03 INTO CURSOR D08_TEMP READWRITE	
+		                          ALTER TABLE D08_TEMP ADD  客戶品號 C(30,0)
+		                      ELSE
+		                         SELECT D07.F01 採購單號,D07.F02 料號,B01.F02 品名規格,D07.F03 預定進貨日,D07.F04 進貨數量,D07.F05 廠商編號,D07_1.EXP_2 廠商名稱,;
+		                         D07.F07 採購用途,D07.F13+'(' + ALLTRIM(D07.F17) + ')' 運貨方式,IIF(D07.F09='1','已回覆','未回覆') 交期回覆,B01.F49 產地代號,P04.F13 代號,D07.F08 安全資料 FROM D07,B01,D07_1,P04;
+		                         WHERE B01.F01=D07.F02 AND D07_1.F05=D07.F05 AND P04.F01+P04.F02=D07.F01+D07.F02 AND D07.F02>=THISFORM.TEXT1.VALUE AND D07.F02<=THISFORM.TEXT2.VALUE;
+		                         ORDER BY D07.F02,D07.F03 INTO CURSOR D08_TEMP READWRITE	
+		                          ALTER TABLE D08_TEMP ADD  客戶品號 C(30,0)
+		                      ENDIF   	                   		                         		                   		                                     		                      		                      
 		                      SELECT D08_TEMP
 		                      GO TOP
 		                      DO WHILE !EOF()
