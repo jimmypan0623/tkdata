@@ -1052,7 +1052,7 @@ DEFINE CLASS TRN_RANGE AS FORM
 *!*	            ENDIF
             REPLACE F36 WITH PADL(ALLTRIM(TRANSFORM(C13T1.F07*C13T1.F14,'@R #######.######')),15,'0')
             REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(ABS(IIF(C13T1.F16='02',ROUND(C13T1.F08/(1+INT_002/100),INT_069),C13T1.F08)),'@R #############')),13,'0')                         
-            REPLACE F43 WITH IIF(C13T1.F16='02','Y','N')
+            REPLACE F43 WITH IIF(C13T1.F16='02','1','0')
             REPLACE F44 WITH C13T1.F03
             REPLACE F70 WITH ICASE(IIF(SEEK(C13T1.F17,'K25'),K25.F09+K25.F01,'')='232','1',IIF(SEEK(C13T1.F17,'K25'),K25.F09+K25.F01,'')='231','4','')
             SELECT C13T1
@@ -1138,7 +1138,7 @@ DEFINE CLASS TRN_RANGE AS FORM
 *!*	            ENDIF            
             REPLACE F36 WITH PADL(ALLTRIM(TRANSFORM(D19T.F07*D19T.F14,'@R #######.######')),15,'0')
             REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(ABS(D19T.F08),'@R #############')),13,'0')             
-            REPLACE F43 WITH IIF(D19T.F19='02','Y','N')
+            REPLACE F43 WITH IIF(D19T.F19='02','1','0')
             REPLACE F44 WITH D19T.F03
             SELECT D19T
             SKIP
@@ -1190,7 +1190,7 @@ DEFINE CLASS TRN_RANGE AS FORM
   
             REPLACE F36 WITH PADL(ALLTRIM(TRANSFORM(E20T1.F07*E20T1.F14,'@R #######.######')),15,'0')
             REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(ABS(E20T1.F08),'@R #############')),13,'0')             
-            REPLACE F43 WITH IIF(E20T1.F19='02','Y','N')
+            REPLACE F43 WITH IIF(E20T1.F19='02','1','0')
             REPLACE F44 WITH E20T1.F03
             SELECT E20T1
             SKIP
@@ -1243,7 +1243,7 @@ DEFINE CLASS TRN_RANGE AS FORM
       
             REPLACE F36 WITH PADL(ALLTRIM(TRANSFORM(E20T2.F07*E20T2.F14,'@R #######.######')),15,'0')
             REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(ABS(E20T2.F08),'@R #############')),13,'0')             
-            REPLACE F43 WITH IIF(E20T2.F19='02','Y','N')
+            REPLACE F43 WITH IIF(E20T2.F19='02','1','0')
             REPLACE F44 WITH E20T2.F03
             SELECT E20T2
             SKIP
@@ -1289,7 +1289,7 @@ DEFINE CLASS TRN_RANGE AS FORM
        
             REPLACE F36 WITH PADL(ALLTRIM(TRANSFORM(E20T3.F07*E20T3.F14,'@R #######.######')),15,'0')
             REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(ABS(E20T3.F08),'@R #############')),13,'0')             
-            REPLACE F43 WITH IIF(E20T3.F19='02','Y','N')
+            REPLACE F43 WITH IIF(E20T3.F19='02','1','0')
             REPLACE F44 WITH E20T3.F03
             SELECT E20T3
             SKIP
@@ -1331,7 +1331,7 @@ DEFINE CLASS TRN_RANGE AS FORM
                REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(G07.F09,'@R #############')),13,'0')       
                REPLACE F38 WITH PADL(ALLTRIM(TRANSFORM(G07.F09,'@R #######.######')),15,'0') 
                REPLACE F39 WITH PADL(ALLTRIM(TRANSFORM(G07.F09,'@R #############')),13,'0')        
-               REPLACE F43 WITH 'N'
+               REPLACE F43 WITH '0'
                REPLACE F44 WITH F07              
                SELECT G07
                SKIP
@@ -1372,7 +1372,7 @@ DEFINE CLASS TRN_RANGE AS FORM
                REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(G09.F09,'@R #############')),13,'0')      
                REPLACE F38 WITH PADL(ALLTRIM(TRANSFORM(G09.F09,'@R #######.######')),15,'0')
                REPLACE F39 WITH PADL(ALLTRIM(TRANSFORM(G09.F09,'@R #############')),13,'0')                        
-               REPLACE F43 WITH 'N'
+               REPLACE F43 WITH '0'
                REPLACE F44 WITH '0018'              
                SELECT G09
                SKIP
@@ -1415,7 +1415,7 @@ DEFINE CLASS TRN_RANGE AS FORM
                REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(P17T.F09,'@R #############')),13,'0')      
                REPLACE F38 WITH PADL(ALLTRIM(TRANSFORM(P17T.F09,'@R #######.######')),15,'0')
                REPLACE F39 WITH PADL(ALLTRIM(TRANSFORM(P17T.F09,'@R #############')),13,'0')                       
-               REPLACE F43 WITH 'N'
+               REPLACE F43 WITH '0'
                REPLACE F44 WITH F07              
                SELECT P17T
                SKIP
@@ -1458,7 +1458,7 @@ DEFINE CLASS TRN_RANGE AS FORM
                REPLACE F39 WITH PADL(ALLTRIM(TRANSFORM(0,'@R ##########.##')),13,'0')                                
                REPLACE F36 WITH PADL(ALLTRIM(TRANSFORM(0,'@R #######.######')),15,'0')
                REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(0,'@R #############')),13,'0')             
-               REPLACE F43 WITH 'N'
+               REPLACE F43 WITH '0'
 *!*	               REPLACE F44 WITH F07                  
                SELECT B06T1
                SKIP
@@ -1627,7 +1627,7 @@ DEFINE CLASS TRN_RANGE AS FORM
                REPLACE F39 WITH PADL(ALLTRIM(TRANSFORM(0,'@R ##########.##')),13,'0')                                
                REPLACE F36 WITH PADL(ALLTRIM(TRANSFORM(0,'@R #######.######')),15,'0')
                REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(0,'@R #############')),13,'0')             
-               REPLACE F43 WITH 'N'
+               REPLACE F43 WITH '0'
 *!*	               REPLACE F44 WITH F07                                               
                SELECT B07T2
                SKIP
@@ -1669,7 +1669,7 @@ DEFINE CLASS TRN_RANGE AS FORM
                REPLACE F39 WITH PADL(ALLTRIM(TRANSFORM(0,'@R ##########.##')),13,'0')                                
                REPLACE F36 WITH PADL(ALLTRIM(TRANSFORM(0,'@R #######.######')),15,'0')
                REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(0,'@R #############')),13,'0')             
-               REPLACE F43 WITH 'N'
+               REPLACE F43 WITH '0'
 *!*	               REPLACE F44 WITH F07                        
                SELECT B08T
                SKIP
@@ -1974,7 +1974,7 @@ DEFINE CLASS TRN_RANGE AS FORM
                REPLACE F39 WITH PADL(ALLTRIM(TRANSFORM(0,'@R ##########.##')),13,'0')                                
                REPLACE F36 WITH PADL(ALLTRIM(TRANSFORM(0,'@R #######.######')),15,'0')
                REPLACE F37 WITH PADL(ALLTRIM(TRANSFORM(0,'@R #############')),13,'0')             
-               REPLACE F43 WITH 'N'
+               REPLACE F43 WITH '0'
 *!*	               REPLACE F44 WITH F07                                       
                SELECT D39T
                SKIP
